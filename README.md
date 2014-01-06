@@ -29,6 +29,7 @@ Branches
 License
 -------
 
-We distribute the modified software under the same License as the
-original software from TU Graz.
-Please refer to Please refer to the [LICENSE](LICENSE) file.
+We distribute the modified software under the same license as the
+original software from TU Graz (by using the
+[MIT License](https://en.wikipedia.org/wiki/MIT_License)).
+Please refer to the [LICENSE](LICENSE) file.
