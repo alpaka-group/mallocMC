@@ -1,4 +1,4 @@
-scatteralloc
+ScatterAlloc
 ============
 
 ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU
@@ -28,6 +28,19 @@ Branches
 
 **tugraz:** kind-of the "upstream" branch - only used to receive new releases
             from the TU Graz group
+
+
+Literature
+----------
+
+Just a random link collection:
+
+- [Paper](http://www.icg.tugraz.at/Members/steinber/scatteralloc-1) by
+  Markus Steinberger, Michael Kenzel, Bernhard Kainz, Dieter Schmalstieg
+
+- 2012: May 5th [Presentation](http://innovativeparallel.org/Presentations/inPar_kainz.pdf)
+        at *Innovative Parallel Computing 2012* by *Bernhard Kainz*
+
 
 License
 -------
