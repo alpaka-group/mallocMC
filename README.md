@@ -22,7 +22,9 @@ Branches
 --------
 
 **master:** our stable new releases
+
 **dev:**    our development branch - start and merge new branches here
+
 **tugraz:** kind-of the "upstream" branch only used to receive new releases
             from the TU Graz group
 
