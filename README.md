@@ -4,6 +4,7 @@ ScatterAlloc
 ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU
 
 Original Homepage: http://www.icg.tugraz.at/project/mvp
+
 Our Homepage: https://www.hzdr.de/crp
 
 
@@ -13,7 +14,9 @@ About This Repository
 This repository is a
 [fork](https://en.wikipedia.org/wiki/Fork_%28software_development%29)
 of the **ScatterAlloc** project from the
-*Managed Volume Processing* group at TU Graz (kudos!).
+[Managed Volume Processing](http://www.icg.tugraz.at/project/mvp)
+group at [Institute for Computer Graphics](http://www.icg.tugraz.at) and
+Vision, TU Graz (kudos!).
 
 Our aim is to improve the implementation, add new features and to fix some
 minor bugs.
@@ -36,9 +39,9 @@ Literature
 Just a random link collection:
 
 - [Paper](http://www.icg.tugraz.at/Members/steinber/scatteralloc-1) by
-  Markus Steinberger, Michael Kenzel, Bernhard Kainz, Dieter Schmalstieg
+  Markus Steinberger, Michael Kenzel, Bernhard Kainz and Dieter Schmalstieg
 
-- 2012: May 5th [Presentation](http://innovativeparallel.org/Presentations/inPar_kainz.pdf)
+- 2012, May 5th: [Presentation](http://innovativeparallel.org/Presentations/inPar_kainz.pdf)
         at *Innovative Parallel Computing 2012* by *Bernhard Kainz*
 
 
