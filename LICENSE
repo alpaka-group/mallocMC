@@ -1,6 +1,7 @@
 /*
   ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU.
   http://www.icg.tugraz.at/project/mvp
+  https://www.hzdr.de/crp
 
   Copyright (C) 2012 Institute for Computer Graphics and Vision,
                      Graz University of Technology
