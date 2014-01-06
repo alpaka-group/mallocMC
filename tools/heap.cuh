@@ -714,7 +714,7 @@ namespace GPUTools
         _pagebasedMutex = 0;
         _firstFreePageBased = numpages-1;
 
-        if( (char*) _page+numpages > (char*)(memory) + memsize)
+        if( (char*) (_page+numpages) > (char*)(memory) + memsize)
           printf("error in heap alloc: numpages too high\n");
       }
       
