@@ -4,8 +4,11 @@
 
   Copyright (C) 2012 Institute for Computer Graphics and Vision,
                      Graz University of Technology
+  Copyright (C) 2014 Institute of Radiation Physics,
+                     Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
+              Rene Widera - r.widera ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +32,7 @@
 #ifndef HEAP_CUH
 #define HEAP_CUH
 
+#include <stdio.h>
 #include "tools/utils.h"
 
 namespace GPUTools
@@ -579,7 +583,7 @@ namespace GPUTools
       //take care of padding
       bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1);
 
-      bool use_coalescing = false; 
+      bool can_use_coalescing = false; 
       uint myoffset = 0;
       uint warpid = GPUTools::warpid();
 
@@ -592,15 +596,15 @@ namespace GPUTools
       if (coalescible && threadcount > 1) 
       {
         myoffset = atomicAdd(&warp_sizecounter[warpid], bytes);
-        use_coalescing = true;
+        can_use_coalescing = true;
       }
 
       uint req_size = bytes;
-      if (use_coalescing)
+      if (can_use_coalescing)
         req_size = (myoffset == 16) ? warp_sizecounter[warpid] : 0;
 
       char* myalloc = (char*)alloc_internal_direct(req_size);
-      if (req_size && use_coalescing) 
+      if (req_size && can_use_coalescing) 
       {
         warp_res[warpid] = myalloc;
         if (myalloc != 0)
@@ -609,7 +613,7 @@ namespace GPUTools
       __threadfence_block();
 
       void *myres = myalloc;
-      if(use_coalescing) 
+      if(can_use_coalescing) 
       {
         if(warp_res[warpid] != 0)
           myres = warp_res[warpid] + myoffset;
