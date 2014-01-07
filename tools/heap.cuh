@@ -276,7 +276,7 @@ namespace GPUTools
       {
         for(uint b = startblock; b < accessblocks; ++b)
         {
-          while(ptetry < b*pagesperblock)
+          while(ptetry < (b+1)*pagesperblock)
           {
             uint region = ptetry/regionsize;
             uint regionfilllevel = _regions[region];
