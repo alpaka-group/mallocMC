@@ -3,6 +3,23 @@ ScatterAlloc
 
 ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU
 
+This project provides a **fast memory manager** for **NVidia GPUs** with
+compute capability `sm_20` or higher.
+
+From http://www.icg.tugraz.at/project/mvp/downloads :
+```quote
+ScatterAlloc is a dynamic memory allocator for the GPU. It is
+designed concerning the requirements of massively parallel
+execution.
+
+ScatterAlloc greatly reduces collisions and congestion by
+scattering memory requests based on hashing. It can deal with
+thousands of GPU-threads concurrently allocating memory and its
+execution time is almost independent of the thread count.
+
+ScatterAlloc is open source and easy to use in your CUDA projects.
+```
+
 Original Homepage: http://www.icg.tugraz.at/project/mvp
 
 Our Homepage: https://www.hzdr.de/crp
@@ -15,8 +32,8 @@ This repository is a
 [fork](https://en.wikipedia.org/wiki/Fork_%28software_development%29)
 of the **ScatterAlloc** project from the
 [Managed Volume Processing](http://www.icg.tugraz.at/project/mvp)
-group at [Institute for Computer Graphics](http://www.icg.tugraz.at) and
-Vision, TU Graz (kudos!).
+group at [Institute for Computer Graphics and Vision](http://www.icg.tugraz.at),
+TU Graz (kudos!).
 
 Our aim is to improve the implementation, add new features and to fix some
 minor bugs.
