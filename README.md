@@ -3,7 +3,7 @@ ScatterAlloc
 
 ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU
 
-This project provides a **fast memory manager** for **NVidia GPUs** with
+This project provides a **fast memory manager** for **Nvidia GPUs** with
 compute capability `sm_20` or higher.
 
 From http://www.icg.tugraz.at/project/mvp/downloads :
