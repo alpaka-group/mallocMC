@@ -118,7 +118,7 @@ namespace GPUTools
     volatile uint* _regions;
     PAGE* _page;
     uint _numpages;
-    uint _memsize;
+    size_t _memsize;
     uint _pagebasedMutex;
     volatile uint _firstFreePageBased;
     volatile uint _firstfreeblock;
@@ -664,7 +664,7 @@ namespace GPUTools
      * @param memory pointer to the memory used for the heap
      * @param memsize size of the memory in bytes
      */
-    __device__ void init(void* memory, uint memsize)
+    __device__ void init(void* memory, size_t memsize)
     {
       uint linid = threadIdx.x + blockDim.x*(threadIdx.y + threadIdx.z*blockDim.y);
       uint threads = blockDim.x*blockDim.y*blockDim.z;
@@ -751,7 +751,7 @@ namespace GPUTools
     * global init heap method
     */
   template<uint pagesize, uint accessblocks, uint regionsize, uint wastefactor,  bool use_coalescing, bool resetfreedpages>
-  __global__ void initHeap(DeviceHeap<pagesize, accessblocks, regionsize, wastefactor, use_coalescing, resetfreedpages>* heap, void* heapmem, uint memsize)
+  __global__ void initHeap(DeviceHeap<pagesize, accessblocks, regionsize, wastefactor, use_coalescing, resetfreedpages>* heap, void* heapmem, size_t memsize)
   {
     heap->init(heapmem, memsize);
   }
