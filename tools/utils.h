@@ -98,7 +98,7 @@ namespace CUDA
 
 
 #define warp_serial                                    \
-  for (uint __mask = __ballot(1),                      \
+  for (uint32 __mask = __ballot(1),                    \
             __num = __popc(__mask),                    \
             __lanemask = GPUTools::lanemask_lt(),      \
             __local_id = __popc(__lanemask & __mask),  \
@@ -110,6 +110,7 @@ namespace CUDA
 
 namespace GPUTools
 {    
+  typedef unsigned int uint32;
 
   template<int PSIZE>
   class __PointerEquivalent
@@ -127,70 +128,70 @@ namespace GPUTools
   typedef GPUTools::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
 
-  __device__ inline uint laneid()
+  __device__ inline uint32 laneid()
   {
-    uint mylaneid;
+    uint32 mylaneid;
     asm("mov.u32 %0, %laneid;" : "=r" (mylaneid));
     return mylaneid;
   }
 
-  __device__ inline uint warpid()
+  __device__ inline uint32 warpid()
   {
-    uint mywarpid;
+    uint32 mywarpid;
     asm("mov.u32 %0, %warpid;" : "=r" (mywarpid));
     return mywarpid;
   }
-  __device__ inline uint nwarpid()
+  __device__ inline uint32 nwarpid()
   {
-    uint mynwarpid;
+    uint32 mynwarpid;
     asm("mov.u32 %0, %nwarpid;" : "=r" (mynwarpid));
     return mynwarpid;
   }
 
-  __device__ inline uint smid()
+  __device__ inline uint32 smid()
   {
-    uint mysmid;
+    uint32 mysmid;
     asm("mov.u32 %0, %smid;" : "=r" (mysmid));
     return mysmid;
   }
 
-  __device__ inline uint nsmid()
+  __device__ inline uint32 nsmid()
   {
-    uint mynsmid;
+    uint32 mynsmid;
     asm("mov.u32 %0, %nsmid;" : "=r" (mynsmid));
     return mynsmid;
   }
-  __device__ inline uint lanemask()
+  __device__ inline uint32 lanemask()
   {
-    uint lanemask;
+    uint32 lanemask;
     asm("mov.u32 %0, %lanemask_eq;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint lanemask_le()
+  __device__ inline uint32 lanemask_le()
   {
-    uint lanemask;
+    uint32 lanemask;
     asm("mov.u32 %0, %lanemask_le;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint lanemask_lt()
+  __device__ inline uint32 lanemask_lt()
   {
-    uint lanemask;
+    uint32 lanemask;
     asm("mov.u32 %0, %lanemask_lt;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint lanemask_ge()
+  __device__ inline uint32 lanemask_ge()
   {
-    uint lanemask;
+    uint32 lanemask;
     asm("mov.u32 %0, %lanemask_ge;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint lanemask_gt()
+  __device__ inline uint32 lanemask_gt()
   {
-    uint lanemask;
+    uint32 lanemask;
     asm("mov.u32 %0, %lanemask_gt;" : "=r" (lanemask));
     return lanemask;
   }
