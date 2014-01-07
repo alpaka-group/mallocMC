@@ -119,11 +119,11 @@ namespace GPUTools
     volatile PTE* _ptes;
     volatile uint32* _regions;
     PAGE* _page;
-    uint _numpages;
+    uint32 _numpages;
     size_t _memsize;
-    uint _pagebasedMutex;
-    volatile uint _firstFreePageBased;
-    volatile uint _firstfreeblock;
+    uint32 _pagebasedMutex;
+    volatile uint32 _firstFreePageBased;
+    volatile uint32 _firstfreeblock;
 
     /**
      * randInit should create an random offset which can be used
