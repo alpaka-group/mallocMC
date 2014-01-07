@@ -4,8 +4,11 @@
 
   Copyright (C) 2012 Institute for Computer Graphics and Vision,
                      Graz University of Technology
+  Copyright (C) 2014 Institute of Radiation Physics,
+                     Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
+              Rene Widera - r.widera ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +32,7 @@
 #ifndef HEAP_CUH
 #define HEAP_CUH
 
+#include <stdio.h>
 #include "tools/utils.h"
 
 namespace GPUTools
@@ -114,7 +118,7 @@ namespace GPUTools
     volatile uint* _regions;
     PAGE* _page;
     uint _numpages;
-    uint _memsize;
+    size_t _memsize;
     uint _pagebasedMutex;
     volatile uint _firstFreePageBased;
     volatile uint _firstfreeblock;
@@ -171,7 +175,6 @@ namespace GPUTools
           return -1;
         spot = nextspot(old, spot, spots);
       }
-      return -1;
     }
     
     /**
@@ -273,7 +276,7 @@ namespace GPUTools
       {
         for(uint b = startblock; b < accessblocks; ++b)
         {
-          while(ptetry < b*pagesperblock)
+          while(ptetry < (b+1)*pagesperblock)
           {
             uint region = ptetry/regionsize;
             uint regionfilllevel = _regions[region];
@@ -579,7 +582,7 @@ namespace GPUTools
       //take care of padding
       bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1);
 
-      bool use_coalescing = false; 
+      bool can_use_coalescing = false; 
       uint myoffset = 0;
       uint warpid = GPUTools::warpid();
 
@@ -592,15 +595,15 @@ namespace GPUTools
       if (coalescible && threadcount > 1) 
       {
         myoffset = atomicAdd(&warp_sizecounter[warpid], bytes);
-        use_coalescing = true;
+        can_use_coalescing = true;
       }
 
       uint req_size = bytes;
-      if (use_coalescing)
+      if (can_use_coalescing)
         req_size = (myoffset == 16) ? warp_sizecounter[warpid] : 0;
 
       char* myalloc = (char*)alloc_internal_direct(req_size);
-      if (req_size && use_coalescing) 
+      if (req_size && can_use_coalescing) 
       {
         warp_res[warpid] = myalloc;
         if (myalloc != 0)
@@ -609,7 +612,7 @@ namespace GPUTools
       __threadfence_block();
 
       void *myres = myalloc;
-      if(use_coalescing) 
+      if(can_use_coalescing) 
       {
         if(warp_res[warpid] != 0)
           myres = warp_res[warpid] + myoffset;
@@ -661,7 +664,7 @@ namespace GPUTools
      * @param memory pointer to the memory used for the heap
      * @param memsize size of the memory in bytes
      */
-    __device__ void init(void* memory, uint memsize)
+    __device__ void init(void* memory, size_t memsize)
     {
       uint linid = threadIdx.x + blockDim.x*(threadIdx.y + threadIdx.z*blockDim.y);
       uint threads = blockDim.x*blockDim.y*blockDim.z;
@@ -711,7 +714,7 @@ namespace GPUTools
         _pagebasedMutex = 0;
         _firstFreePageBased = numpages-1;
 
-        if(_page[numpages].data - 1 >= (char*)(memory) + memsize)
+        if( (char*) (_page+numpages) > (char*)(memory) + memsize)
           printf("error in heap alloc: numpages too high\n");
       }
       
@@ -748,7 +751,7 @@ namespace GPUTools
     * global init heap method
     */
   template<uint pagesize, uint accessblocks, uint regionsize, uint wastefactor,  bool use_coalescing, bool resetfreedpages>
-  __global__ void initHeap(DeviceHeap<pagesize, accessblocks, regionsize, wastefactor, use_coalescing, resetfreedpages>* heap, void* heapmem, uint memsize)
+  __global__ void initHeap(DeviceHeap<pagesize, accessblocks, regionsize, wastefactor, use_coalescing, resetfreedpages>* heap, void* heapmem, size_t memsize)
   {
     heap->init(heapmem, memsize);
   }

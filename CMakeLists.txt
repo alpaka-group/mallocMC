@@ -1,7 +1,9 @@
 project(ScatterAlloc)
 cmake_minimum_required(VERSION 2.6)
-set(CUDA_NVCC_FLAGS "-arch=sm_20;-use_fast_math;")
+
 find_package(CUDA REQUIRED)
+set(CUDA_NVCC_FLAGS "-arch=sm_20;-use_fast_math;")
+set(CUDA_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CUDA_INCLUDE_DIRS})
 cuda_include_directories(${CUDA_INCLUDE_DIRS})
 
@@ -17,7 +19,4 @@ if(NOT ${CUDA_OPTIMIZATION_TYPE} STREQUAL  "unset")
 endif()
 
 cuda_add_executable(ScatterAllocExample 
-                    example.cu 
-                    ${CMAKE_CURRENT_SOURCE_DIR}/tools/heap.cuh
-					${CMAKE_CURRENT_SOURCE_DIR}/tools/heap_impl.cuh 
-					${CMAKE_CURRENT_SOURCE_DIR}/tools/utils.h)
+                    example.cu )
