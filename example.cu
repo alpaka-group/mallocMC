@@ -28,7 +28,6 @@
 */
 
 #include <cuda.h>
-typedef unsigned int uint;
 
 //replace the cuda malloc and free calls
 #define OVERWRITE_MALLOC
@@ -54,6 +53,8 @@ typedef unsigned int uint;
 
 #include <iostream>
 #include <stdio.h>
+
+typedef GPUTools::uint32 uint;
 
 void runexample(int cuda_device);
 
