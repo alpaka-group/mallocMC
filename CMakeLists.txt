@@ -19,4 +19,4 @@ if(NOT ${CUDA_OPTIMIZATION_TYPE} STREQUAL  "unset")
 endif()
 
 cuda_add_executable(ScatterAllocExample 
-                    example.cu )
+                    examples/example.cu )
