@@ -51,7 +51,8 @@ void* initHeap(size_t memsize = 8*1024U*1024U)
   return pool;
 }
 
-/** 
+/** Overwrite Operators new/delete and malloc/free ****************************/
+
 #ifdef __CUDACC__
 #ifdef SCATTERALLOC_OVERWRITE_MALLOC
 #if __CUDA_ARCH__ >= 200
