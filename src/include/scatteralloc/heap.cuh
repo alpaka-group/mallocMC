@@ -29,12 +29,10 @@
   THE SOFTWARE.
 */
 
-#ifndef HEAP_CUH
-#define HEAP_CUH
+#pragma once
 
 #include <stdio.h>
 #include "src/include/scatteralloc/utils.h"
-
 
 
 namespace GPUTools
@@ -776,7 +774,7 @@ namespace GPUTools
     Heap(device_heap_t* heap, size_t memsize)
       : memsize(memsize)
     {
-      CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
+      SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
       initHeap<pagesize, accessblocks, regionsize, wastefactor, use_coalescing, resetfreedpages><<<1,128>>>(heap, pool, memsize);
     }
 
@@ -786,5 +784,3 @@ namespace GPUTools
     }
   };
 }
-
-#endif

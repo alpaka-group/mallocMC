@@ -30,18 +30,19 @@
 #include <cuda.h>
 
 //replace the cuda malloc and free calls
-#define OVERWRITE_MALLOC
-//set the template arguments using HEAPARGS
+#define SCATTERALLOC_OVERWRITE_MALLOC 1
+
+//set the template arguments using SCATTERALLOC_HEAPARGS
 // pagesize ... byter per page
 // accessblocks ... number of superblocks
 // regionsize ... number of regions for meta data structur
 // wastefactor ... how much memory can be wasted per alloc (multiplicative factor)
 // use_coalescing ... combine memory requests of within each warp
 // resetfreedpages ... allow pages to be reused with a different size
-#define HEAPARGS 4096, 8, 16, 2, true, false
+#define SCATTERALLOC_HEAPARGS 4096, 8, 16, 2, true, false
+
 //include the scatter alloc heap
 #include <src/include/scatteralloc/heap_impl.cuh>
-
 #include <src/include/scatteralloc/utils.h>
 
 #ifdef WIN32
@@ -124,9 +125,9 @@ void runexample(int cuda_device)
   size_t grid = 64;
 
   uint** data;
-  CUDA_CHECKED_CALL(cudaMalloc(&data, grid*block*sizeof(uint*)));
+  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc(&data, grid*block*sizeof(uint*)));
   allocSomething<<<grid,block>>>(data);
-  CUDA_CHECKED_CALL(cudaDeviceSynchronize());
+  SCATTERALLOC_CUDA_CHECKED_CALL(cudaDeviceSynchronize());
   freeSomething<<<grid,block>>>(data);
-  CUDA_CHECKED_CALL(cudaDeviceSynchronize());
+  SCATTERALLOC_CUDA_CHECKED_CALL(cudaDeviceSynchronize());
 }

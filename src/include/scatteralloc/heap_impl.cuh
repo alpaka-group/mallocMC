@@ -29,14 +29,14 @@
   THE SOFTWARE.
 */
 
-#ifndef HEAP_IMPL_CUH
-#define HEAP_IMPL_CUH
+#pragma once
 
 #include "src/include/scatteralloc/heap.cuh"
-#ifndef HEAPARGS
+
+#ifndef SCATTERALLOC_HEAPARGS
 typedef GPUTools::DeviceHeap<> heap_t;
 #else
-typedef  GPUTools::DeviceHeap<HEAPARGS> heap_t;
+typedef GPUTools::DeviceHeap<SCATTERALLOC_HEAPARGS> heap_t;
 #endif
 
 __device__  heap_t theHeap;
@@ -45,17 +45,16 @@ void* initHeap(size_t memsize = 8*1024U*1024U)
 {
   void* pool;
   heap_t* heap;
-  CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,theHeap));
-  CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
+  SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,theHeap));
+  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
   GPUTools::initHeap<<<1,256>>>(heap, pool, memsize);
   return pool;
 }
 
-
-
+/** Overwrite Operators new/delete and malloc/free ****************************/
 
 #ifdef __CUDACC__
-#ifdef OVERWRITE_MALLOC
+#ifdef SCATTERALLOC_OVERWRITE_MALLOC
 #if __CUDA_ARCH__ >= 200
 __device__ void* malloc(size_t t) __THROW
 {
@@ -65,16 +64,8 @@ __device__ void  free(void* p) __THROW
 {
   theHeap.dealloc(p);
 }
-#define sNew new
-#define sNewA new
-#define sDelete(what) delete what
-#define sDeleteA(what) delete what
-#endif
-#else
-#define sNew new(theHeap)
-#define sNewA new(theHeap)
-#define sDelete(what) theHeap.deleteS(what)
-#define sDeleteA(what) theHeap.deleteA(what)
+#endif // __CUDA_ARCH__ >= 200
+#else // SCATTERALLOC_OVERWRITE_MALLOC
 template<uint pagesize, uint accessblocks, uint regionsize, uint wastefactor, bool use_coalescing, bool resetfreedpages>
 __device__ void* operator new(size_t bytes, GPUTools::DeviceHeap<pagesize, accessblocks,  regionsize, wastefactor, use_coalescing, resetfreedpages> &h )
 {
@@ -95,8 +86,6 @@ __device__ void operator delete[](void* mem, GPUTools::DeviceHeap<pagesize, acce
 {
   h.dealloc(mem);
 }
-#endif 
+#endif // SCATTERALLOC_OVERWRITE_MALLOC
 
 #endif //__CUDACC__
-
-#endif //HEAP_IMPL_CUH

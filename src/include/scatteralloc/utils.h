@@ -27,10 +27,6 @@
   THE SOFTWARE.
 */
 
-
-#ifndef INCLUDED_GPUTOOLS_UTILS_H
-#define INCLUDED_GPUTOOLS_UTILS_H
-
 #pragma once
 
 #ifdef _MSC_VER
@@ -92,8 +88,8 @@ namespace CUDA
 #endif
   }
 
-#define CUDA_CHECKED_CALL(call) CUDA::checkError(call, __FILE__, __LINE__)
-#define CUDA_CHECK_ERROR() CUDA::checkError(__FILE__, __LINE__)
+#define SCATTERALLOC_CUDA_CHECKED_CALL(call) CUDA::checkError(call, __FILE__, __LINE__)
+#define SCATTERALLOC_CUDA_CHECK_ERROR() CUDA::checkError(__FILE__, __LINE__)
 }
 
 
@@ -109,7 +105,7 @@ namespace CUDA
 
 
 namespace GPUTools
-{    
+{
   typedef unsigned int uint32;
 
   template<int PSIZE>
@@ -197,10 +193,6 @@ namespace GPUTools
   }
 
   template<class T>
-  __host__ __device__ inline T divup(T a, T b) { return (a + b - 1)/b; } 
+  __host__ __device__ inline T divup(T a, T b) { return (a + b - 1)/b; }
 
 }
-
-
-
-#endif  // INCLUDED_GPUTOOLS_UTILS_H
