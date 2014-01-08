@@ -40,9 +40,9 @@
 // resetfreedpages ... allow pages to be reused with a different size
 #define HEAPARGS 4096, 8, 16, 2, true, false
 //include the scatter alloc heap
-#include "tools/heap_impl.cuh"
+#include <src/include/scatteralloc/heap_impl.cuh>
 
-#include "tools/utils.h"
+#include <src/include/scatteralloc/utils.h>
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN

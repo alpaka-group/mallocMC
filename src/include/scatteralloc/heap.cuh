@@ -33,7 +33,7 @@
 #define HEAP_CUH
 
 #include <stdio.h>
-#include "tools/utils.h"
+#include "src/include/scatteralloc/utils.h"
 
 
 

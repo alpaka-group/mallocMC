@@ -32,7 +32,7 @@
 #ifndef HEAP_IMPL_CUH
 #define HEAP_IMPL_CUH
 
-#include "tools/heap.cuh"
+#include "src/include/scatteralloc/heap.cuh"
 #ifndef HEAPARGS
 typedef GPUTools::DeviceHeap<> heap_t;
 #else
