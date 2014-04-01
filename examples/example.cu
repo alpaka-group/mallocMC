@@ -55,7 +55,6 @@
 #include <iostream>
 #include <stdio.h>
 
-typedef GPUTools::uint32 uint;
 
 void runexample(int cuda_device);
 
