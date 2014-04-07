@@ -8,7 +8,7 @@ namespace PolicyMalloc{
 namespace GetHeapPolicies{
 
   struct SimpleCudaMalloc{
-    static void* getMemPool(size_t memsize){
+    static void* setMemPool(size_t memsize){
       void* pool;
       SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
       return pool;

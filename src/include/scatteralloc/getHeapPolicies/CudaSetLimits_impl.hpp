@@ -8,7 +8,7 @@ namespace PolicyMalloc{
 namespace GetHeapPolicies{
 
   struct CudaSetLimits{
-    static void* getMemPool(size_t memsize){
+    static void* setMemPool(size_t memsize){
       cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
       return NULL;
     }

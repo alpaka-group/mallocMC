@@ -1,3 +1,4 @@
+#pragma once
 #define POLICY_MALLOC_GLOBAL_FUNCTIONS_INTERNAL(POLICY_MALLOC_USER_DEFINED_TYPENAME_INTERNAL)      \
 namespace PolicyMalloc{                                                        \
   typedef POLICY_MALLOC_USER_DEFINED_TYPENAME_INTERNAL PolicyMallocType;       \
@@ -11,34 +12,28 @@ __host__  void* initHeap(                                                      \
 {                                                                              \
     return p.initHeap(heapsize);                                               \
 }                                                                              \
-__host__  void destroyHeap(                                                    \
+__host__  void finalizeHeap(                                                   \
     PolicyMallocType &p = policyMallocGlobalObject                             \
     )                                                                          \
 {                                                                              \
-    p.destroyHeap();                                                           \
+    p.finalizeHeap();                                                          \
 }                                                                              \
 } //end namespace PolicyMalloc
 
 
-#ifdef __CUDACC__
-#if __CUDA_ARCH__ >= 200
 #define POLICY_MALLOC_MEMORY_ALLOCATOR_FUNCTIONS()                             \
 namespace PolicyMalloc{                                                        \
 __device__ void* pbMalloc(size_t t) __THROW                                    \
 {                                                                              \
-    return policyMallocGlobalObject.alloc(t);                                  \
+  return PolicyMalloc::policyMallocGlobalObject.alloc(t);                      \
 }                                                                              \
 __device__ void  pbFree(void* p) __THROW                                       \
 {                                                                              \
-        policyMallocGlobalObject.dealloc(p);                                   \
+  PolicyMalloc::policyMallocGlobalObject.dealloc(p);                           \
 }                                                                              \
 } //end namespace PolicyMalloc
-#endif
-#endif
 
 
-#ifdef __CUDACC__
-#if __CUDA_ARCH__ >= 200
 #define POLICY_MALLOC_MEMORY_ALLOCATOR_MALLOC_NAMESPACE()                      \
 namespace PolicyMalloc{                                                        \
 __device__ void* malloc(size_t t) __THROW                                      \
@@ -50,8 +45,6 @@ __device__ void  free(void* p) __THROW                                         \
   PolicyMalloc::policyMallocGlobalObject.dealloc(p);                           \
 }                                                                              \
 } /* end namespace PolicyMalloc */
-#endif
-#endif
 
 
 #ifdef __CUDACC__
@@ -82,6 +75,7 @@ __device__ void operator delete[](void* p, PolicyMalloc::PolicyMallocType &h)  \
 #define POLICY_MALLOC_MEMORY_ALLOCATOR_MALLOC_OVERWRITE()                      \
 __device__ void* malloc(size_t t) __THROW                                      \
 {                                                                              \
+  printf("test");                                                              \
   return PolicyMalloc::policyMallocGlobalObject.alloc(t);                      \
 }                                                                              \
 __device__ void  free(void* p) __THROW                                         \
@@ -111,6 +105,7 @@ __device__ void  free(void* p) __THROW                                         \
 #define SET_ACCELERATOR_MEMORY_ALLOCATOR_TYPE(POLICY_MALLOC_USER_DEFINED_TYPE)\
 POLICY_MALLOC_GLOBAL_FUNCTIONS_INTERNAL(POLICY_MALLOC_USER_DEFINED_TYPE)\
 POLICY_MALLOC_MEMORY_ALLOCATOR_FUNCTIONS()\
-POLICY_MALLOC_MEMORY_ALLOCATOR_MALLOC_NAMESPACE()\
-POLICY_MALLOC_MEMORY_ALLOCATOR_NEW_OVERWRITE()
+POLICY_MALLOC_MEMORY_ALLOCATOR_MALLOC_NAMESPACE()
+
+//POLICY_MALLOC_MEMORY_ALLOCATOR_NEW_OVERWRITE()
 

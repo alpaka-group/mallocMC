@@ -12,10 +12,12 @@
 namespace PolicyMalloc{
 namespace CreationPolicies{
     
+namespace Scatter2NS{
   template < typename T_Allocator >
   __global__ void initKernel(T_Allocator* heap, void* heapmem, size_t memsize){
     heap->initDeviceFunction(heapmem, memsize);
   }
+}
 
   template<class T_Dummy>
   class Scatter2
@@ -47,7 +49,7 @@ namespace CreationPolicies{
 #endif
       //static const uint32 minChunkSize0 = pagesize/(32*32); // TODO remove? it is used nowhere in the code
       static const uint32 minChunkSize1 = 0x10;
-      static const uint32 dataAlignment = Properties::dataAlignment::value;
+      //static const uint32 dataAlignment = Properties::dataAlignment::value;
 
       static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
 
@@ -74,10 +76,10 @@ namespace CreationPolicies{
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::wastefactor::type>::is_signed);
       BOOST_STATIC_ASSERT(wastefactor > 0); 
 
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::dataAlignment::type>::is_signed);
-      BOOST_STATIC_ASSERT(dataAlignment > 0); 
-      //dataAlignment must also be a power of 2!
-      BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
+//      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::dataAlignment::type>::is_signed);
+//      BOOST_STATIC_ASSERT(dataAlignment > 0); 
+//      //dataAlignment must also be a power of 2!
+//      BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
 
 
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::hashingK::type>::is_signed);
@@ -553,7 +555,7 @@ namespace CreationPolicies{
         if(bytes == 0)
           return 0;
         //take care of padding
-        bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1); 
+        //bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1); // in alignment-policy
         if(bytes < pagesize)
           //chunck based 
           return allocChunked(bytes);
@@ -611,17 +613,22 @@ namespace CreationPolicies{
 
         uint32 numregions = ((unsigned long long)memsize)/( ((unsigned long long)regionsize)*(sizeof(PTE)+pagesize)+sizeof(uint32));
         uint32 numpages = numregions*regionsize;
+        //pointer is copied (copy is called page)
         PAGE* page = (PAGE*)(memory);
         //sec check for alignment
-        PointerEquivalent alignmentstatus = ((PointerEquivalent)page) & (dataAlignment -1);
-        if(alignmentstatus != 0)
-        {
-          page =(PAGE*)(((PointerEquivalent)page) + dataAlignment - alignmentstatus);
-          if(linid == 0) printf("Heap Warning: memory to use not 16 byte aligned...\n");
-        }
+        //copy is checked
+        //PointerEquivalent alignmentstatus = ((PointerEquivalent)page) & (dataAlignment -1);
+        //if(alignmentstatus != 0)
+        //{
+        //  //copy is adjusted, potentially pointer to higher address now.
+        //  page =(PAGE*)(((PointerEquivalent)page) + dataAlignment - alignmentstatus);
+        //  if(linid == 0) printf("Heap Warning: memory to use not 16 byte aligned...\n");
+        //}
         PTE* ptes = (PTE*)(page + numpages);
         uint32* regions = (uint32*)(ptes + numpages);
         //sec check for mem size
+        //this check refers to the original memory-pointer, which was not adjusted!
+        //TODO fix the bug, potentially by always using "page" from now on
         if( (void*)(regions + numregions) > (((char*)memory) + memsize) )
         {
           --numregions;
@@ -659,6 +666,7 @@ namespace CreationPolicies{
 
 
       __device__ bool isOOM(void* p){
+        // all threads in a warp return get NULL
         return  32 == __popc(__ballot(p == NULL));
       }
 
@@ -667,14 +675,15 @@ namespace CreationPolicies{
       static void* initHeap(const T& obj, void* pool, size_t memsize){
         T* heap;
         SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
-        initKernel<<<1,256>>>(heap, pool, memsize);
+        Scatter2NS::initKernel<<<1,256>>>(heap, pool, memsize);
         return heap;
       }   
 
 
       template < typename T>
-      static void destroyHeap(const T& obj){
+      static void finalizeHeap(const T& obj){
         //TODO: Think about the necessity of a teardown... (inside the pool)
+        //reset PAGE, memsize, numpages, regions, firstfreedblock, firstfreepagebased,numregions,ptes
       }
 
   };

@@ -13,12 +13,14 @@ namespace PolicyMalloc{
      typename T_CreationPolicy, 
      typename T_DistributionPolicy, 
      typename T_OOMPolicy, 
-     typename T_GetHeapPolicy
+     typename T_GetHeapPolicy,
+     typename T_AlignmentPolicy
        >
   struct PolicyAllocator : 
     public T_CreationPolicy, 
     public T_OOMPolicy, 
-    public T_GetHeapPolicy
+    public T_GetHeapPolicy,
+    public T_AlignmentPolicy
   {
     private:
       typedef boost::uint32_t uint32;
@@ -26,15 +28,18 @@ namespace PolicyMalloc{
       typedef T_DistributionPolicy DistributionPolicy;
       typedef T_OOMPolicy OOMPolicy;
       typedef T_GetHeapPolicy GetHeapPolicy;
+      typedef T_AlignmentPolicy AlignmentPolicy;
       void* pool;
 
     public:
 
-      typedef PolicyAllocator<CreationPolicy,DistributionPolicy,OOMPolicy,GetHeapPolicy> MyType;
+      typedef PolicyAllocator<CreationPolicy,DistributionPolicy,OOMPolicy,GetHeapPolicy,AlignmentPolicy> MyType;
       __device__ void* alloc(size_t bytes){
         DistributionPolicy distributionPolicy;
 
-        uint32 req_size  = distributionPolicy.gather(bytes);
+        bytes            = AlignmentPolicy::alignAccess(bytes);
+        uint32 req_size  = distributionPolicy.collect(bytes);
+        req_size         = AlignmentPolicy::alignAccess(req_size); //TODO check if this call is necessary
         void* memBlock   = CreationPolicy::create(req_size);
         const bool oom   = CreationPolicy::isOOM(memBlock);
         if(oom) memBlock = OOMPolicy::handleOOM(memBlock);
@@ -51,12 +56,13 @@ namespace PolicyMalloc{
       }
 
       __host__ void* initHeap(size_t size){
-        pool = GetHeapPolicy::getMemPool(size);
+        pool = GetHeapPolicy::setMemPool(size);
+        pool = AlignmentPolicy::alignPool(pool);
         return CreationPolicy::initHeap(*this,pool,size);
       }
 
-      __host__ void destroyHeap(){
-        CreationPolicy::destroyHeap(*this);
+      __host__ void finalizeHeap(){
+        CreationPolicy::finalizeHeap(*this);
         GetHeapPolicy::resetMemPool(pool);
       }
 

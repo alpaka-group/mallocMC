@@ -34,7 +34,7 @@ namespace CreationPolicies{
     }   
 
     template < typename T>
-    static void destroyHeap(const T& obj){
+    static void finalizeHeap(const T& obj){
     }
 
   };

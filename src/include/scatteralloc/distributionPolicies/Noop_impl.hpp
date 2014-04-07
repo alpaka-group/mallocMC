@@ -13,7 +13,7 @@ namespace DistributionPolicies{
 
     public:
 
-    __device__ uint32 gather(uint32 bytes){
+    __device__ uint32 collect(uint32 bytes){
       return bytes;
     }
 

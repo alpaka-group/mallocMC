@@ -23,7 +23,6 @@ namespace DistributionPolicies{
       typedef XMallocSIMD2<T_Dummy> MyType;
       typedef GetProperties<MyType> Properties;
       static const uint32 pagesize      = Properties::pagesize::value;
-      static const uint32 dataAlignment = Properties::dataAlignment::value;
 
 #ifndef BOOST_NOINLINE
 #define BOOST_NOINLINE='__attribute__ ((noinline)'
@@ -34,11 +33,6 @@ namespace DistributionPolicies{
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::pagesize::type>::is_signed);
       BOOST_STATIC_ASSERT(pagesize > 0);
 
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::dataAlignment::type>::is_signed);
-      BOOST_STATIC_ASSERT(dataAlignment > 0);
-      //dataAlignment must also be a power of 2!
-      BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) );
-
 #ifdef BOOST_NOINLINE_WAS_JUSTDEFINED
 #undef BOOST_NOINLINE_WAS_JUSTDEFINED
 #undef BOOST_NOINLINE
@@ -46,8 +40,7 @@ namespace DistributionPolicies{
 
     public:
 
-      __device__ uint32 gather(uint32 bytes){
-        bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1);
+      __device__ uint32 collect(uint32 bytes){
 
         can_use_coalescing = false;
         warpid = PolicyMalloc::warpid();
@@ -58,6 +51,8 @@ namespace DistributionPolicies{
         __shared__ uint32 warp_sizecounter[32];
         warp_sizecounter[warpid] = 16;
 
+        //second half: make sure that all coalesced allocations can fit within one page
+        //necessary for offset calculation
         bool coalescible = bytes > 0 && bytes < (pagesize / 32);
         uint32 threadcount = __popc(__ballot(coalescible));
 
