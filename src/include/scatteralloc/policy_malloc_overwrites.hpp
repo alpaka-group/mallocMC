@@ -75,7 +75,6 @@ __device__ void operator delete[](void* p, PolicyMalloc::PolicyMallocType &h)  \
 #define POLICY_MALLOC_MEMORY_ALLOCATOR_MALLOC_OVERWRITE()                      \
 __device__ void* malloc(size_t t) __THROW                                      \
 {                                                                              \
-  printf("test");                                                              \
   return PolicyMalloc::policyMallocGlobalObject.alloc(t);                      \
 }                                                                              \
 __device__ void  free(void* p) __THROW                                         \
