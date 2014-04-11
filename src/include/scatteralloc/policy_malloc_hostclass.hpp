@@ -2,7 +2,7 @@
 
 #include "policy_malloc_utils.hpp"
 #include <boost/cstdint.hpp>
-
+#include <boost/tuple/tuple.hpp>
 
 namespace PolicyMalloc{
 
@@ -57,7 +57,7 @@ namespace PolicyMalloc{
 
       __host__ void* initHeap(size_t size){
         pool = GetHeapPolicy::setMemPool(size);
-        pool = AlignmentPolicy::alignPool(pool);
+        boost::tie(pool,size) = AlignmentPolicy::alignPool(pool,size);
         return CreationPolicy::initHeap(*this,pool,size);
       }
 

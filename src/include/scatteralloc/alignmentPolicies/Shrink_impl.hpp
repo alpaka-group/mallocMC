@@ -3,6 +3,9 @@
 #include <boost/cstdint.hpp>
 #include <boost/static_assert.hpp>
 #include <stdio.h>
+#include <iostream>
+#include <boost/tuple/tuple.hpp>
+
 
 #include "Shrink.hpp"
 
@@ -11,21 +14,10 @@ namespace AlignmentPolicies{
 
 namespace Shrink2NS{
     
-  typedef boost::uint32_t uint32;
   template<int PSIZE> struct __PointerEquivalent{ typedef unsigned int type;};
   template<>
   struct __PointerEquivalent<8>{ typedef unsigned long long int type; };
 
-  typedef __PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
-
-  __global__ void alignPoolKernel(void* memory, uint32 dataAlignment){
-    PointerEquivalent alignmentstatus = ((PointerEquivalent)memory) & (dataAlignment -1);
-    if(alignmentstatus != 0)
-    {
-      memory =(void*)(((PointerEquivalent)memory) + dataAlignment - alignmentstatus);
-      printf("Heap Warning: memory to use not 16 byte aligned...\n");
-    }
-  }
 }// namespace ShrinkNS
 
   template<typename T_Dummy>
@@ -35,6 +27,7 @@ namespace Shrink2NS{
     typedef typename GetProperties<MyType>::dataAlignment DataAlignment;
 
     static const uint32 dataAlignment = DataAlignment::value;
+    typedef Shrink2NS::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
 #ifndef BOOST_NOINLINE
 #define BOOST_NOINLINE='__attribute__ ((noinline)'
@@ -51,10 +44,27 @@ namespace Shrink2NS{
 
     public:
 
-    static void* alignPool(void* memory){
-      Shrink2NS::alignPoolKernel<<<1,1>>>(memory,dataAlignment);
-      //TODO:maybe also take care of the memory-size bug
-      return memory;
+    static boost::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
+      PointerEquivalent alignmentstatus = ((PointerEquivalent)memory) & (dataAlignment -1);
+      if(alignmentstatus != 0)
+      {
+        std::cout << "Heap Warning: memory to use not ";
+        std::cout << dataAlignment << " byte aligned..."        << std::endl;
+        std::cout << "Before:"                                  << std::endl;
+        std::cout << "dataAlignment:   " << dataAlignment       << std::endl;
+        std::cout << "Alignmentstatus: " << alignmentstatus     << std::endl;
+        std::cout << "size_t memsize   " << memsize << " byte"  << std::endl;
+        std::cout << "void *memory     " << memory              << std::endl;
+
+        memory   = (void*)(((PointerEquivalent)memory) + dataAlignment - alignmentstatus);
+        memsize -= (size_t)dataAlignment + (size_t)alignmentstatus;
+
+        std::cout << "Was shrinked automatically to:"            << std::endl;
+        std::cout << "size_t memsize   " << memsize << " byte"  << std::endl;
+        std::cout << "void *memory     " << memory              << std::endl;
+      }
+
+      return boost::make_tuple(memory,memsize);
     }
 
     __device__ static uint32 alignAccess(uint32 bytes){

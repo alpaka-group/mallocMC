@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <boost/cstdint.hpp> /* uint32_t */
+#include <iostream>
 
 #include "../policy_malloc_utils.hpp"
 #include "Scatter.hpp"
@@ -34,8 +35,6 @@ namespace Scatter2NS{
       static const uint32 wastefactor   = static_cast<uint32>(Properties::wastefactor::value);
       static const bool resetfreedpages = static_cast<bool>(Properties::resetfreedpages::value);
 
-
-      //This is something like a public interface. TODO: Remove?
     public:
       static const uint32 _pagesize       = pagesize;
       static const uint32 _accessblocks   = accessblocks;
@@ -47,10 +46,12 @@ namespace Scatter2NS{
 #if _DEBUG || ANALYSEHEAP
     public:
 #endif
-      //static const uint32 minChunkSize0 = pagesize/(32*32); // TODO remove? it is used nowhere in the code
+      /** @TODO remove? This seems to be legacy code. 
+       * Looks like the size of the bitfield is 
+       * nowadays bigger than 1024bit ??
+       */
+      //static const uint32 minChunkSize0 = pagesize/(32*32);
       static const uint32 minChunkSize1 = 0x10;
-      //static const uint32 dataAlignment = Properties::dataAlignment::value;
-
       static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
 
       //this are the parameters for hashing
@@ -75,12 +76,6 @@ namespace Scatter2NS{
       BOOST_STATIC_ASSERT(regionsize > 0); 
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::wastefactor::type>::is_signed);
       BOOST_STATIC_ASSERT(wastefactor > 0); 
-
-//      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::dataAlignment::type>::is_signed);
-//      BOOST_STATIC_ASSERT(dataAlignment > 0); 
-//      //dataAlignment must also be a power of 2!
-//      BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
-
 
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::hashingK::type>::is_signed);
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::hashingDistMP::type>::is_signed);
@@ -617,26 +612,37 @@ namespace Scatter2NS{
         PAGE* page = (PAGE*)(memory);
         //sec check for alignment
         //copy is checked
-        //PointerEquivalent alignmentstatus = ((PointerEquivalent)page) & (dataAlignment -1);
+        //PointerEquivalent alignmentstatus = ((PointerEquivalent)page) & (16 -1);
         //if(alignmentstatus != 0)
         //{
+        //  if(linid == 0){
+        //    printf("c Before:\n");
+        //    printf("c dataAlignment:   %d\n",16);
+        //    printf("c Alignmentstatus: %d\n",alignmentstatus);
+        //    printf("c size_t memsize   %llu byte\n", memsize);
+        //    printf("c void *memory     %p\n", page);
+        //  }
         //  //copy is adjusted, potentially pointer to higher address now.
-        //  page =(PAGE*)(((PointerEquivalent)page) + dataAlignment - alignmentstatus);
-        //  if(linid == 0) printf("Heap Warning: memory to use not 16 byte aligned...\n");
+        //  page =(PAGE*)(((PointerEquivalent)page) + 16 - alignmentstatus);
+        //  if(linid == 0) printf("c Heap Warning: memory to use not 16 byte aligned...\n");
         //}
         PTE* ptes = (PTE*)(page + numpages);
         uint32* regions = (uint32*)(ptes + numpages);
         //sec check for mem size
         //this check refers to the original memory-pointer, which was not adjusted!
-        //TODO fix the bug, potentially by always using "page" from now on
         if( (void*)(regions + numregions) > (((char*)memory) + memsize) )
         {
           --numregions;
           numpages = min(numregions*regionsize,numpages);
-          if(linid == 0) printf("Heap Warning: needed to reduce number of regions to stay within memory limit\n");
+          if(linid == 0) printf("c Heap Warning: needed to reduce number of regions to stay within memory limit\n");
         }
         //if(linid == 0) printf("Heap info: wasting %d bytes\n",(((POINTEREQUIVALENT)memory) + memsize) - (POINTEREQUIVALENT)(regions + numregions));
 
+        //if(linid == 0 && alignmentstatus != 0){
+        //  printf("c Was shrinked automatically to:\n");
+        //  printf("c size_t memsize   %llu byte\n", memsize);
+        //  printf("c void *memory     %p\n", page);
+        //}
         threads = threads*blocks;
 
         for(uint32 i = linid; i < numpages; i+= threads)
