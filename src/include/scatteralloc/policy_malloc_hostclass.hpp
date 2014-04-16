@@ -3,11 +3,10 @@
 #include "policy_malloc_utils.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <sstream>
+#include <typeinfo>
 
 namespace PolicyMalloc{
-
-  template <typename T>
-  struct GetProperties;
 
   template < 
      typename T_CreationPolicy, 
@@ -30,6 +29,7 @@ namespace PolicyMalloc{
       typedef T_GetHeapPolicy GetHeapPolicy;
       typedef T_AlignmentPolicy AlignmentPolicy;
       void* pool;
+
 
     public:
 
@@ -64,6 +64,16 @@ namespace PolicyMalloc{
       __host__ void finalizeHeap(){
         CreationPolicy::finalizeHeap(*this);
         GetHeapPolicy::resetMemPool(pool);
+      }
+
+      __host__ static std::string info(std::string linebreak = " "){
+        std::stringstream ss;
+        ss << "CreationPolicy:      " << CreationPolicy::classname()     << linebreak;
+        ss << "DistributionPolicy:  " << DistributionPolicy::classname() << linebreak;
+        ss << "OOMPolicy:           " << OOMPolicy::classname()          << linebreak;
+        ss << "GetHeapPolicy:       " << GetHeapPolicy::classname()      << linebreak;
+        ss << "AlignmentPolicy:     " << AlignmentPolicy::classname()    << linebreak;
+        return ss.str();
       }
 
   };

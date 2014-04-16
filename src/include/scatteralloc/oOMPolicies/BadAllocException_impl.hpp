@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <string>
 
 #include "BadAllocException.hpp"
 
@@ -24,6 +25,10 @@ namespace OOMPolicies{
       throw exception;
 #endif
       return mem;
+    }
+
+    static std::string classname(){
+      return "BadAllocException";
     }
   };
 

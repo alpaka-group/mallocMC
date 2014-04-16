@@ -84,6 +84,8 @@ void run()
   PolicyMalloc::initHeap(1U*1024U*1024U*1024U); //1GB for device-side malloc
   std::cerr << "done" << std::endl;
 
+  std::cout << ScatterAllocator::info("\n") << std::endl;
+
   // device-side pointers
   int*  d;
   cudaMalloc((void**) &d, sizeof(int)*block*grid);

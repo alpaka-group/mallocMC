@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/cstdint.hpp>
+#include <string>
 
 #include "Noop.hpp"
 
@@ -19,6 +20,10 @@ namespace DistributionPolicies{
 
     __device__ void* distribute(void* allocatedMem){
       return allocatedMem;
+    }
+
+    static std::string classname(){
+      return "Noop";
     }
 
   };

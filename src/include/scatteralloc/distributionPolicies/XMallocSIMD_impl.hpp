@@ -2,6 +2,9 @@
 
 #include <boost/cstdint.hpp>
 #include <boost/static_assert.hpp>
+#include <limits>
+#include <string>
+#include <sstream>
 
 #include "../policy_malloc_utils.hpp"
 #include "XMallocSIMD.hpp"
@@ -9,8 +12,8 @@
 namespace PolicyMalloc{
 namespace DistributionPolicies{
 
-  template<class T_Dummy>
-  class XMallocSIMD2
+  template<class T_Config>
+  class XMallocSIMD
   {
     private:
 
@@ -20,9 +23,12 @@ namespace DistributionPolicies{
       uint32 myoffset;
       uint32 threadcount;
       uint32 req_size;
-      typedef XMallocSIMD2<T_Dummy> MyType;
-      typedef GetProperties<MyType> Properties;
-      static const uint32 pagesize      = Properties::pagesize::value;
+      typedef T_Config Properties;
+
+#ifndef PMMA_DP_XMALLOCSIMD_PAGESIZE
+#define PMMA_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
+#endif
+      static const uint32 pagesize      = PMMA_DP_XMALLOCSIMD_PAGESIZE;
 
 #ifndef BOOST_NOINLINE
 #define BOOST_NOINLINE='__attribute__ ((noinline)'
@@ -39,6 +45,7 @@ namespace DistributionPolicies{
 #endif
 
     public:
+      static const uint32 _pagesize = pagesize;
 
       __device__ uint32 collect(uint32 bytes){
 
@@ -91,6 +98,12 @@ namespace DistributionPolicies{
             myres = 0;
         }
         return myres;
+      }
+
+      __host__ static std::string classname(){
+        std::stringstream ss;
+        ss << "XMallocSIMD[" << pagesize << "]";
+        return ss.str();
       }
 
   };

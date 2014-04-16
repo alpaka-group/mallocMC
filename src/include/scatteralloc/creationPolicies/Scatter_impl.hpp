@@ -3,37 +3,56 @@
 #include <stdio.h>
 #include <boost/cstdint.hpp> /* uint32_t */
 #include <iostream>
+#include <string>
 
 #include "../policy_malloc_utils.hpp"
 #include "Scatter.hpp"
 
-#include <boost/static_assert.hpp> /*static assert for property verification */
-#include <limits> /*numeric_limits for property verification */
-
 namespace PolicyMalloc{
 namespace CreationPolicies{
     
-namespace Scatter2NS{
-  template < typename T_Allocator >
-  __global__ void initKernel(T_Allocator* heap, void* heapmem, size_t memsize){
-    heap->initDeviceFunction(heapmem, memsize);
+  namespace ScatterKernelDetail{
+    template < typename T_Allocator >
+      __global__ void initKernel(T_Allocator* heap, void* heapmem, size_t memsize){
+        heap->initDeviceFunction(heapmem, memsize);
+      }
   }
-}
 
-  template<class T_Dummy>
-  class Scatter2
+  template<class T_Config, class T_Hashing>
+  class Scatter
   {
 
     private:
       typedef boost::uint32_t uint32;
-      typedef Scatter2<T_Dummy> myType;
-      typedef GetProperties<myType> Properties;
-      typedef typename Properties::pagesize Pagesize;
-      static const uint32 pagesize      = static_cast<uint32>(Pagesize::value);
-      static const uint32 accessblocks  = static_cast<uint32>(Properties::accessblocks::value);
-      static const uint32 regionsize    = static_cast<uint32>(Properties::regionsize::value);
-      static const uint32 wastefactor   = static_cast<uint32>(Properties::wastefactor::value);
-      static const bool resetfreedpages = static_cast<bool>(Properties::resetfreedpages::value);
+      typedef T_Config Properties;
+      typedef T_Hashing HashParams;
+
+
+#ifndef PMMA_CP_SCATTER_PAGESIZE
+#define PMMA_CP_SCATTER_PAGESIZE  static_cast<uint32>(Properties::pagesize::value)
+#endif
+      static const uint32 pagesize      = PMMA_CP_SCATTER_PAGESIZE;
+
+#ifndef PMMA_CP_SCATTER_ACCESSBLOCKS
+#define PMMA_CP_SCATTER_ACCESSBLOCKS static_cast<uint32>(Properties::accessblocks::value)
+#endif
+      static const uint32 accessblocks  = PMMA_CP_SCATTER_ACCESSBLOCKS;
+
+#ifndef PMMA_CP_SCATTER_REGIONSIZE
+#define PMMA_CP_SCATTER_REGIONSIZE static_cast<uint32>(Properties::regionsize::value)
+#endif
+      static const uint32 regionsize    = PMMA_CP_SCATTER_REGIONSIZE;
+
+#ifndef PMMA_CP_SCATTER_WASTEFACTOR
+#define PMMA_CP_SCATTER_WASTEFACTOR static_cast<uint32>(Properties::wastefactor::value)
+#endif
+      static const uint32 wastefactor   = PMMA_CP_SCATTER_WASTEFACTOR;
+
+#ifndef PMMA_CP_SCATTER_RESETFREEDPAGES
+#define PMMA_CP_SCATTER_RESETFREEDPAGES static_cast<bool>(Properties::resetfreedpages::value)
+#endif
+      static const bool resetfreedpages = PMMA_CP_SCATTER_RESETFREEDPAGES;
+
 
     public:
       static const uint32 _pagesize       = pagesize;
@@ -46,46 +65,29 @@ namespace Scatter2NS{
 #if _DEBUG || ANALYSEHEAP
     public:
 #endif
-      /** @TODO remove? This seems to be legacy code. 
-       * Looks like the size of the bitfield is 
-       * nowadays bigger than 1024bit ??
-       */
       //static const uint32 minChunkSize0 = pagesize/(32*32);
       static const uint32 minChunkSize1 = 0x10;
       static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
 
-      //this are the parameters for hashing
-      //the values have not been fully evaluated yet, so altering them
-      //might strongly increase performance
-      static const uint32 hashingK          = static_cast<uint32>(Properties::hashingK::value);
-      static const uint32 hashingDistMP     = static_cast<uint32>(Properties::hashingDistMP::value);
-      static const uint32 hashingDistWP     = static_cast<uint32>(Properties::hashingDistWP::value);
-      static const uint32 hashingDistWPRel  = static_cast<uint32>(Properties::hashingDistWPRel::value);
-
-#ifndef BOOST_NOINLINE
-#define BOOST_NOINLINE='__attribute__ ((noinline)'
-#define BOOST_NOINLINE_WAS_JUSTDEFINED
+#ifndef PMMA_CP_SCATTER_HASHINGK
+#define PMMA_CP_SCATTER_HASHINGK    static_cast<uint32>(HashParams::hashingK::value)
 #endif
-      //all the properties must be unsigned integers > 0
-        
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::pagesize::type>::is_signed);
-      BOOST_STATIC_ASSERT(pagesize > 0); 
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::accessblocks::type>::is_signed);
-      BOOST_STATIC_ASSERT(accessblocks > 0); 
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::regionsize::type>::is_signed);
-      BOOST_STATIC_ASSERT(regionsize > 0); 
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::wastefactor::type>::is_signed);
-      BOOST_STATIC_ASSERT(wastefactor > 0); 
+     static const uint32 hashingK       = PMMA_CP_SCATTER_HASHINGK;
 
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::hashingK::type>::is_signed);
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::hashingDistMP::type>::is_signed);
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::hashingDistWP::type>::is_signed);
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::hashingDistWPRel::type>::is_signed);
-
-#ifdef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE
+#ifndef PMMA_CP_SCATTER_HASHINGDISTMP
+#define PMMA_CP_SCATTER_HASHINGDISTMP static_cast<uint32>(HashParams::hashingDistMP::value)
 #endif
+     static const uint32 hashingDistMP  = PMMA_CP_SCATTER_HASHINGDISTMP;
+
+#ifndef PMMA_CP_SCATTER_HASHINGDISTWP
+#define PMMA_CP_SCATTER_HASHINGDISTWP static_cast<uint32>(HashParams::hashingDistWP::value)
+#endif
+     static const uint32 hashingDistWP  = PMMA_CP_SCATTER_HASHINGDISTWP;
+
+#ifndef PMMA_CP_SCATTER_HASHINGDISTWPREL
+#define PMMA_CP_SCATTER_HASHINGDISTWPREL static_cast<uint32>(HashParams::hashingDistWPRel::value)
+#endif
+     static const uint32 hashingDistWPRel = PMMA_CP_SCATTER_HASHINGDISTWPREL;
 
 
       /**
@@ -677,19 +679,34 @@ namespace Scatter2NS{
       }
 
 
-      template < typename T>
-      static void* initHeap(const T& obj, void* pool, size_t memsize){
-        T* heap;
+      template < typename T_Obj>
+      static void* initHeap(const T_Obj& obj, void* pool, size_t memsize){
+        T_Obj* heap;
         SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
-        Scatter2NS::initKernel<<<1,256>>>(heap, pool, memsize);
+        ScatterKernelDetail::initKernel<<<1,256>>>(heap, pool, memsize);
         return heap;
       }   
 
 
-      template < typename T>
-      static void finalizeHeap(const T& obj){
-        //TODO: Think about the necessity of a teardown... (inside the pool)
+      template < typename T_Obj>
+      static void finalizeHeap(const T_Obj& obj){
+        /* @TODO: Think about the necessity of a teardown... (inside the pool) */
         //reset PAGE, memsize, numpages, regions, firstfreedblock, firstfreepagebased,numregions,ptes
+      }
+
+      static std::string classname(){
+        std::stringstream ss;
+        ss << "Scatter[";
+        ss << pagesize        << ",";
+        ss << accessblocks    << ",";
+        ss << regionsize      << ",";
+        ss << wastefactor     << ",";
+        ss << resetfreedpages << ",";
+        ss << hashingK        << ",";
+        ss << hashingDistMP   << ",";
+        ss << hashingDistWP   << ",";
+        ss << hashingDistWPRel<< "]";
+        return ss.str();
       }
 
   };

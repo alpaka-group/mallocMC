@@ -1,12 +1,18 @@
 #pragma once
 
+#include <boost/mpl/int.hpp>
+
 namespace PolicyMalloc{
 namespace AlignmentPolicies{
 
-  template<typename T_Dummy>
-  class Shrink2;
+namespace ShrinkConfig{
+  struct DefaultShrinkConfig{
+    typedef boost::mpl::int_<16> dataAlignment;
+  };
+}
 
-  typedef Shrink2<void> Shrink;
+  template<typename T_Config = ShrinkConfig::DefaultShrinkConfig>
+  class Shrink;
 
 } //namespace AlignmentPolicies
 } //namespace PolicyMalloc

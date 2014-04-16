@@ -10,7 +10,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // includes for PolicyMalloc
 ///////////////////////////////////////////////////////////////////////////////
-
 // basic files for PolicyMalloc
 #include "src/include/scatteralloc/policy_malloc_overwrites.hpp"
 #include "src/include/scatteralloc/policy_malloc_hostclass.hpp"
@@ -26,24 +25,16 @@
 // Configuration for PolicyMalloc
 ///////////////////////////////////////////////////////////////////////////////
 
-// Define a new allocator and call it ScatterAllocator
-typedef PolicyMalloc::PolicyAllocator< 
-  PolicyMalloc::CreationPolicies::Scatter,
-  PolicyMalloc::DistributionPolicies::XMallocSIMD,
-  PolicyMalloc::OOMPolicies::ReturnNull,
-  PolicyMalloc::GetHeapPolicies::SimpleCudaMalloc,
-  PolicyMalloc::AlignmentPolicies::Shrink
-  > ScatterAllocator;
-
 // configurate the CreationPolicy "Scatter"
-template<>
-struct PolicyMalloc::GetProperties<PolicyMalloc::CreationPolicies::Scatter>{
+struct ScatterConfig{
     typedef boost::mpl::int_<4096>  pagesize;
     typedef boost::mpl::int_<8>     accessblocks;
     typedef boost::mpl::int_<16>    regionsize;
     typedef boost::mpl::int_<2>     wastefactor;
     typedef boost::mpl::bool_<false> resetfreedpages;
+};
 
+struct ScatterHashParams{
     typedef boost::mpl::int_<38183> hashingK;
     typedef boost::mpl::int_<17497> hashingDistMP;
     typedef boost::mpl::int_<1>     hashingDistWP;
@@ -51,16 +42,24 @@ struct PolicyMalloc::GetProperties<PolicyMalloc::CreationPolicies::Scatter>{
 };
 
 // configure the DistributionPolicy "XMallocSIMD"
-template<>
-struct PolicyMalloc::GetProperties<PolicyMalloc::DistributionPolicies::XMallocSIMD>{
-  typedef GetProperties<CreationPolicies::Scatter>::pagesize pagesize;
+struct DistributionConfig{
+  typedef ScatterConfig::pagesize pagesize;
 };
 
 // configure the AlignmentPolicy "Shrink"
-template<>
-struct PolicyMalloc::GetProperties<PolicyMalloc::AlignmentPolicies::Shrink>{
+struct AlignmentConfig{
   typedef boost::mpl::int_<16> dataAlignment;
 };
+
+// Define a new allocator and call it ScatterAllocator
+// which resembles the behaviour of ScatterAlloc
+typedef PolicyMalloc::PolicyAllocator< 
+  PolicyMalloc::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
+  PolicyMalloc::DistributionPolicies::XMallocSIMD<DistributionConfig>,
+  PolicyMalloc::OOMPolicies::ReturnNull,
+  PolicyMalloc::GetHeapPolicies::SimpleCudaMalloc,
+  PolicyMalloc::AlignmentPolicies::Shrink<AlignmentConfig>
+  > ScatterAllocator;
 
 // use "ScatterAllocator" as PolicyAllocator
 SET_ACCELERATOR_MEMORY_ALLOCATOR_TYPE(ScatterAllocator)

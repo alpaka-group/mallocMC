@@ -1,12 +1,19 @@
 #pragma once
 
+#include <boost/mpl/int.hpp>
+
 namespace PolicyMalloc{
 namespace DistributionPolicies{
     
-  template<class T_Dummy>
-  class XMallocSIMD2;
+  namespace XMallocSIMDConf{
+    struct DefaultXMallocConfig{
+      typedef boost::mpl::int_<4096>     pagesize;
+    };  
+  }
 
-  typedef XMallocSIMD2<void> XMallocSIMD;
+  template<class T_Config=XMallocSIMDConf::DefaultXMallocConfig>
+  class XMallocSIMD;
+
 
 } //namespace DistributionPolicies
 } //namespace PolicyMalloc

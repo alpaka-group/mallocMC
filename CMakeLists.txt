@@ -18,8 +18,6 @@ if(NOT ${CUDA_OPTIMIZATION_TYPE} STREQUAL  "unset")
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};${CUDA_OPTIMIZATION_TYPE}")
 endif()
 
-cuda_add_executable(ScatterAllocExample 
-                    examples/example.cu )
 cuda_add_executable(PolicyAllocExample
                     examples/policy_example.cu )
 cuda_add_executable(PolicyAllocExample01

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "../policy_malloc_utils.hpp"
 
 #include "SimpleCudaMalloc.hpp"
@@ -16,6 +18,10 @@ namespace GetHeapPolicies{
 
     static void resetMemPool(void* p){
       SCATTERALLOC_CUDA_CHECKED_CALL(cudaFree(p));
+    }
+
+    static std::string classname(){
+      return "SimpleCudaMalloc";
     }
 
   };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cuda_runtime_api.h>
+#include <string>
 
 #include "CudaSetLimits.hpp"
 
@@ -15,6 +16,10 @@ namespace GetHeapPolicies{
 
     static void resetMemPool(void *p=NULL){
       cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
+    }
+
+    static std::string classname(){
+      return "CudaSetLimits";
     }
 
   };

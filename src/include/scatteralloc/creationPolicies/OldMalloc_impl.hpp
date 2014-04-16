@@ -37,6 +37,10 @@ namespace CreationPolicies{
     static void finalizeHeap(const T& obj){
     }
 
+    static std::string classname(){
+      return "OldMalloc";
+    }
+
   };
 
 } //namespace CreationPolicies

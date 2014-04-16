@@ -2,10 +2,10 @@
 
 #include <boost/cstdint.hpp>
 #include <boost/static_assert.hpp>
-#include <stdio.h>
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <boost/tuple/tuple.hpp>
-
 
 #include "Shrink.hpp"
 
@@ -20,20 +20,33 @@ namespace Shrink2NS{
 
 }// namespace ShrinkNS
 
-  template<typename T_Dummy>
-  class Shrink2{
+  template<typename T_Config>
+  class Shrink{
     typedef boost::uint32_t uint32;
-    typedef Shrink2<T_Dummy> MyType;
-    typedef typename GetProperties<MyType>::dataAlignment DataAlignment;
-
-    static const uint32 dataAlignment = DataAlignment::value;
     typedef Shrink2NS::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
+    typedef T_Config Properties;
+
+#ifdef PMMA_AP_SHRINK_DATAALIGNMENT
+    static const uint32 dataAlignment = PMMA_AP_SHRINK_DATAALIGNMENT;
+#else
+    typedef typename Properties::dataAlignment DataAlignment;
+    static const uint32 dataAlignment = DataAlignment::value;
 #ifndef BOOST_NOINLINE
 #define BOOST_NOINLINE='__attribute__ ((noinline)'
 #define BOOST_NOINLINE_WAS_JUSTDEFINED
 #endif
     BOOST_STATIC_ASSERT(!std::numeric_limits<typename DataAlignment::type>::is_signed);
+#ifdef BOOST_NOINLINE_WAS_JUSTDEFINED
+#undef BOOST_NOINLINE_WAS_JUSTDEFINED
+#undef BOOST_NOINLINE
+#endif
+#endif //PMMA_AP_SHRINK_DATAALIGNMENT
+
+#ifndef BOOST_NOINLINE
+#define BOOST_NOINLINE='__attribute__ ((noinline)'
+#define BOOST_NOINLINE_WAS_JUSTDEFINED
+#endif
     BOOST_STATIC_ASSERT(dataAlignment > 0); 
     //dataAlignment must also be a power of 2!
     BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
@@ -41,7 +54,6 @@ namespace Shrink2NS{
 #undef BOOST_NOINLINE_WAS_JUSTDEFINED
 #undef BOOST_NOINLINE
 #endif
-
     public:
 
     static boost::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
@@ -69,6 +81,12 @@ namespace Shrink2NS{
 
     __device__ static uint32 alignAccess(uint32 bytes){
       return (bytes + dataAlignment - 1) & ~(dataAlignment-1);
+    }
+
+    __host__ static std::string classname(){
+      std::stringstream ss;
+      ss << "Shrink[" << dataAlignment << "]";
+      return ss.str();
     }
 
   };
