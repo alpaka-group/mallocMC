@@ -30,7 +30,7 @@ endif()
 ###############################################################################
 # Boost
 ###############################################################################
-find_package(Boost 1.49.0 REQUIRED)
+find_package(Boost 1.48.0 REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 
