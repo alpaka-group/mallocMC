@@ -42,18 +42,17 @@ minor bugs.
 Branches
 --------
 
-**master:** our stable new releases
-
-**dev:**    our development branch - start and merge new branches here
-
-**tugraz:** kind-of the "upstream" branch - only used to receive new releases
-            from the TU Graz group
+| *branch*    | *state* | *description*           |
+| ----------- | ------- | ----------------------- |
+| **master**  | [![Build Status Master](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc.png?branch=master)](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc "master") | our stable new releases |
+| **dev**     | [![Build Status Development](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc.png?branch=dev)](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc "dev") | our development branch - start and merge new branches here |
+| **tugraz**  | n/a | kind-of the "upstream" branch - only used to receive new releases from the TU Graz group |
 
 
 Literature
 ----------
 
-Just a random link collection:
+Just an incomplete link collection for now:
 
 - [Paper](http://www.icg.tugraz.at/Members/steinber/scatteralloc-1) by
   Markus Steinberger, Michael Kenzel, Bernhard Kainz and Dieter Schmalstieg
