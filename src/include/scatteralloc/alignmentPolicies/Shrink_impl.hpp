@@ -32,28 +32,12 @@ namespace Shrink2NS{
 #else
     typedef typename Properties::dataAlignment DataAlignment;
     static const uint32 dataAlignment = DataAlignment::value;
-#ifndef BOOST_NOINLINE
-#define BOOST_NOINLINE='__attribute__ ((noinline)'
-#define BOOST_NOINLINE_WAS_JUSTDEFINED
-#endif
     BOOST_STATIC_ASSERT(!std::numeric_limits<typename DataAlignment::type>::is_signed);
-#ifdef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE
-#endif
 #endif //PMMA_AP_SHRINK_DATAALIGNMENT
 
-#ifndef BOOST_NOINLINE
-#define BOOST_NOINLINE='__attribute__ ((noinline)'
-#define BOOST_NOINLINE_WAS_JUSTDEFINED
-#endif
     BOOST_STATIC_ASSERT(dataAlignment > 0); 
     //dataAlignment must also be a power of 2!
     BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
-#ifdef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE
-#endif
     public:
 
     static boost::tuple<void*,size_t> alignPool(void* memory, size_t memsize){

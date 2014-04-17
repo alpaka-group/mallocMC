@@ -30,19 +30,9 @@ namespace DistributionPolicies{
 #endif
       static const uint32 pagesize      = PMMA_DP_XMALLOCSIMD_PAGESIZE;
 
-#ifndef BOOST_NOINLINE
-#define BOOST_NOINLINE='__attribute__ ((noinline)'
-#define BOOST_NOINLINE_WAS_JUSTDEFINED
-#endif
       //all the properties must be unsigned integers > 0
-
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::pagesize::type>::is_signed);
       BOOST_STATIC_ASSERT(pagesize > 0);
-
-#ifdef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE_WAS_JUSTDEFINED
-#undef BOOST_NOINLINE
-#endif
 
     public:
       static const uint32 _pagesize = pagesize;
