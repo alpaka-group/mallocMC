@@ -49,11 +49,8 @@ cuda_add_executable(PolicyAllocExample01
                     examples/policy_example01.cu )
 cuda_add_executable(PolicyAllocExample02
                     examples/policy_example02.cu )
-cuda_add_executable(PolicyAllocExample03
-                    examples/newdelete_example/newdelete.cu )
 
 target_link_libraries(PolicyAllocExample ${LIBS})
 target_link_libraries(PolicyAllocExample01 ${LIBS})
 target_link_libraries(PolicyAllocExample02 ${LIBS})
-target_link_libraries(PolicyAllocExample03 ${LIBS})
 
