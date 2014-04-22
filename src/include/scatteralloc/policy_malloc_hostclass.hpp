@@ -1,10 +1,10 @@
 #pragma once 
 
 #include "policy_malloc_utils.hpp"
+#include "policy_malloc_constraints.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <sstream>
-#include <typeinfo>
 
 namespace PolicyMalloc{
 
@@ -30,10 +30,13 @@ namespace PolicyMalloc{
       typedef T_AlignmentPolicy AlignmentPolicy;
       void* pool;
 
+      PolicyConstraints<CreationPolicy,DistributionPolicy,
+        OOMPolicy,ReservePoolPolicy,AlignmentPolicy> c;
 
     public:
+      typedef PolicyAllocator<CreationPolicy,DistributionPolicy,
+              OOMPolicy,ReservePoolPolicy,AlignmentPolicy> MyType;
 
-      typedef PolicyAllocator<CreationPolicy,DistributionPolicy,OOMPolicy,ReservePoolPolicy,AlignmentPolicy> MyType;
       __device__ void* alloc(size_t bytes){
         DistributionPolicy distributionPolicy;
 
