@@ -12,13 +12,13 @@ namespace PolicyMalloc{
      typename T_CreationPolicy, 
      typename T_DistributionPolicy, 
      typename T_OOMPolicy, 
-     typename T_GetHeapPolicy,
+     typename T_ReservePoolPolicy,
      typename T_AlignmentPolicy
        >
   struct PolicyAllocator : 
     public T_CreationPolicy, 
     public T_OOMPolicy, 
-    public T_GetHeapPolicy,
+    public T_ReservePoolPolicy,
     public T_AlignmentPolicy
   {
     private:
@@ -26,14 +26,14 @@ namespace PolicyMalloc{
       typedef T_CreationPolicy CreationPolicy;
       typedef T_DistributionPolicy DistributionPolicy;
       typedef T_OOMPolicy OOMPolicy;
-      typedef T_GetHeapPolicy GetHeapPolicy;
+      typedef T_ReservePoolPolicy ReservePoolPolicy;
       typedef T_AlignmentPolicy AlignmentPolicy;
       void* pool;
 
 
     public:
 
-      typedef PolicyAllocator<CreationPolicy,DistributionPolicy,OOMPolicy,GetHeapPolicy,AlignmentPolicy> MyType;
+      typedef PolicyAllocator<CreationPolicy,DistributionPolicy,OOMPolicy,ReservePoolPolicy,AlignmentPolicy> MyType;
       __device__ void* alloc(size_t bytes){
         DistributionPolicy distributionPolicy;
 
@@ -56,14 +56,14 @@ namespace PolicyMalloc{
       }
 
       __host__ void* initHeap(size_t size){
-        pool = GetHeapPolicy::setMemPool(size);
+        pool = ReservePoolPolicy::setMemPool(size);
         boost::tie(pool,size) = AlignmentPolicy::alignPool(pool,size);
         return CreationPolicy::initHeap(*this,pool,size);
       }
 
       __host__ void finalizeHeap(){
         CreationPolicy::finalizeHeap(*this);
-        GetHeapPolicy::resetMemPool(pool);
+        ReservePoolPolicy::resetMemPool(pool);
       }
 
       __host__ static std::string info(std::string linebreak = " "){
@@ -71,7 +71,7 @@ namespace PolicyMalloc{
         ss << "CreationPolicy:      " << CreationPolicy::classname()     << linebreak;
         ss << "DistributionPolicy:  " << DistributionPolicy::classname() << linebreak;
         ss << "OOMPolicy:           " << OOMPolicy::classname()          << linebreak;
-        ss << "GetHeapPolicy:       " << GetHeapPolicy::classname()      << linebreak;
+        ss << "ReservePoolPolicy:   " << ReservePoolPolicy::classname()  << linebreak;
         ss << "AlignmentPolicy:     " << AlignmentPolicy::classname()    << linebreak;
         return ss.str();
       }

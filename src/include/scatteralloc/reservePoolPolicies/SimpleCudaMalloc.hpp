@@ -1,9 +1,9 @@
 #pragma once
 
 namespace PolicyMalloc{
-namespace GetHeapPolicies{
+namespace ReservePoolPolicies{
 
   struct SimpleCudaMalloc;
 
-} //namespace GetHeapPolicies
+} //namespace ReservePoolPolicies
 } //namespace PolicyMalloc

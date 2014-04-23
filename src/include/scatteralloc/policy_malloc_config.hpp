@@ -11,7 +11,7 @@
 #include "src/include/scatteralloc/CreationPolicies.hpp"
 #include "src/include/scatteralloc/DistributionPolicies.hpp"
 #include "src/include/scatteralloc/OOMPolicies.hpp"
-#include "src/include/scatteralloc/GetHeapPolicies.hpp"
+#include "src/include/scatteralloc/ReservePoolPolicies.hpp"
 #include "src/include/scatteralloc/AlignmentPolicies.hpp"
     
 
@@ -47,7 +47,7 @@ typedef PolicyMalloc::PolicyAllocator<
   PolicyMalloc::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
   PolicyMalloc::DistributionPolicies::XMallocSIMD<DistributionConfig>,
   PolicyMalloc::OOMPolicies::ReturnNull,
-  PolicyMalloc::GetHeapPolicies::SimpleCudaMalloc,
+  PolicyMalloc::ReservePoolPolicies::SimpleCudaMalloc,
   PolicyMalloc::AlignmentPolicies::Shrink<AlignmentConfig>
   > ScatterAllocator;
 
@@ -55,7 +55,7 @@ typedef PolicyMalloc::PolicyAllocator<
   PolicyMalloc::CreationPolicies::OldMalloc,
   PolicyMalloc::DistributionPolicies::Noop,
   PolicyMalloc::OOMPolicies::ReturnNull,
-  PolicyMalloc::GetHeapPolicies::CudaSetLimits,
+  PolicyMalloc::ReservePoolPolicies::CudaSetLimits,
   PolicyMalloc::AlignmentPolicies::Noop
   > OldAllocator;
 
