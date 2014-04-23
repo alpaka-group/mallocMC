@@ -37,9 +37,8 @@ namespace PolicyMalloc{
       __device__ void* alloc(size_t bytes){
         DistributionPolicy distributionPolicy;
 
-        bytes            = AlignmentPolicy::alignAccess(bytes);
+        bytes            = AlignmentPolicy::applyPadding(bytes);
         uint32 req_size  = distributionPolicy.collect(bytes);
-        req_size         = AlignmentPolicy::alignAccess(req_size); //TODO check if this call is necessary
         void* memBlock   = CreationPolicy::create(req_size);
         const bool oom   = CreationPolicy::isOOM(memBlock);
         if(oom) memBlock = OOMPolicy::handleOOM(memBlock);

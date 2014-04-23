@@ -63,7 +63,7 @@ namespace Shrink2NS{
       return boost::make_tuple(memory,memsize);
     }
 
-    __device__ static uint32 alignAccess(uint32 bytes){
+    __device__ static uint32 applyPadding(uint32 bytes){
       return (bytes + dataAlignment - 1) & ~(dataAlignment-1);
     }
 
