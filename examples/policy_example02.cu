@@ -62,11 +62,11 @@ typedef PolicyMalloc::PolicyAllocator<
   > ScatterAllocator;
 
 // use "ScatterAllocator" as PolicyAllocator
-SET_ACCELERATOR_MEMORY_ALLOCATOR_TYPE(ScatterAllocator)
+POLICYMALLOC_SET_ALLOCATOR_TYPE(ScatterAllocator)
 
 // replace all standard malloc()-calls on the device by PolicyAllocator calls
 // This will not work with the CreationPolicy "OldMalloc"!
-POLICY_MALLOC_MEMORY_ALLOCATOR_MALLOC_OVERWRITE()
+POLICYMALLOC_OVERWRITE_MALLOC()
 
 ///////////////////////////////////////////////////////////////////////////////
 // End of PolicyMalloc configuration
@@ -109,7 +109,7 @@ __global__ void createArrays(int x, int y){
 __global__ void fillArrays(int length, int* d){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
 
-  // using the POLICY_MALLOC_MEMORY_ALLOCATOR_MALLOC_OVERWRITE() macro
+  // using the POLICYMALLOC_OVERWRITE_MALLOC() macro
   // allows also the use of "new" 
   a[id] = new int[length];
   b[id] = new int[length];

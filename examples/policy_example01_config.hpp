@@ -53,4 +53,4 @@ typedef PolicyMalloc::PolicyAllocator<
   > ScatterAllocator;
 
 // use "ScatterAllocator" as PolicyAllocator
-SET_ACCELERATOR_MEMORY_ALLOCATOR_TYPE(ScatterAllocator)
+POLICYMALLOC_SET_ALLOCATOR_TYPE(ScatterAllocator)
