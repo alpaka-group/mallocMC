@@ -16,8 +16,8 @@
     
 
 
-// configurate the CreationPolicy "Scatter"
-struct ScatterConfig{
+// configurate the CreationPolicy "Scatter" to modify the default behaviour
+struct ScatterHeapConfig : PolicyMalloc::CreationPolicies::Scatter<>::HeapProperties{
     typedef boost::mpl::int_<4096>  pagesize;
     typedef boost::mpl::int_<8>     accessblocks;
     typedef boost::mpl::int_<16>    regionsize;
@@ -25,7 +25,7 @@ struct ScatterConfig{
     typedef boost::mpl::bool_<false> resetfreedpages;
 };
 
-struct ScatterHashParams{
+struct ScatterHashConfig : PolicyMalloc::CreationPolicies::Scatter<>::HashingProperties{
     typedef boost::mpl::int_<38183> hashingK;
     typedef boost::mpl::int_<17497> hashingDistMP;
     typedef boost::mpl::int_<1>     hashingDistWP;
@@ -33,23 +33,23 @@ struct ScatterHashParams{
 };
 
 // configure the DistributionPolicy "XMallocSIMD"
-struct DistributionConfig{
-  typedef ScatterConfig::pagesize pagesize;
+struct XMallocConfig : PolicyMalloc::DistributionPolicies::XMallocSIMD<>::Properties {
+  typedef ScatterHeapConfig::pagesize pagesize;
 };
 
 // configure the AlignmentPolicy "Shrink"
-struct AlignmentConfig{
+struct ShrinkConfig : PolicyMalloc::AlignmentPolicies::Shrink<>::Properties {
   typedef boost::mpl::int_<16> dataAlignment;
 };
 
 // Define a new allocator and call it ScatterAllocator
 // which resembles the behaviour of ScatterAlloc
 typedef PolicyMalloc::PolicyAllocator< 
-  PolicyMalloc::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
-  PolicyMalloc::DistributionPolicies::XMallocSIMD<DistributionConfig>,
+  PolicyMalloc::CreationPolicies::Scatter<ScatterHeapConfig, ScatterHashConfig>,
+  PolicyMalloc::DistributionPolicies::XMallocSIMD<XMallocConfig>,
   PolicyMalloc::OOMPolicies::ReturnNull,
   PolicyMalloc::ReservePoolPolicies::SimpleCudaMalloc,
-  PolicyMalloc::AlignmentPolicies::Shrink<AlignmentConfig>
+  PolicyMalloc::AlignmentPolicies::Shrink<ShrinkConfig>
   > ScatterAllocator;
 
 // use "ScatterAllocator" as PolicyAllocator

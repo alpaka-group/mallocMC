@@ -22,10 +22,13 @@ namespace Shrink2NS{
 
   template<typename T_Config>
   class Shrink{
+    public:
+    typedef T_Config Properties;
+
+    private:
     typedef boost::uint32_t uint32;
     typedef Shrink2NS::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
-    typedef T_Config Properties;
 
 #ifdef POLICYMALLOC_AP_SHRINK_DATAALIGNMENT
     static const uint32 dataAlignment = POLICYMALLOC_AP_SHRINK_DATAALIGNMENT;

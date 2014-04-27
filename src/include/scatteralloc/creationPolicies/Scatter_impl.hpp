@@ -22,34 +22,37 @@ namespace CreationPolicies{
   class Scatter
   {
 
+    public:
+      typedef T_Config  HeapProperties;
+      typedef T_Hashing HashingProperties;
+      struct  Properties : HeapProperties, HashingProperties{};
+      
     private:
       typedef boost::uint32_t uint32;
-      typedef T_Config Properties;
-      typedef T_Hashing HashParams;
 
 
 #ifndef POLICYMALLOC_CP_SCATTER_PAGESIZE
-#define POLICYMALLOC_CP_SCATTER_PAGESIZE  static_cast<uint32>(Properties::pagesize::value)
+#define POLICYMALLOC_CP_SCATTER_PAGESIZE  static_cast<uint32>(HeapProperties::pagesize::value)
 #endif
       static const uint32 pagesize      = POLICYMALLOC_CP_SCATTER_PAGESIZE;
 
 #ifndef POLICYMALLOC_CP_SCATTER_ACCESSBLOCKS
-#define POLICYMALLOC_CP_SCATTER_ACCESSBLOCKS static_cast<uint32>(Properties::accessblocks::value)
+#define POLICYMALLOC_CP_SCATTER_ACCESSBLOCKS static_cast<uint32>(HeapProperties::accessblocks::value)
 #endif
       static const uint32 accessblocks  = POLICYMALLOC_CP_SCATTER_ACCESSBLOCKS;
 
 #ifndef POLICYMALLOC_CP_SCATTER_REGIONSIZE
-#define POLICYMALLOC_CP_SCATTER_REGIONSIZE static_cast<uint32>(Properties::regionsize::value)
+#define POLICYMALLOC_CP_SCATTER_REGIONSIZE static_cast<uint32>(HeapProperties::regionsize::value)
 #endif
       static const uint32 regionsize    = POLICYMALLOC_CP_SCATTER_REGIONSIZE;
 
 #ifndef POLICYMALLOC_CP_SCATTER_WASTEFACTOR
-#define POLICYMALLOC_CP_SCATTER_WASTEFACTOR static_cast<uint32>(Properties::wastefactor::value)
+#define POLICYMALLOC_CP_SCATTER_WASTEFACTOR static_cast<uint32>(HeapProperties::wastefactor::value)
 #endif
       static const uint32 wastefactor   = POLICYMALLOC_CP_SCATTER_WASTEFACTOR;
 
 #ifndef POLICYMALLOC_CP_SCATTER_RESETFREEDPAGES
-#define POLICYMALLOC_CP_SCATTER_RESETFREEDPAGES static_cast<bool>(Properties::resetfreedpages::value)
+#define POLICYMALLOC_CP_SCATTER_RESETFREEDPAGES static_cast<bool>(HeapProperties::resetfreedpages::value)
 #endif
       static const bool resetfreedpages = POLICYMALLOC_CP_SCATTER_RESETFREEDPAGES;
 
@@ -70,22 +73,22 @@ namespace CreationPolicies{
       static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
 
 #ifndef POLICYMALLOC_CP_SCATTER_HASHINGK
-#define POLICYMALLOC_CP_SCATTER_HASHINGK    static_cast<uint32>(HashParams::hashingK::value)
+#define POLICYMALLOC_CP_SCATTER_HASHINGK    static_cast<uint32>(HashingProperties::hashingK::value)
 #endif
      static const uint32 hashingK       = POLICYMALLOC_CP_SCATTER_HASHINGK;
 
 #ifndef POLICYMALLOC_CP_SCATTER_HASHINGDISTMP
-#define POLICYMALLOC_CP_SCATTER_HASHINGDISTMP static_cast<uint32>(HashParams::hashingDistMP::value)
+#define POLICYMALLOC_CP_SCATTER_HASHINGDISTMP static_cast<uint32>(HashingProperties::hashingDistMP::value)
 #endif
      static const uint32 hashingDistMP  = POLICYMALLOC_CP_SCATTER_HASHINGDISTMP;
 
 #ifndef POLICYMALLOC_CP_SCATTER_HASHINGDISTWP
-#define POLICYMALLOC_CP_SCATTER_HASHINGDISTWP static_cast<uint32>(HashParams::hashingDistWP::value)
+#define POLICYMALLOC_CP_SCATTER_HASHINGDISTWP static_cast<uint32>(HashingProperties::hashingDistWP::value)
 #endif
      static const uint32 hashingDistWP  = POLICYMALLOC_CP_SCATTER_HASHINGDISTWP;
 
 #ifndef POLICYMALLOC_CP_SCATTER_HASHINGDISTWPREL
-#define POLICYMALLOC_CP_SCATTER_HASHINGDISTWPREL static_cast<uint32>(HashParams::hashingDistWPRel::value)
+#define POLICYMALLOC_CP_SCATTER_HASHINGDISTWPREL static_cast<uint32>(HashingProperties::hashingDistWPRel::value)
 #endif
      static const uint32 hashingDistWPRel = POLICYMALLOC_CP_SCATTER_HASHINGDISTWPREL;
 
@@ -685,7 +688,7 @@ namespace CreationPolicies{
         SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
         ScatterKernelDetail::initKernel<<<1,256>>>(heap, pool, memsize);
         return heap;
-      }   
+      }
 
 
       template < typename T_Obj>
