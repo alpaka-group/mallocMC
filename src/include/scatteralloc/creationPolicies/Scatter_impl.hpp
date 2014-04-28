@@ -11,12 +11,18 @@
 namespace PolicyMalloc{
 namespace CreationPolicies{
     
-  namespace ScatterKernelDetail{
-    template < typename T_Allocator >
-      __global__ void initKernel(T_Allocator* heap, void* heapmem, size_t memsize){
-        heap->initDeviceFunction(heapmem, memsize);
-      }
+namespace ScatterKernelDetail{
+  template < typename T_Allocator >
+  __global__ void initKernel(T_Allocator* heap, void* heapmem, size_t memsize){
+    heap->initDeviceFunction(heapmem, memsize);
   }
+
+  template < typename T_Allocator >
+  __global__ void getAvailableSlotsKernel(T_Allocator* heap, void* pool, size_t slotSize, unsigned* slots){
+    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(pool, slotSize, slots);
+    atomicAdd(slots, temp);
+  }
+}
 
   template<class T_Config, class T_Hashing>
   class Scatter
@@ -675,6 +681,17 @@ namespace CreationPolicies{
 
       }
 
+      __device__ unsigned getAvailaibleSlotsDeviceFunction(
+        void* pool,
+        size_t slotSize,
+        unsigned* slots
+        ){
+
+
+        printf("\nslots in kernel: %d\n", *slots);
+        return *slots;
+
+      }
 
       __device__ bool isOOM(void* p){
         // all threads in a warp return get NULL
@@ -691,10 +708,27 @@ namespace CreationPolicies{
       }
 
 
-      template < typename T_Obj>
+      template < typename T_Obj >
       static void finalizeHeap(const T_Obj& obj, void* pool){
         /* @TODO: Think about the necessity of a teardown... (inside the pool) */
         //reset PAGE, memsize, numpages, regions, firstfreedblock, firstfreepagebased,numregions,ptes
+      }
+
+      template <typename T_Obj>
+      static unsigned getAvailableSlots(const T_Obj& obj, void* pool, size_t slotSize){
+        T_Obj* heap;
+        SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
+        unsigned h_slots = 13;
+        unsigned* d_slots;
+        cudaMalloc((void**) &d_slots, sizeof(unsigned));
+        cudaMemcpy(d_slots, &h_slots, sizeof(unsigned), cudaMemcpyHostToDevice);
+      
+        ScatterKernelDetail::getAvailableSlotsKernel<<<1,1>>>(heap, pool, slotSize, d_slots);
+
+        cudaMemcpy(&h_slots, d_slots, sizeof(unsigned), cudaMemcpyDeviceToDevice);
+        cudaFree(d_slots);
+        std::cout << "slots after kernel: " << h_slots << std::endl;
+        return h_slots;
       }
 
       static std::string classname(){

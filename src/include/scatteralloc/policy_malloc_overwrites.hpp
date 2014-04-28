@@ -25,6 +25,11 @@ __host__  void finalizeHeap(                                                   \
 {                                                                              \
     p.finalizeHeap();                                                          \
 }                                                                              \
+__host__ unsigned getAvailableSlots(                                           \
+    size_t slotSize,                                                           \
+    PolicyMallocType &p = policyMallocGlobalObject){                           \
+    return p.getAvailableSlots(slotSize);                                      \
+}                                                                              \
 } /* end namespace PolicyMalloc */
 
 
