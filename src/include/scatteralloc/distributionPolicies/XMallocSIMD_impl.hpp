@@ -25,10 +25,10 @@ namespace DistributionPolicies{
       uint32 req_size;
       typedef T_Config Properties;
 
-#ifndef PMMA_DP_XMALLOCSIMD_PAGESIZE
-#define PMMA_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
+#ifndef POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE
+#define POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
 #endif
-      static const uint32 pagesize      = PMMA_DP_XMALLOCSIMD_PAGESIZE;
+      static const uint32 pagesize      = POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE;
 
       //all the properties must be unsigned integers > 0
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::pagesize::type>::is_signed);

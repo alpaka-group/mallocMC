@@ -28,30 +28,30 @@ namespace CreationPolicies{
       typedef T_Hashing HashParams;
 
 
-#ifndef PMMA_CP_SCATTER_PAGESIZE
-#define PMMA_CP_SCATTER_PAGESIZE  static_cast<uint32>(Properties::pagesize::value)
+#ifndef POLICYMALLOC_CP_SCATTER_PAGESIZE
+#define POLICYMALLOC_CP_SCATTER_PAGESIZE  static_cast<uint32>(Properties::pagesize::value)
 #endif
-      static const uint32 pagesize      = PMMA_CP_SCATTER_PAGESIZE;
+      static const uint32 pagesize      = POLICYMALLOC_CP_SCATTER_PAGESIZE;
 
-#ifndef PMMA_CP_SCATTER_ACCESSBLOCKS
-#define PMMA_CP_SCATTER_ACCESSBLOCKS static_cast<uint32>(Properties::accessblocks::value)
+#ifndef POLICYMALLOC_CP_SCATTER_ACCESSBLOCKS
+#define POLICYMALLOC_CP_SCATTER_ACCESSBLOCKS static_cast<uint32>(Properties::accessblocks::value)
 #endif
-      static const uint32 accessblocks  = PMMA_CP_SCATTER_ACCESSBLOCKS;
+      static const uint32 accessblocks  = POLICYMALLOC_CP_SCATTER_ACCESSBLOCKS;
 
-#ifndef PMMA_CP_SCATTER_REGIONSIZE
-#define PMMA_CP_SCATTER_REGIONSIZE static_cast<uint32>(Properties::regionsize::value)
+#ifndef POLICYMALLOC_CP_SCATTER_REGIONSIZE
+#define POLICYMALLOC_CP_SCATTER_REGIONSIZE static_cast<uint32>(Properties::regionsize::value)
 #endif
-      static const uint32 regionsize    = PMMA_CP_SCATTER_REGIONSIZE;
+      static const uint32 regionsize    = POLICYMALLOC_CP_SCATTER_REGIONSIZE;
 
-#ifndef PMMA_CP_SCATTER_WASTEFACTOR
-#define PMMA_CP_SCATTER_WASTEFACTOR static_cast<uint32>(Properties::wastefactor::value)
+#ifndef POLICYMALLOC_CP_SCATTER_WASTEFACTOR
+#define POLICYMALLOC_CP_SCATTER_WASTEFACTOR static_cast<uint32>(Properties::wastefactor::value)
 #endif
-      static const uint32 wastefactor   = PMMA_CP_SCATTER_WASTEFACTOR;
+      static const uint32 wastefactor   = POLICYMALLOC_CP_SCATTER_WASTEFACTOR;
 
-#ifndef PMMA_CP_SCATTER_RESETFREEDPAGES
-#define PMMA_CP_SCATTER_RESETFREEDPAGES static_cast<bool>(Properties::resetfreedpages::value)
+#ifndef POLICYMALLOC_CP_SCATTER_RESETFREEDPAGES
+#define POLICYMALLOC_CP_SCATTER_RESETFREEDPAGES static_cast<bool>(Properties::resetfreedpages::value)
 #endif
-      static const bool resetfreedpages = PMMA_CP_SCATTER_RESETFREEDPAGES;
+      static const bool resetfreedpages = POLICYMALLOC_CP_SCATTER_RESETFREEDPAGES;
 
 
     public:
@@ -69,25 +69,25 @@ namespace CreationPolicies{
       static const uint32 minChunkSize1 = 0x10;
       static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
 
-#ifndef PMMA_CP_SCATTER_HASHINGK
-#define PMMA_CP_SCATTER_HASHINGK    static_cast<uint32>(HashParams::hashingK::value)
+#ifndef POLICYMALLOC_CP_SCATTER_HASHINGK
+#define POLICYMALLOC_CP_SCATTER_HASHINGK    static_cast<uint32>(HashParams::hashingK::value)
 #endif
-     static const uint32 hashingK       = PMMA_CP_SCATTER_HASHINGK;
+     static const uint32 hashingK       = POLICYMALLOC_CP_SCATTER_HASHINGK;
 
-#ifndef PMMA_CP_SCATTER_HASHINGDISTMP
-#define PMMA_CP_SCATTER_HASHINGDISTMP static_cast<uint32>(HashParams::hashingDistMP::value)
+#ifndef POLICYMALLOC_CP_SCATTER_HASHINGDISTMP
+#define POLICYMALLOC_CP_SCATTER_HASHINGDISTMP static_cast<uint32>(HashParams::hashingDistMP::value)
 #endif
-     static const uint32 hashingDistMP  = PMMA_CP_SCATTER_HASHINGDISTMP;
+     static const uint32 hashingDistMP  = POLICYMALLOC_CP_SCATTER_HASHINGDISTMP;
 
-#ifndef PMMA_CP_SCATTER_HASHINGDISTWP
-#define PMMA_CP_SCATTER_HASHINGDISTWP static_cast<uint32>(HashParams::hashingDistWP::value)
+#ifndef POLICYMALLOC_CP_SCATTER_HASHINGDISTWP
+#define POLICYMALLOC_CP_SCATTER_HASHINGDISTWP static_cast<uint32>(HashParams::hashingDistWP::value)
 #endif
-     static const uint32 hashingDistWP  = PMMA_CP_SCATTER_HASHINGDISTWP;
+     static const uint32 hashingDistWP  = POLICYMALLOC_CP_SCATTER_HASHINGDISTWP;
 
-#ifndef PMMA_CP_SCATTER_HASHINGDISTWPREL
-#define PMMA_CP_SCATTER_HASHINGDISTWPREL static_cast<uint32>(HashParams::hashingDistWPRel::value)
+#ifndef POLICYMALLOC_CP_SCATTER_HASHINGDISTWPREL
+#define POLICYMALLOC_CP_SCATTER_HASHINGDISTWPREL static_cast<uint32>(HashParams::hashingDistWPRel::value)
 #endif
-     static const uint32 hashingDistWPRel = PMMA_CP_SCATTER_HASHINGDISTWPREL;
+     static const uint32 hashingDistWPRel = POLICYMALLOC_CP_SCATTER_HASHINGDISTWPREL;
 
 
       /**
@@ -689,7 +689,7 @@ namespace CreationPolicies{
 
 
       template < typename T_Obj>
-      static void finalizeHeap(const T_Obj& obj){
+      static void finalizeHeap(const T_Obj& obj, void* pool){
         /* @TODO: Think about the necessity of a teardown... (inside the pool) */
         //reset PAGE, memsize, numpages, regions, firstfreedblock, firstfreepagebased,numregions,ptes
       }

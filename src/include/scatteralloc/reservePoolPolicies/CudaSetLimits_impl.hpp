@@ -6,7 +6,7 @@
 #include "CudaSetLimits.hpp"
 
 namespace PolicyMalloc{
-namespace GetHeapPolicies{
+namespace ReservePoolPolicies{
 
   struct CudaSetLimits{
     static void* setMemPool(size_t memsize){
@@ -24,5 +24,5 @@ namespace GetHeapPolicies{
 
   };
 
-} //namespace GetHeapPolicies
+} //namespace ReservePoolPolicies
 } //namespace PolicyMalloc

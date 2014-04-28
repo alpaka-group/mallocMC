@@ -27,13 +27,13 @@ namespace Shrink2NS{
 
     typedef T_Config Properties;
 
-#ifdef PMMA_AP_SHRINK_DATAALIGNMENT
-    static const uint32 dataAlignment = PMMA_AP_SHRINK_DATAALIGNMENT;
+#ifdef POLICYMALLOC_AP_SHRINK_DATAALIGNMENT
+    static const uint32 dataAlignment = POLICYMALLOC_AP_SHRINK_DATAALIGNMENT;
 #else
     typedef typename Properties::dataAlignment DataAlignment;
     static const uint32 dataAlignment = DataAlignment::value;
     BOOST_STATIC_ASSERT(!std::numeric_limits<typename DataAlignment::type>::is_signed);
-#endif //PMMA_AP_SHRINK_DATAALIGNMENT
+#endif //POLICYMALLOC_AP_SHRINK_DATAALIGNMENT
 
     BOOST_STATIC_ASSERT(dataAlignment > 0); 
     //dataAlignment must also be a power of 2!
@@ -63,7 +63,7 @@ namespace Shrink2NS{
       return boost::make_tuple(memory,memsize);
     }
 
-    __device__ static uint32 alignAccess(uint32 bytes){
+    __device__ static uint32 applyPadding(uint32 bytes){
       return (bytes + dataAlignment - 1) & ~(dataAlignment-1);
     }
 

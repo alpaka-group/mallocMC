@@ -7,7 +7,7 @@
 #include "SimpleCudaMalloc.hpp"
 
 namespace PolicyMalloc{
-namespace GetHeapPolicies{
+namespace ReservePoolPolicies{
 
   struct SimpleCudaMalloc{
     static void* setMemPool(size_t memsize){
@@ -26,5 +26,5 @@ namespace GetHeapPolicies{
 
   };
 
-} //namespace GetHeapPolicies
+} //namespace ReservePoolPolicies
 } //namespace PolicyMalloc

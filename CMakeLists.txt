@@ -36,7 +36,7 @@ set(LIBS ${LIBS} ${Boost_LIBRARIES})
 
 # nvcc + boost 1.55 work around
 if(Boost_VERSION EQUAL 105500)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_NOINLINE='__attribute__ ((noinline))'")
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
 endif(Boost_VERSION EQUAL 105500)
 
 

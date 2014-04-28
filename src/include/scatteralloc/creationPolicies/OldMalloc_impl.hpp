@@ -34,7 +34,7 @@ namespace CreationPolicies{
     }   
 
     template < typename T>
-    static void finalizeHeap(const T& obj){
+    static void finalizeHeap(const T& obj, void* pool){
     }
 
     static std::string classname(){
