@@ -23,8 +23,10 @@ namespace DistributionPolicies{
       uint32 myoffset;
       uint32 threadcount;
       uint32 req_size;
+    public:
       typedef T_Config Properties;
 
+    private:
 #ifndef POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE
 #define POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
 #endif
