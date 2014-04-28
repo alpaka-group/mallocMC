@@ -689,7 +689,7 @@ namespace CreationPolicies{
 
 
       template < typename T_Obj>
-      static void finalizeHeap(const T_Obj& obj){
+      static void finalizeHeap(const T_Obj& obj, void* pool){
         /* @TODO: Think about the necessity of a teardown... (inside the pool) */
         //reset PAGE, memsize, numpages, regions, firstfreedblock, firstfreepagebased,numregions,ptes
       }

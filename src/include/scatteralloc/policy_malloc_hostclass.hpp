@@ -61,7 +61,7 @@ namespace PolicyMalloc{
       }
 
       __host__ void finalizeHeap(){
-        CreationPolicy::finalizeHeap(*this);
+        CreationPolicy::finalizeHeap(*this,pool);
         ReservePoolPolicy::resetMemPool(pool);
       }
 
