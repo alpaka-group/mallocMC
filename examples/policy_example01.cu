@@ -105,6 +105,8 @@ void run()
 
   cudaMemcpy(&array_sums[0],d,sizeof(int)*block*grid,cudaMemcpyDeviceToHost);
 
+  PolicyMalloc::getAvailableSlots(1024U*1024U); //get available megabyte-sized slots
+
   int sum = std::accumulate(array_sums.begin(),array_sums.end(),0);
   std::cout << "The sum of the arrays on GPU is " << sum << std::endl;
 

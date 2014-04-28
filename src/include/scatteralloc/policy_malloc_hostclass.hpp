@@ -68,6 +68,10 @@ namespace PolicyMalloc{
         ReservePoolPolicy::resetMemPool(pool);
       }
 
+      __host__ unsigned getAvailableSlots(size_t slotSize){
+        return CreationPolicy::getAvailableSlots(*this, pool, slotSize);
+      }
+
       __host__ static std::string info(std::string linebreak = " "){
         std::stringstream ss;
         ss << "CreationPolicy:      " << CreationPolicy::classname()     << linebreak;
