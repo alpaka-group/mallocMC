@@ -1,33 +1,3 @@
-/*
-ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU.
-http://www.icg.tugraz.at/project/mvp
-
-Copyright (C) 2012 Institute for Computer Graphics and Vision,
-Graz University of Technology
-
-Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
-Michael Kenzel - kenzel ( at ) icg.tugraz.at
-Carlchristian Eckert - c.eckert ( at ) hzdr.de
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
 // get a CUDA error and print it nicely
 #define CUDA_CHECK(cmd) {cudaError_t error = cmd; \
   if(error!=cudaSuccess){\
@@ -77,6 +47,11 @@ std::ostream& dout() {
   return verbose ? std::cout : n;
 }
 
+// define some defaults
+static const unsigned threads_default = 128;
+static const unsigned blocks_default  = 64; 
+static const size_t heapInMB_default  = 1024; // 1GB
+
 
 /**
  * will do a basic verification of scatterAlloc.
@@ -90,15 +65,14 @@ std::ostream& dout() {
 int main(int argc, char** argv){
   bool correct          = false;
   bool machine_readable = false;
-  size_t heapInMB       = size_t(1024U*1U); //1GB
-  unsigned threads      = 128;
-  unsigned blocks       = 64;
+  size_t heapInMB       = heapInMB_default;
+  unsigned threads      = threads_default;
+  unsigned blocks       = blocks_default;
 
   parse_cmdline(argc, argv, &heapInMB, &threads, &blocks, &machine_readable);
 
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  dout() << "Using device: " << deviceProp.name << std::endl;
 
   if( deviceProp.major < 2 ) {
     std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
@@ -212,13 +186,16 @@ void print_help(char** argv){
   s << "    requested with --verbose or -v"                     << std::endl;
   s << ""                                                       << std::endl;
   s << "  --threads=N"                                          << std::endl;
-  s << "    Set the number of threads per block (default 128)"  << std::endl;
+  s << "    Set the number of threads per block (default "                  ;
+  s <<                               threads_default << "128)"  << std::endl;
   s << ""                                                       << std::endl;
   s << "  --blocks=N"                                           << std::endl;
-  s << "    Set the number of blocks in the grid (default 64)"  << std::endl;
+  s << "    Set the number of blocks in the grid (default "                 ;
+  s <<                                   blocks_default << ")"  << std::endl;
   s << ""                                                       << std::endl;
   s << "  --heapsize=N"                                         << std::endl;
-  s << "    Set the heapsize to N Megabyte (default 1024)"      << std::endl;
+  s << "    Set the heapsize to N Megabyte (default "                       ;
+  s <<                         heapInMB_default << "1024)"      << std::endl;
 
   std::cout << s.str();
 }
