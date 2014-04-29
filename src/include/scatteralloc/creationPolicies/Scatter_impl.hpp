@@ -20,7 +20,9 @@ namespace ScatterKernelDetail{
 
   template < typename T_Allocator >
   __global__ void getAvailableSlotsKernel(T_Allocator* heap, size_t slotSize, unsigned* slots){
-    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(slotSize);
+    int gid = threadIdx.x + blockIdx.x*blockDim.x;
+    int nWorker = gridDim.x * blockDim.x;
+    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(slotSize,gid,nWorker);
     if(temp) atomicAdd(slots, temp);
   }
 }
@@ -725,16 +727,14 @@ namespace ScatterKernelDetail{
       }
 
 
-      __device__ unsigned getAvailaibleSlotsDeviceFunction(size_t slotSize)
+      __device__ unsigned getAvailaibleSlotsDeviceFunction(size_t slotSize, int gid, int stride)
       {
         unsigned slotcount = 0;
-        int gid = threadIdx.x + blockIdx.x*blockDim.x;
         if(gid==0){
           //TODO: remove debug output
           printf("slotSize:%llu  pagesize:%d  numpages%d\n",slotSize,pagesize,_numpages);
         }
         if(slotSize < pagesize){ // multiple slots per page
-          int stride = blockDim.x * gridDim.x;
           for(uint32 currentpage=gid; currentpage < _numpages; currentpage += stride){
             uint32 maxchunksize = min(pagesize,wastefactor*(uint32)slotSize);
             uint32 region = currentpage/regionsize;
@@ -784,6 +784,26 @@ namespace ScatterKernelDetail{
         cudaFree(d_slots);
         return h_slots;
       }
+
+      //Note: the maximum level of cooperation is inside block-boundaries
+      __device__ unsigned getAvailableSlotsAccelerator(size_t slotSize){
+        __shared__ uint32 participants;
+        __shared__ unsigned result;
+
+        result = 0;
+        participants = 0;
+        __threadfence_block();
+        int id = atomicAdd(&participants, 1);
+        __threadfence_block();
+
+        unsigned temp = getAvailaibleSlotsDeviceFunction(slotSize, id, participants);
+        if(temp) atomicAdd(&result, temp);
+        __threadfence_block();
+        return temp;
+      }
+
+
+
 
       static std::string classname(){
         std::stringstream ss;
