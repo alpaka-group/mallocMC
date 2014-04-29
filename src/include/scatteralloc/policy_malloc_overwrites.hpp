@@ -30,6 +30,11 @@ __host__ unsigned getAvailableSlots(                                           \
     PolicyMallocType &p = policyMallocGlobalObject){                           \
     return p.getAvailableSlots(slotSize);                                      \
 }                                                                              \
+__device__ unsigned getAvailableSlotsAccelerator(                              \
+    size_t slotSize,                                                           \
+    PolicyMallocType &p = policyMallocGlobalObject){                           \
+    return p.getAvailableSlotsAccelerator(slotSize);                           \
+}                                                                              \
 } /* end namespace PolicyMalloc */
 
 
