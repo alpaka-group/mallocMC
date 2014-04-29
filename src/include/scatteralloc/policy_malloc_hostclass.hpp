@@ -69,8 +69,15 @@ namespace PolicyMalloc{
       }
 
       __host__ unsigned getAvailableSlots(size_t slotSize){
-        return CreationPolicy::getAvailableSlots(*this, pool, slotSize);
+        slotSize = AlignmentPolicy::applyPadding(slotSize);
+        return CreationPolicy::getAvailableSlotsHost(*this, pool, slotSize);
       }
+
+      //__device__ unsigned getAvailableSlots(size_t slotSize){
+      //  slotSize = AlignmentPolicy::applyPadding(slotSize);
+      //  uint32 req_size = distributionPolicy.collect(slotSize);
+      //  return CreationPolicy::getAvailableSlotsAccelerator(req_size);
+      //}
 
       __host__ static std::string info(std::string linebreak = " "){
         std::stringstream ss;
