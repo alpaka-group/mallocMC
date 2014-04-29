@@ -4,6 +4,7 @@
 #include <boost/cstdint.hpp> /* uint32_t */
 #include <iostream>
 #include <string>
+#include <cassert>
 
 #include "../policy_malloc_utils.hpp"
 #include "Scatter.hpp"
@@ -18,8 +19,8 @@ namespace ScatterKernelDetail{
   }
 
   template < typename T_Allocator >
-  __global__ void getAvailableSlotsKernel(T_Allocator* heap, void* pool, size_t slotSize, unsigned* slots){
-    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(pool, slotSize);
+  __global__ void getAvailableSlotsKernel(T_Allocator* heap, size_t slotSize, unsigned* slots){
+    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(slotSize);
     if(temp) atomicAdd(slots, temp);
   }
 }
@@ -293,6 +294,7 @@ namespace ScatterKernelDetail{
         return 0;
       }
 
+
       /**
        * allocChunked tries to allocate the demanded number of bytes on one of the pages
        * @param bytes the number of bytes to allocate
@@ -365,68 +367,8 @@ namespace ScatterKernelDetail{
         }
         return 0;
       }
-      
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      __device__ unsigned countFreeChunksInPage(uint32 currentpage, uint32 chunksize){
-          
-        return 0;
-      }
 
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      __device__ unsigned getAvailaibleSlotsDeviceFunction(void* pool, size_t slotSize, unsigned* slots)
-      {
-        if(slotSize < pagesize) // multiple slots per page
-        {
-
-          uint32 pagespersuperblock = _numpages/accessblocks;
-          uint32 reloff = warpSize*bytes / pagesize;
-          //uint32 startpage = (bytes*hashingK + hashingDistMP*smid() + (hashingDistWP+hashingDistWPRel*reloff)*warpid() ) % pagespersuperblock;
-          uint32 startpage = 0;
-          uint32 maxchunksize = min(pagesize,wastefactor*bytes);
-          //uint32 startblock = _firstfreeblock;
-          //uint32 currentpage = startpage + startblock*pagespersuperblock; //optimization: check only non-full superblocks
-          uint32 checklevel = regionsize*3/4; // this can be used to adjust precision (set to *1 to get maximum precision)
-          unsigned slotcount = 0;
-
-          for(uint32 currentpage=0; currentpage < numpages; ++currentpage){ //this already includes the superblocks
-            uint32 region = currentpage/regionsize;
-            uint32 regionfilllevel = _regions[region];
-            if(regionfilllevel < checklevel){
-              uint32 chunksize = _ptes[currentpage].chunksize;
-              if(chunksize >= bytes && chunksize <= maxchunksize){
-                //see how much space is left (each chunk suffices to satisfy our request)
-                slotcount += countFreeChunksInPage(currentpage, chunksize);
-              }else if(chunksize==0){
-                //take it all
-                chunksize = max(bytes, minChunkSize1); //make sure the chunks are big enough for the request the heap limits
-                slotcount += countFreeChunksInPage(currentpage, chunksize);
-              }else{
-                 //do nothing: the chunks here are too small for the request :( 
-                 continue;
-              }// chunksize >= bytes
-            }//if(regionfilllevel...)
-          }//currentpage
-        }else // 1 slot needs multiple pages
-        {
-          uint32 pagestoalloc = divup(bytes, pagesize);
-          uint32 freecount = 0;
-          unsigned slotcount=0;
-          for(uint32 currentpage=0; currentpage < numpages; ++currentpage){ //this already includes the superblocks
-            if(_ptes[currentpage].chunksize == 0){
-              if(++freecount == pagestoalloc){
-                freecount = 0;
-                ++slotcount; //TODO: use this slotcount in final result
-              }
-            }
-          }
-        }
-        printf("\nslots in kernel: %d\n", *slots);
-        return *slots;
-      }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       /**
        * deallocChunked frees the chunk on the page and updates all data accordingly
@@ -765,8 +707,69 @@ namespace ScatterKernelDetail{
         //reset PAGE, memsize, numpages, regions, firstfreedblock, firstfreepagebased,numregions,ptes
       }
 
+
+      __device__ unsigned countFreeChunksInPage(uint32 page, uint32 chunksize){
+        uint32 filledChunks = _ptes[page].count;
+        if(chunksize <= HierarchyThreshold)
+        {
+          uint32 segmentsize = chunksize*32 + sizeof(uint32); //each segment can hold 32 2nd-level chunks
+          uint32 fullsegments = pagesize / segmentsize; //there might be space for more than 32 segments with 32 2nd-level chunks
+          uint32 additional_chunks = max(0,(int)pagesize - (int)fullsegments*segmentsize - (int)sizeof(uint32))/chunksize;
+          uint32 level2Chunks = fullsegments * 32 + additional_chunks;
+          return level2Chunks - filledChunks;
+        }else{
+          uint32 chunksinpage = min(pagesize / chunksize, 32); //without hierarchy, there can not be more than 32 chunks
+          return chunksinpage - filledChunks;
+        }
+      }
+
+
+      __device__ unsigned getAvailaibleSlotsDeviceFunction(size_t slotSize)
+      {
+        unsigned slotcount = 0;
+        int gid = threadIdx.x + blockIdx.x*blockDim.x;
+        if(gid==0){
+          //TODO: remove debug output
+          printf("slotSize:%llu  pagesize:%d  numpages%d\n",slotSize,pagesize,_numpages);
+        }
+        if(slotSize < pagesize){ // multiple slots per page
+          int stride = blockDim.x * gridDim.x;
+          for(uint32 currentpage=gid; currentpage < _numpages; currentpage += stride){
+            uint32 maxchunksize = min(pagesize,wastefactor*(uint32)slotSize);
+            uint32 region = currentpage/regionsize;
+            uint32 regionfilllevel = _regions[region];
+
+            uint32 chunksize = _ptes[currentpage].chunksize;
+            if(chunksize >= slotSize && chunksize <= maxchunksize){ //how many chunks left? (each chunk is big enough)
+              slotcount += countFreeChunksInPage(currentpage, chunksize);
+            }else if(chunksize==0){
+              chunksize = max((uint32)slotSize, minChunkSize1); //ensure minimum chunk size
+              slotcount += countFreeChunksInPage(currentpage, chunksize); //how many chunks fit in one page?
+            }else{
+              continue; //the chunks on this page are too small for the request :(
+            } // chunksize >= bytes
+
+          } //for each page
+        }else{ // 1 slot needs multiple pages
+          if(gid > 0) return 0;
+          uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
+          uint32 freecount = 0;
+          for(uint32 currentpage=_numpages; currentpage > 0 ; --currentpage){ //this already includes all superblocks
+            if(_ptes[currentpage].chunksize == 0){
+              if(++freecount == pagestoalloc){
+                freecount = 0;
+                ++slotcount;
+              }
+            }else{ // the sequence of free pages was interrupted
+              freecount = 0;
+            }
+          }
+        }
+        return slotcount;
+      }
+
       template <typename T_Obj>
-      static unsigned getAvailableSlots(const T_Obj& obj, void* pool, size_t slotSize){
+      static unsigned getAvailableSlotsHost(const T_Obj& obj, void* pool, size_t slotSize){
         T_Obj* heap;
         SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
         unsigned h_slots = 0;
@@ -774,7 +777,7 @@ namespace ScatterKernelDetail{
         cudaMalloc((void**) &d_slots, sizeof(unsigned));
         cudaMemcpy(d_slots, &h_slots, sizeof(unsigned), cudaMemcpyHostToDevice);
       
-        ScatterKernelDetail::getAvailableSlotsKernel<<<1,1>>>(heap, pool, slotSize, d_slots);
+        ScatterKernelDetail::getAvailableSlotsKernel<<<32,256>>>(heap, slotSize, d_slots);
 
         cudaMemcpy(&h_slots, d_slots, sizeof(unsigned), cudaMemcpyDeviceToHost);
         cudaFree(d_slots);
