@@ -4,6 +4,7 @@
 #include <boost/cstdint.hpp> /* uint32_t */
 #include <iostream>
 #include <string>
+#include <cassert>
 
 #include "../policy_malloc_utils.hpp"
 #include "Scatter.hpp"
@@ -19,7 +20,7 @@ namespace ScatterKernelDetail{
 
   template < typename T_Allocator >
   __global__ void getAvailableSlotsKernel(T_Allocator* heap, void* pool, size_t slotSize, unsigned* slots){
-    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(pool, slotSize);
+    unsigned temp = heap->getAvailaibleSlotsDeviceFunction2(pool, slotSize);
     if(temp) atomicAdd(slots, temp);
   }
 }
@@ -293,6 +294,28 @@ namespace ScatterKernelDetail{
         return 0;
       }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      __device__ unsigned countFreeChunksInPage(uint32 page, uint32 chunksize){
+        uint32 filledChunks = _ptes[page].count;
+        if(chunksize <= HierarchyThreshold) // there is another hierarchy
+        {
+          uint32 segmentsize = chunksize*32 + sizeof(uint32); //each segment can hold 32 2nd-level chunks
+          uint32 fullsegments = pagesize / segmentsize; //there might be space for more than 32 segments with 32 2nd-level chunks
+          //therefore, there might be even more 2nd-level chunks
+          uint32 additional_chunks = max(0,(int)pagesize - (int)fullsegments*segmentsize - (int)sizeof(uint32))/chunksize;
+          uint32 level2Chunks = fullsegments * 32 + additional_chunks;
+
+          assert(filledChunks <= level2Chunks);
+          return level2Chunks - filledChunks;
+        }else{ //could yield more speed if there is a different function for completely empty pages!
+          uint32 chunksinpage = min(pagesize / chunksize, 32); //without hierarchy, there can not be more than 32 chunks
+          assert(filledChunks <= chunksinpage);
+          return chunksinpage - filledChunks;
+        }
+      }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
       /**
        * allocChunked tries to allocate the demanded number of bytes on one of the pages
        * @param bytes the number of bytes to allocate
@@ -365,60 +388,102 @@ namespace ScatterKernelDetail{
         }
         return 0;
       }
-      
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      __device__ unsigned countFreeChunksInPage(uint32 currentpage, uint32 chunksize){
-          
-        return 0;
-      }
-
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public:
       __device__ unsigned getAvailaibleSlotsDeviceFunction(void* pool, size_t slotSize)
       {
+        unsigned slotcount = 0;
         if(slotSize < pagesize) // multiple slots per page
         {
 
-          uint32 pagespersuperblock = _numpages/accessblocks;
-          uint32 reloff = warpSize*bytes / pagesize;
+          //uint32 pagespersuperblock = _numpages/accessblocks;
+          //uint32 reloff = warpSize*slotSize / pagesize;
           //uint32 startpage = (bytes*hashingK + hashingDistMP*smid() + (hashingDistWP+hashingDistWPRel*reloff)*warpid() ) % pagespersuperblock;
-          uint32 startpage = 0;
-          uint32 maxchunksize = min(pagesize,wastefactor*bytes);
+          //uint32 startpage = 0;
+          uint32 maxchunksize = min(pagesize,wastefactor*(uint32)slotSize); //what exactly is this?
           //uint32 startblock = _firstfreeblock;
           //uint32 currentpage = startpage + startblock*pagespersuperblock; //optimization: check only non-full superblocks
           uint32 checklevel = regionsize*3/4; // this can be used to adjust precision (set to *1 to get maximum precision)
-          unsigned slotcount = 0;
 
-          for(uint32 currentpage=0; currentpage < numpages; ++currentpage){ //this already includes the superblocks
+          for(uint32 currentpage=0; currentpage < _numpages; ++currentpage){ //this already includes the superblocks
             uint32 region = currentpage/regionsize;
             uint32 regionfilllevel = _regions[region];
             if(regionfilllevel < checklevel){
               uint32 chunksize = _ptes[currentpage].chunksize;
-              if(chunksize >= bytes && chunksize <= maxchunksize){
+              if(chunksize >= slotSize && chunksize <= maxchunksize){
                 //see how much space is left (each chunk suffices to satisfy our request)
                 slotcount += countFreeChunksInPage(currentpage, chunksize);
               }else if(chunksize==0){
                 //take it all
-                chunksize = max(bytes, minChunkSize1); //make sure the chunks are big enough for the request the heap limits
+                chunksize = max((uint32)slotSize, minChunkSize1); //make sure the chunks are big enough for the request the heap limits
                 slotcount += countFreeChunksInPage(currentpage, chunksize);
               }else{
-                 //do nothing: the chunks here are too small for the request :( 
-                 continue;
+                //do nothing: the chunks here are too small for the request :( 
+                continue;
               }// chunksize >= bytes
             }//if(regionfilllevel...)
           }//currentpage
         }else // 1 slot needs multiple pages
         {
-          uint32 pagestoalloc = divup(bytes, pagesize);
+          uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
           uint32 freecount = 0;
-          unsigned slotcount=0;
-          for(uint32 currentpage=0; currentpage < numpages; ++currentpage){ //this already includes the superblocks
+          for(uint32 currentpage=0; currentpage < _numpages; ++currentpage){ //this already includes the superblocks
             if(_ptes[currentpage].chunksize == 0){
               if(++freecount == pagestoalloc){
                 freecount = 0;
                 ++slotcount; //TODO: use this slotcount in final result
+              }
+            }else{
+              freecount = 0; // the sequence of free pages was interrupted
+            }
+          }
+        }
+        return slotcount;
+      }
+      __device__ unsigned getAvailaibleSlotsDeviceFunction2(void* pool, size_t slotSize)
+      {
+        unsigned slotcount = 0;
+        int gid = threadIdx.x + blockIdx.x*blockDim.x;
+        int stride = blockDim.x * gridDim.x;
+        for(uint32 currentpage=gid; currentpage < _numpages; currentpage += stride){ //this already includes the superblocks
+          if(slotSize < pagesize) // multiple slots per page
+          {
+            //uint32 pagespersuperblock = _numpages/accessblocks;
+            //uint32 reloff = warpSize*slotSize / pagesize;
+            //uint32 startpage = (bytes*hashingK + hashingDistMP*smid() + (hashingDistWP+hashingDistWPRel*reloff)*warpid() ) % pagespersuperblock;
+            uint32 maxchunksize = min(pagesize,wastefactor*(uint32)slotSize); //what exactly is this?
+            //uint32 startblock = _firstfreeblock;
+            //uint32 currentpage = startpage + startblock*pagespersuperblock; //optimization: check only non-full superblocks
+            uint32 checklevel = regionsize*3/4; // this can be used to adjust precision (set to *1 to get maximum precision)
+            uint32 region = currentpage/regionsize;
+            uint32 regionfilllevel = _regions[region];
+            if(regionfilllevel < checklevel){
+              uint32 chunksize = _ptes[currentpage].chunksize;
+              if(chunksize >= slotSize && chunksize <= maxchunksize){
+                //see how much space is left (each chunk suffices to satisfy our request)
+                slotcount += countFreeChunksInPage(currentpage, chunksize);
+              }else if(chunksize==0){
+                //take it all
+                chunksize = max((uint32)slotSize, minChunkSize1); //make sure the chunks are big enough for the request the heap limits
+                slotcount += countFreeChunksInPage(currentpage, chunksize);
+              }else{
+                //do nothing: the chunks here are too small for the request :( 
+                continue;
+              }// chunksize >= bytes
+            }//if(regionfilllevel...)
+          } else // 1 slot needs multiple pages
+          {
+            uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
+            uint32 freecount = 0;
+            for(uint32 currentpage=0; currentpage < _numpages; ++currentpage){ //this already includes the superblocks
+              if(_ptes[currentpage].chunksize == 0){
+                if(++freecount == pagestoalloc){
+                  freecount = 0;
+                  ++slotcount; //TODO: use this slotcount in final result
+                }
+              }else{
+                freecount = 0; // the sequence of free pages was interrupted
               }
             }
           }
@@ -426,7 +491,6 @@ namespace ScatterKernelDetail{
         return slotcount;
       }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
       /**
        * deallocChunked frees the chunk on the page and updates all data accordingly
