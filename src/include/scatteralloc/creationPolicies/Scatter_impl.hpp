@@ -19,8 +19,8 @@ namespace ScatterKernelDetail{
 
   template < typename T_Allocator >
   __global__ void getAvailableSlotsKernel(T_Allocator* heap, void* pool, size_t slotSize, unsigned* slots){
-    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(pool, slotSize, slots);
-    atomicAdd(slots, temp);
+    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(pool, slotSize);
+    if(temp) atomicAdd(slots, temp);
   }
 }
 
@@ -376,7 +376,7 @@ namespace ScatterKernelDetail{
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      __device__ unsigned getAvailaibleSlotsDeviceFunction(void* pool, size_t slotSize, unsigned* slots)
+      __device__ unsigned getAvailaibleSlotsDeviceFunction(void* pool, size_t slotSize)
       {
         if(slotSize < pagesize) // multiple slots per page
         {
@@ -423,10 +423,10 @@ namespace ScatterKernelDetail{
             }
           }
         }
-        printf("\nslots in kernel: %d\n", *slots);
-        return *slots;
+        return slotcount;
       }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
       /**
        * deallocChunked frees the chunk on the page and updates all data accordingly
@@ -769,16 +769,15 @@ namespace ScatterKernelDetail{
       static unsigned getAvailableSlots(const T_Obj& obj, void* pool, size_t slotSize){
         T_Obj* heap;
         SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
-        unsigned h_slots = 13;
+        unsigned h_slots = 0;
         unsigned* d_slots;
         cudaMalloc((void**) &d_slots, sizeof(unsigned));
         cudaMemcpy(d_slots, &h_slots, sizeof(unsigned), cudaMemcpyHostToDevice);
       
         ScatterKernelDetail::getAvailableSlotsKernel<<<1,1>>>(heap, pool, slotSize, d_slots);
 
-        cudaMemcpy(&h_slots, d_slots, sizeof(unsigned), cudaMemcpyDeviceToDevice);
+        cudaMemcpy(&h_slots, d_slots, sizeof(unsigned), cudaMemcpyDeviceToHost);
         cudaFree(d_slots);
-        std::cout << "slots after kernel: " << h_slots << std::endl;
         return h_slots;
       }
 
