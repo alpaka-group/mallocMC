@@ -4,7 +4,11 @@
 #include "policy_malloc_constraints.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/mpl/bool.hpp>
 #include <sstream>
+#include <cassert>
+
+#include <boost/mpl/assert.hpp>
 
 namespace PolicyMalloc{
 
@@ -68,17 +72,6 @@ namespace PolicyMalloc{
         ReservePoolPolicy::resetMemPool(pool);
       }
 
-      __host__ unsigned getAvailableSlots(size_t slotSize){
-        slotSize = AlignmentPolicy::applyPadding(slotSize);
-        return CreationPolicy::getAvailableSlotsHost(*this, pool, slotSize);
-      }
-
-      __device__ unsigned getAvailableSlotsAccelerator(size_t slotSize){
-        slotSize = AlignmentPolicy::applyPadding(slotSize);
-        unsigned slots = CreationPolicy::getAvailableSlotsAccelerator(slotSize);
-        return slots;
-      }
-
       __host__ static std::string info(std::string linebreak = " "){
         std::stringstream ss;
         ss << "CreationPolicy:      " << CreationPolicy::classname()     << linebreak;
@@ -89,6 +82,42 @@ namespace PolicyMalloc{
         return ss.str();
       }
 
+      __host__
+      unsigned getAvailSlotsHostPoly(size_t slotSize, boost::mpl::bool_<false>){
+        assert(false);
+        return 0;
+      }
+
+      __host__
+      unsigned getAvailSlotsHostPoly(size_t slotSize, boost::mpl::bool_<true>){
+        slotSize = AlignmentPolicy::applyPadding(slotSize);
+        return CreationPolicy::getAvailableSlotsHost(slotSize,*this);
+      }
+
+      __device__
+      unsigned getAvailSlotsAcceleratorPoly(size_t slotSize, boost::mpl::bool_<false>){
+        assert(false);
+        return 0;
+      }
+
+      __device__
+      unsigned getAvailSlotsAcceleratorPoly(size_t slotSize, boost::mpl::bool_<true>){
+        slotSize = AlignmentPolicy::applyPadding(slotSize);
+        return CreationPolicy::getAvailableSlotsAccelerator(slotSize);
+      }
+
+      __host__
+      unsigned getAvailableSlotsHost(size_t slotSize){
+        return getAvailSlotsHostPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsHost::value>());
+      }
+
+      __device__
+      unsigned getAvailableSlotsAccelerator(size_t slotSize){
+        return getAvailSlotsAcceleratorPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsAccelerator::value>());
+      }
+
   };
+
+
 
 } //namespace PolicyMalloc

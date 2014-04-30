@@ -25,10 +25,20 @@ __host__  void finalizeHeap(                                                   \
 {                                                                              \
     p.finalizeHeap();                                                          \
 }                                                                              \
-__host__ unsigned getAvailableSlots(                                           \
+} /* end namespace PolicyMalloc */
+
+
+/** Provides the easily accessible functions getAvaliableSlots*
+ *
+ * Will use the global object defined by POLICYMALLOC_SET_ALLOCATOR_TYPE and
+ * use it to generate global functions that use this type internally.
+ */
+#define POLICYMALLOC_AVAILABLESLOTS()                                          \
+namespace PolicyMalloc{                                                        \
+__host__ unsigned getAvailableSlotsHost(                                       \
     size_t slotSize,                                                           \
     PolicyMallocType &p = policyMallocGlobalObject){                           \
-    return p.getAvailableSlots(slotSize);                                      \
+    return p.getAvailableSlotsHost(slotSize);                                  \
 }                                                                              \
 __device__ unsigned getAvailableSlotsAccelerator(                              \
     size_t slotSize,                                                           \
@@ -163,7 +173,8 @@ __device__ void  free(void* p) __THROW                                         \
 #define POLICYMALLOC_SET_ALLOCATOR_TYPE(POLICYMALLOC_USER_DEFINED_TYPE)        \
 POLICYMALLOC_GLOBAL_FUNCTIONS(POLICYMALLOC_USER_DEFINED_TYPE)                  \
 POLICYMALLOC_MALLOC()                                                          \
-POLICYMALLOC_PBMALLOC()
+POLICYMALLOC_PBMALLOC()                                                        \
+POLICYMALLOC_AVAILABLESLOTS()
 
 //POLICYMALLOC_OVERWRITE_NEW()
 
