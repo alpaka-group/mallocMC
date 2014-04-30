@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <cassert>
+#include <boost/mpl/bool.hpp>
 
 #include "../policy_malloc_utils.hpp"
 #include "Scatter.hpp"
@@ -20,9 +21,9 @@ namespace ScatterKernelDetail{
 
   template < typename T_Allocator >
   __global__ void getAvailableSlotsKernel(T_Allocator* heap, size_t slotSize, unsigned* slots){
-    int gid = threadIdx.x + blockIdx.x*blockDim.x;
-    int nWorker = gridDim.x * blockDim.x;
-    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(slotSize,gid,nWorker);
+    int gid       = threadIdx.x + blockIdx.x*blockDim.x;
+    int nWorker   = gridDim.x * blockDim.x;
+    unsigned temp = heap->getAvailaibleSlotsDeviceFunction(slotSize, gid, nWorker);
     if(temp) atomicAdd(slots, temp);
   }
 }
@@ -35,6 +36,8 @@ namespace ScatterKernelDetail{
       typedef T_Config  HeapProperties;
       typedef T_Hashing HashingProperties;
       struct  Properties : HeapProperties, HashingProperties{};
+      typedef boost::mpl::bool_<true>  providesAvailableSlotsHost;
+      typedef boost::mpl::bool_<true>  providesAvailableSlotsAccelerator;
       
     private:
       typedef boost::uint32_t uint32;
@@ -710,6 +713,20 @@ namespace ScatterKernelDetail{
       }
 
 
+      /** counts how many elements of a size fit inside a given page
+       *
+       * Examines a (potentially already used) page to find how many elements
+       * of size chunksize still fit on the page. This includes hierarchically
+       * organized pages and empty pages. The algorithm determines the number
+       * of chunks in the page in a manner similar to the allocation algorithm
+       * of CreationPolicies::Scatter.
+       *
+       * @param page the number of the page to examine. The page needs to be
+       *        formatted with a chunksize and potentially a hierarchy.
+       * @param chunksize the size of element that should be placed inside the
+       *        page. This size must be appropriate to the formatting of the
+       *        page.
+       */
       __device__ unsigned countFreeChunksInPage(uint32 page, uint32 chunksize){
         uint32 filledChunks = _ptes[page].count;
         if(chunksize <= HierarchyThreshold)
@@ -726,35 +743,46 @@ namespace ScatterKernelDetail{
       }
 
 
+      /** counts the number of available slots inside the heap
+       *
+       * Searches the heap for all possible locations of an element with size
+       * slotSize. The used traversal algorithms are similar to the allocation
+       * strategy of CreationPolicies::Scatter, to ensure comparable results.
+       * There are 3 different algorithms, based on the size of the requested
+       * slot: 1 slot spans over multiple pages, 1 slot fits in one chunk
+       * within a page, 1 slot fits in a fraction of a chunk.
+       *
+       * @param slotSize the amount of bytes that a single slot accounts for
+       * @param gid the id of the thread. this id does not have to correspond
+       *        with threadId.x, but there must be a continous range of ids
+       *        beginning from 0.
+       * @param stride the stride should be equal to the number of different
+       *        gids (and therefore of value max(gid)-1)
+       */
       __device__ unsigned getAvailaibleSlotsDeviceFunction(size_t slotSize, int gid, int stride)
       {
         unsigned slotcount = 0;
-        if(gid==0){
-          //TODO: remove debug output
-          printf("slotSize:%llu  pagesize:%d  numpages%d\n",slotSize,pagesize,_numpages);
-        }
         if(slotSize < pagesize){ // multiple slots per page
-          for(uint32 currentpage=gid; currentpage < _numpages; currentpage += stride){
-            uint32 maxchunksize = min(pagesize,wastefactor*(uint32)slotSize);
+          for(uint32 currentpage = gid; currentpage < _numpages; currentpage += stride){
+            uint32 maxchunksize = min(pagesize, wastefactor*(uint32)slotSize);
             uint32 region = currentpage/regionsize;
             uint32 regionfilllevel = _regions[region];
 
             uint32 chunksize = _ptes[currentpage].chunksize;
             if(chunksize >= slotSize && chunksize <= maxchunksize){ //how many chunks left? (each chunk is big enough)
               slotcount += countFreeChunksInPage(currentpage, chunksize);
-            }else if(chunksize==0){
-              chunksize = max((uint32)slotSize, minChunkSize1); //ensure minimum chunk size
+            }else if(chunksize == 0){
+              chunksize  = max((uint32)slotSize, minChunkSize1); //ensure minimum chunk size
               slotcount += countFreeChunksInPage(currentpage, chunksize); //how many chunks fit in one page?
             }else{
               continue; //the chunks on this page are too small for the request :(
-            } // chunksize >= bytes
-
-          } //for each page
+            }
+          }
         }else{ // 1 slot needs multiple pages
-          if(gid > 0) return 0;
+          if(gid > 0) return 0; //do this serially
           uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
           uint32 freecount = 0;
-          for(uint32 currentpage=_numpages; currentpage > 0 ; --currentpage){ //this already includes all superblocks
+          for(uint32 currentpage = _numpages; currentpage > 0; --currentpage){ //this already includes all superblocks
             if(_ptes[currentpage].chunksize == 0){
               if(++freecount == pagestoalloc){
                 freecount = 0;
@@ -768,8 +796,22 @@ namespace ScatterKernelDetail{
         return slotcount;
       }
 
+
+      /** Count, how many elements can be allocated at maximum
+       *
+       * Takes an input size and determines, how many elements of this size can
+       * be allocated with the CreationPolicy Scatter. This will return the
+       * maximum number of free slots of the indicated size. It is not
+       * guaranteed where these slots are (regarding fragmentation). Therefore,
+       * the practically usable number of slots might be smaller. This function
+       * is executed in parallel. Speedup can possibly increased by a higher
+       * amount ofparallel workers.
+       *
+       * @param slotSize the size of allocatable elements to count
+       * @param obj a reference to the allocator instance (host-side)
+       */
       template <typename T_Obj>
-      static unsigned getAvailableSlotsHost(const T_Obj& obj, void* pool, size_t slotSize){
+      static unsigned getAvailableSlotsHost(size_t const slotSize, const T_Obj& obj){
         T_Obj* heap;
         SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
         unsigned h_slots = 0;
@@ -777,31 +819,48 @@ namespace ScatterKernelDetail{
         cudaMalloc((void**) &d_slots, sizeof(unsigned));
         cudaMemcpy(d_slots, &h_slots, sizeof(unsigned), cudaMemcpyHostToDevice);
       
-        ScatterKernelDetail::getAvailableSlotsKernel<<<32,256>>>(heap, slotSize, d_slots);
+        ScatterKernelDetail::getAvailableSlotsKernel<<<64,256>>>(heap, slotSize, d_slots);
 
         cudaMemcpy(&h_slots, d_slots, sizeof(unsigned), cudaMemcpyDeviceToHost);
         cudaFree(d_slots);
         return h_slots;
       }
 
-      //Note: the maximum level of cooperation is inside block-boundaries
+
+      /** Count, how many elements can be allocated at maximum
+       *
+       * Takes an input size and determines, how many elements of this size can
+       * be allocated with the CreationPolicy Scatter. This will return the
+       * maximum number of free slots of the indicated size. It is not
+       * guaranteed where these slots are (regarding fragmentation). Therefore,
+       * the practically usable number of slots might be smaller. This function
+       * is executed separately for each warp and does not cooperate with other
+       * warps. Maximum speed is expected if every thread in the warp executes
+       * the function.
+       * Uses 256 byte of shared memory.
+       *
+       * @param slotSize the size of allocatable elements to count
+       */
       __device__ unsigned getAvailableSlotsAccelerator(size_t slotSize){
-        __shared__ uint32 participants;
-        __shared__ unsigned result;
+        int linearId;
+        int wId = threadIdx.x >> 5; //do not use warpid-function, since this value is not guaranteed to be stable across warp lifetime
+        uint32 activeThreads  = __popc(__ballot(true));
 
-        result = 0;
-        participants = 0;
-        __threadfence_block();
-        int id = atomicAdd(&participants, 1);
-        __threadfence_block();
+        __shared__ uint32 activePerWarp[32]; //32 is the maximum number of warps in a block
+        __shared__ unsigned warpResults[32];
+        warpResults[wId]   = 0;
+        activePerWarp[wId] = 0;
 
-        unsigned temp = getAvailaibleSlotsDeviceFunction(slotSize, id, participants);
-        if(temp) atomicAdd(&result, temp);
+        // the active threads obtain an id from 0 to activeThreads-1
+        if(slotSize>0) linearId = atomicAdd(&activePerWarp[wId], 1);
+        else return 0;
+
+        //printf("Block %d, id %d: activeThreads=%d linearId=%d\n",blockIdx.x,threadIdx.x,activeThreads,linearId);
+        unsigned temp = getAvailaibleSlotsDeviceFunction(slotSize, linearId, activeThreads);
+        if(temp) atomicAdd(&warpResults[wId], temp);
         __threadfence_block();
-        return temp;
+        return warpResults[wId];
       }
-
-
 
 
       static std::string classname(){

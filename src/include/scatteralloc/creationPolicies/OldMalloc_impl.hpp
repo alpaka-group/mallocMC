@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/cstdint.hpp>
+#include <boost/mpl/bool.hpp>
 
 #include "OldMalloc.hpp"
 
@@ -12,6 +13,9 @@ namespace CreationPolicies{
     typedef boost::uint32_t uint32;
 
     public:
+    typedef boost::mpl::bool_<false> providesAvailableSlotsHost;
+    typedef boost::mpl::bool_<false> providesAvailableSlotsAccelerator;
+
     __device__ void* create(uint32 bytes)
     {
       return ::malloc(static_cast<size_t>(bytes));
