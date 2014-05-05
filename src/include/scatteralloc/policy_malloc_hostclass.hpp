@@ -12,6 +12,14 @@
 
 namespace PolicyMalloc{
 
+  template <class T>
+  class  Traits : public T{
+    public:
+    static const bool providesAvailableSlotsHost        = T::CreationPolicy::providesAvailableSlotsHost::value;
+    static const bool providesAvailableSlotsAccelerator = T::CreationPolicy::providesAvailableSlotsAccelerator::value;
+  };
+
+
   template < 
      typename T_CreationPolicy, 
      typename T_DistributionPolicy, 
@@ -25,19 +33,21 @@ namespace PolicyMalloc{
     public T_ReservePoolPolicy,
     public T_AlignmentPolicy
   {
-    private:
-      typedef boost::uint32_t uint32;
+    public:
       typedef T_CreationPolicy CreationPolicy;
       typedef T_DistributionPolicy DistributionPolicy;
       typedef T_OOMPolicy OOMPolicy;
       typedef T_ReservePoolPolicy ReservePoolPolicy;
       typedef T_AlignmentPolicy AlignmentPolicy;
-      void* pool;
 
+    private:
+      typedef boost::uint32_t uint32;
+      void* pool;
       PolicyConstraints<CreationPolicy,DistributionPolicy,
         OOMPolicy,ReservePoolPolicy,AlignmentPolicy> c;
 
     public:
+
       typedef PolicyAllocator<CreationPolicy,DistributionPolicy,
               OOMPolicy,ReservePoolPolicy,AlignmentPolicy> MyType;
 
@@ -82,6 +92,19 @@ namespace PolicyMalloc{
         return ss.str();
       }
 
+      // polymorphism over the availability of getAvailableSlotsHost
+      __host__
+      unsigned getAvailableSlotsHost(size_t slotSize){
+        return getAvailSlotsHostPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsHost::value>());
+      }
+
+      // polymorphism over the availability of getAvailableSlotsAccelerator
+      __device__
+      unsigned getAvailableSlotsAccelerator(size_t slotSize){
+        return getAvailSlotsAcceleratorPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsAccelerator::value>());
+      }
+
+    private:
       __host__
       unsigned getAvailSlotsHostPoly(size_t slotSize, boost::mpl::bool_<false>){
         assert(false);
@@ -106,18 +129,7 @@ namespace PolicyMalloc{
         return CreationPolicy::getAvailableSlotsAccelerator(slotSize);
       }
 
-      __host__
-      unsigned getAvailableSlotsHost(size_t slotSize){
-        return getAvailSlotsHostPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsHost::value>());
-      }
-
-      __device__
-      unsigned getAvailableSlotsAccelerator(size_t slotSize){
-        return getAvailSlotsAcceleratorPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsAccelerator::value>());
-      }
 
   };
-
-
 
 } //namespace PolicyMalloc
