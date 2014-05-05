@@ -179,6 +179,12 @@ void run()
   int gaussian = n*(n-1);
   std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
 
+  if(PolicyMalloc::Traits<ScatterAllocator>::providesAvailableSlotsHost){
+    std::cout << "there are ";
+    std::cout << PolicyMalloc::getAvailableSlotsHost(1024U*1024U);
+    std::cout << " Slots of size 1MB available" << std::endl;
+  }
+
   freeArrays<<<grid,block>>>();
   cudaFree(d);
   //finalize the heap again
