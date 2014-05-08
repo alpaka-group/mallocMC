@@ -49,6 +49,12 @@ Branches
 | **tugraz**  | n/a | kind-of the "upstream" branch - only used to receive new releases from the TU Graz group |
 
 
+Install
+-------
+
+Installation notes can be found in [INSTALL.md](INSTALL.md).
+
+
 Literature
 ----------
 
