@@ -48,7 +48,7 @@ INSTALL(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/include/."
   DESTINATION include
   PATTERN ".git" EXCLUDE
-  PATTERN "policy_malloc_config.hpp"
+  PATTERN "policy_malloc_config.hpp" EXCLUDE
   )
 
 # uninstall target

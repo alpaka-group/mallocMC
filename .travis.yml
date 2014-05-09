@@ -6,7 +6,7 @@ compiler:
 script:
   - mkdir build_tmp && cd build_tmp
   - cmake $TRAVIS_BUILD_DIR
-  - make
+  - make examples
 
 before_script:
   - sudo apt-get update -qq
