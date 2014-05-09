@@ -39,17 +39,45 @@ if(Boost_VERSION EQUAL 105500)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
 endif(Boost_VERSION EQUAL 105500)
 
+###############################################################################
+# Installation
+###############################################################################
+
+# copy include folder to install folder
+INSTALL(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/include/."
+  DESTINATION include
+  PATTERN ".git" EXCLUDE
+  PATTERN "policy_malloc_config.hpp"
+  )
+
+# uninstall target
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+  IMMEDIATE @ONLY)
+
+add_custom_target(uninstall
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
 
 ###############################################################################
 # Executables
 ###############################################################################
+add_custom_target(examples DEPENDS PolicyAllocExample01 PolicyAllocExample02 VerifyHeap)
+
 cuda_add_executable(PolicyAllocExample
+                    EXCLUDE_FROM_ALL
                     examples/policy_example.cu )
 cuda_add_executable(PolicyAllocExample01
+                    EXCLUDE_FROM_ALL
                     examples/policy_example01.cu )
 cuda_add_executable(PolicyAllocExample02
+                    EXCLUDE_FROM_ALL
                     examples/policy_example02.cu )
-cuda_add_executable(VerifyHeap tests/verify_heap.cu)
+cuda_add_executable(VerifyHeap
+                    EXCLUDE_FROM_ALL
+                    tests/verify_heap.cu )
 
 target_link_libraries(PolicyAllocExample ${LIBS})
 target_link_libraries(PolicyAllocExample01 ${LIBS})
