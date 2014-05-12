@@ -41,9 +41,9 @@ namespace ScatterKernelDetail{
    * accelerator and works only with Nvidia CUDA capable accelerators that have
    * at least compute capability 2.0.
    *
-   * @param T_Config (template, optional) configure the heap layout. The
+   * @tparam T_Config (optional) configure the heap layout. The
    *        default can be obtained through Scatter<>::HeapProperties
-   * @param T_Hashing (template, optional) configure the parameters for
+   * @tparam T_Hashing (optional) configure the parameters for
    *        the hashing formula. The default can be obtained through
    *        Scatter<>::HashingProperties
    */

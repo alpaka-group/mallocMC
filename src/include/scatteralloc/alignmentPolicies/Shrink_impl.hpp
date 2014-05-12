@@ -29,6 +29,8 @@ namespace Shrink2NS{
    * memory. Memory pools are truncated at the beginning until the pointer to
    * the memory fits the alignment. Requests to allocate memory are padded
    * until their size is a multiple of the alignment.
+   *
+   * @tparam T_Config (optional) The alignment to use
    */
   template<typename T_Config>
   class Shrink{

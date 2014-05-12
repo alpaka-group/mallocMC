@@ -37,11 +37,11 @@ namespace PolicyMalloc{
    * executes some constraint checking based on an instance of the class
    * PolicyConstraints.
    *
-   * @param T_CreationPolicy (template) The desired type of a CreationPolicy
-   * @param T_DistributionPolicy (template) The desired type of a DistributionPolicy
-   * @param T_OOMPolicy (template) The desired type of a OOMPolicy
-   * @param T_ReservePoolPolicy (template) The desired type of a ReservePoolPolicy
-   * @param T_AlignmentPolicy (template) The desired type of a AlignmentPolicy
+   * @tparam T_CreationPolicy The desired type of a CreationPolicy
+   * @tparam T_DistributionPolicy The desired type of a DistributionPolicy
+   * @tparam T_OOMPolicy The desired type of a OOMPolicy
+   * @tparam T_ReservePoolPolicy The desired type of a ReservePoolPolicy
+   * @tparam T_AlignmentPolicy The desired type of a AlignmentPolicy
    */
   template < 
      typename T_CreationPolicy, 

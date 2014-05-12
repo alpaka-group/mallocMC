@@ -27,7 +27,7 @@ namespace DistributionPolicies{
    * XMallocSIMD is inteded to be used with Nvidia CUDA capable accelerators
    * that support at least compute capability 2.0
    *
-   * @param T_Config (template, optional) The configuration struct to overwrite
+   * @tparam T_Config (optional) The configuration struct to overwrite
    *        default configuration. The default can be obtained through
    *        XMallocSIMD<>::Properties
    */
