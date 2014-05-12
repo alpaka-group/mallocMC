@@ -15,8 +15,7 @@ namespace PolicyMalloc{
   template <class T>
   class  Traits : public T{
     public:
-    static const bool providesAvailableSlotsHost        = T::CreationPolicy::providesAvailableSlotsHost::value;
-    static const bool providesAvailableSlotsAccelerator = T::CreationPolicy::providesAvailableSlotsAccelerator::value;
+    static const bool providesAvailableSlots = T::CreationPolicy::providesAvailableSlots::value;
   };
 
 
@@ -92,43 +91,31 @@ namespace PolicyMalloc{
         return ss.str();
       }
 
-      // polymorphism over the availability of getAvailableSlotsHost
-      __host__
-      unsigned getAvailableSlotsHost(size_t slotSize){
-        return getAvailSlotsHostPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsHost::value>());
-      }
 
-      // polymorphism over the availability of getAvailableSlotsAccelerator
-      __device__
-      unsigned getAvailableSlotsAccelerator(size_t slotSize){
-        return getAvailSlotsAcceleratorPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlotsAccelerator::value>());
+      // polymorphism over the availability of getAvailableSlots
+      __host__ __device__
+      unsigned getAvailableSlots(size_t slotSize){
+        return getAvailSlotsPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlots::value>());
       }
 
     private:
-      __host__
-      unsigned getAvailSlotsHostPoly(size_t slotSize, boost::mpl::bool_<false>){
+      __host__ __device__
+        unsigned getAvailSlotsPoly(size_t slotSize, boost::mpl::bool_<false>){
+#ifdef __CUDA_ARCH__
         assert(false);
+#endif
         return 0;
       }
 
-      __host__
-      unsigned getAvailSlotsHostPoly(size_t slotSize, boost::mpl::bool_<true>){
+      __host__ __device__
+      unsigned getAvailSlotsPoly(size_t slotSize, boost::mpl::bool_<true>){
         slotSize = AlignmentPolicy::applyPadding(slotSize);
-        return CreationPolicy::getAvailableSlotsHost(slotSize,*this);
-      }
-
-      __device__
-      unsigned getAvailSlotsAcceleratorPoly(size_t slotSize, boost::mpl::bool_<false>){
-        assert(false);
-        return 0;
-      }
-
-      __device__
-      unsigned getAvailSlotsAcceleratorPoly(size_t slotSize, boost::mpl::bool_<true>){
-        slotSize = AlignmentPolicy::applyPadding(slotSize);
+#ifdef __CUDA_ARCH__
         return CreationPolicy::getAvailableSlotsAccelerator(slotSize);
+#else
+        return CreationPolicy::getAvailableSlotsHost(slotSize,*this);
+#endif
       }
-
 
   };
 

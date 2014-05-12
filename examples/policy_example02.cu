@@ -179,9 +179,9 @@ void run()
   int gaussian = n*(n-1);
   std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
 
-  if(PolicyMalloc::Traits<ScatterAllocator>::providesAvailableSlotsHost){
+  if(PolicyMalloc::Traits<ScatterAllocator>::providesAvailableSlots){
     std::cout << "there are ";
-    std::cout << PolicyMalloc::getAvailableSlotsHost(1024U*1024U);
+    std::cout << PolicyMalloc::getAvailableSlots(1024U*1024U);
     std::cout << " Slots of size 1MB available" << std::endl;
   }
 

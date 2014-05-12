@@ -13,8 +13,7 @@ namespace CreationPolicies{
     typedef boost::uint32_t uint32;
 
     public:
-    typedef boost::mpl::bool_<false> providesAvailableSlotsHost;
-    typedef boost::mpl::bool_<false> providesAvailableSlotsAccelerator;
+    typedef boost::mpl::bool_<false> providesAvailableSlots;
 
     __device__ void* create(uint32 bytes)
     {

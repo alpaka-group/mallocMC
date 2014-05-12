@@ -36,8 +36,7 @@ namespace ScatterKernelDetail{
       typedef T_Config  HeapProperties;
       typedef T_Hashing HashingProperties;
       struct  Properties : HeapProperties, HashingProperties{};
-      typedef boost::mpl::bool_<true>  providesAvailableSlotsHost;
-      typedef boost::mpl::bool_<true>  providesAvailableSlotsAccelerator;
+      typedef boost::mpl::bool_<true>  providesAvailableSlots;
       
     private:
       typedef boost::uint32_t uint32;
