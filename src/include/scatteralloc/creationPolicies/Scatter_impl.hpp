@@ -33,7 +33,6 @@ namespace ScatterKernelDetail{
   __global__ void finalizeKernel(T_Allocator* heap){
     heap->finalizeDeviceFunction();
   }
-}
 
 } //namespace ScatterKernelDetail
 
