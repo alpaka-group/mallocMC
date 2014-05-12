@@ -20,6 +20,16 @@ namespace Shrink2NS{
 
 }// namespace ShrinkNS
 
+  /**
+   * @brief Provides proper alignment of pool and pads memory requests
+   *
+   * This AlignmentPolicy is based on ideas from ScatterAlloc
+   * (http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6339604). It
+   * performs alignment operations on big memory pools and requests to allocate
+   * memory. Memory pools are truncated at the beginning until the pointer to
+   * the memory fits the alignment. Requests to allocate memory are padded
+   * until their size is a multiple of the alignment.
+   */
   template<typename T_Config>
   class Shrink{
     public:
@@ -29,20 +39,25 @@ namespace Shrink2NS{
     typedef boost::uint32_t uint32;
     typedef Shrink2NS::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
-
-#ifdef POLICYMALLOC_AP_SHRINK_DATAALIGNMENT
+/** Allow for a hierarchical validation of parameters:
+ *
+ * shipped default-parameters (in the inherited struct) have lowest precedence.
+ * They will be overridden by a given configuration struct. However, even the
+ * given configuration struct can be overridden by compile-time command line
+ * parameters (e.g. -D POLICYMALLOC_AP_SHRINK_DATAALIGNMENT 128)
+ *
+ * default-struct < template-struct < command-line parameter
+ */
+#ifndef POLICYMALLOC_AP_SHRINK_DATAALIGNMENT
+#define POLICYMALLOC_AP_SHRINK_DATAALIGNMENT Properties::dataAlignment::value
+#endif
     static const uint32 dataAlignment = POLICYMALLOC_AP_SHRINK_DATAALIGNMENT;
-#else
-    typedef typename Properties::dataAlignment DataAlignment;
-    static const uint32 dataAlignment = DataAlignment::value;
-    BOOST_STATIC_ASSERT(!std::numeric_limits<typename DataAlignment::type>::is_signed);
-#endif //POLICYMALLOC_AP_SHRINK_DATAALIGNMENT
 
     BOOST_STATIC_ASSERT(dataAlignment > 0); 
     //dataAlignment must also be a power of 2!
     BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
-    public:
 
+    public:
     static boost::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
       PointerEquivalent alignmentstatus = ((PointerEquivalent)memory) & (dataAlignment -1);
       if(alignmentstatus != 0)
@@ -58,7 +73,7 @@ namespace Shrink2NS{
         memory   = (void*)(((PointerEquivalent)memory) + dataAlignment - alignmentstatus);
         memsize -= (size_t)dataAlignment + (size_t)alignmentstatus;
 
-        std::cout << "Was shrinked automatically to:"            << std::endl;
+        std::cout << "Was shrunk automatically to: "            << std::endl;
         std::cout << "size_t memsize   " << memsize << " byte"  << std::endl;
         std::cout << "void *memory     " << memory              << std::endl;
       }

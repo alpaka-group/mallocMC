@@ -12,6 +12,25 @@
 namespace PolicyMalloc{
 namespace DistributionPolicies{
 
+  /**
+   * @brief SIMD optimized chunk resizing in the style of XMalloc
+   *
+   * This DistributionPolicy can take the memory requests from a group of
+   * worker threads and combine them, so that only one of the workers will
+   * allocate the whole request. Later, each worker gets an appropriate offset
+   * into the allocated chunk. This is beneficial for SIMD architectures since
+   * only one of the workers has to compete for the resource.  This algorithm
+   * is inspired by the XMalloc memory allocator
+   * (http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5577907&tag=1) and
+   * its implementation in ScatterAlloc
+   * (http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6339604)
+   * XMallocSIMD is inteded to be used with Nvidia CUDA capable accelerators
+   * that support at least compute capability 2.0
+   *
+   * @param T_Config (template, optional) The configuration struct to overwrite
+   *        default configuration. The default can be obtained through
+   *        XMallocSIMD<>::Properties
+   */
   template<class T_Config>
   class XMallocSIMD
   {
@@ -27,6 +46,15 @@ namespace DistributionPolicies{
       typedef T_Config Properties;
 
     private:
+/** Allow for a hierarchical validation of parameters:
+ *
+ * shipped default-parameters (in the inherited struct) have lowest precedence.
+ * They will be overridden by a given configuration struct. However, even the
+ * given configuration struct can be overridden by compile-time command line
+ * parameters (e.g. -D POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE 1024)
+ *
+ * default-struct < template-struct < command-line parameter
+ */
 #ifndef POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE
 #define POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
 #endif

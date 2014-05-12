@@ -28,6 +28,25 @@ namespace ScatterKernelDetail{
   }
 }
 
+  /**
+   * @brief fast memory allocation based on ScatterAlloc
+   *
+   * This CreationPolicy implements a fast memory allocator that trades speed
+   * for fragmentation of memory. This is based on the memory allocator
+   * "ScatterAlloc"
+   * (http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6339604), and
+   * is extended to report free memory slots of a given size (both on host and
+   * accelerator).
+   * To work properly, this policy class requires a pre-allocated heap on the
+   * accelerator and works only with Nvidia CUDA capable accelerators that have
+   * at least compute capability 2.0.
+   *
+   * @param T_Config (template, optional) configure the heap layout. The
+   *        default can be obtained through Scatter<>::HeapProperties
+   * @param T_Hashing (template, optional) configure the parameters for
+   *        the hashing formula. The default can be obtained through
+   *        Scatter<>::HashingProperties
+   */
   template<class T_Config, class T_Hashing>
   class Scatter
   {
@@ -43,6 +62,15 @@ namespace ScatterKernelDetail{
       typedef boost::uint32_t uint32;
 
 
+/** Allow for a hierarchical validation of parameters:
+ *
+ * shipped default-parameters (in the inherited struct) have lowest precedence.
+ * They will be overridden by a given configuration struct. However, even the
+ * given configuration struct can be overridden by compile-time command line
+ * parameters (e.g. -D POLICYMALLOC_CP_SCATTER_PAGESIZE 1024)
+ *
+ * default-struct < template-struct < command-line parameter
+ */
 #ifndef POLICYMALLOC_CP_SCATTER_PAGESIZE
 #define POLICYMALLOC_CP_SCATTER_PAGESIZE  static_cast<uint32>(HeapProperties::pagesize::value)
 #endif
@@ -373,7 +401,6 @@ namespace ScatterKernelDetail{
         return 0;
       }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       /**
        * deallocChunked frees the chunk on the page and updates all data accordingly

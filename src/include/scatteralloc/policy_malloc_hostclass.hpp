@@ -12,6 +12,15 @@
 
 namespace PolicyMalloc{
 
+  /**
+   * @brief Defines Traits for certain PolicyAllocators
+   *
+   * This trait class provides information about the capabilities of the
+   * allocator.
+   * Available traits:
+   * bool providesAvailableSlots: declares if the allocator implements a useful
+   * version of getAvailableSlots().
+   */
   template <class T>
   class  Traits : public T{
     public:
@@ -20,6 +29,20 @@ namespace PolicyMalloc{
   };
 
 
+  /**
+   * @brief "HostClass" that combines all policies to a useful allocator
+   *
+   * This class implements the necessary glue-logic to form an actual allocator
+   * from the provided policies. It implements the public interface and
+   * executes some constraint checking based on an instance of the class
+   * PolicyConstraints.
+   *
+   * @param T_CreationPolicy (template) The desired type of a CreationPolicy
+   * @param T_DistributionPolicy (template) The desired type of a DistributionPolicy
+   * @param T_OOMPolicy (template) The desired type of a OOMPolicy
+   * @param T_ReservePoolPolicy (template) The desired type of a ReservePoolPolicy
+   * @param T_AlignmentPolicy (template) The desired type of a AlignmentPolicy
+   */
   template < 
      typename T_CreationPolicy, 
      typename T_DistributionPolicy, 
@@ -43,6 +66,8 @@ namespace PolicyMalloc{
     private:
       typedef boost::uint32_t uint32;
       void* pool;
+
+      //Instantiating the constraints checker will execute the check
       PolicyConstraints<CreationPolicy,DistributionPolicy,
         OOMPolicy,ReservePoolPolicy,AlignmentPolicy> c;
 
