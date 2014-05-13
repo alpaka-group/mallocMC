@@ -9,6 +9,8 @@
                      Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
+              Bernhard Kainz - kainz ( at ) icg.tugraz.at
+              Michael Kenzel - kenzel ( at ) icg.tugraz.at
               Rene Widera - r.widera ( at ) hzdr.de
               Axel Huebl - a.huebl ( at ) hzdr.de
               Carlchristian Eckert - c.eckert ( at ) hzdr.de
