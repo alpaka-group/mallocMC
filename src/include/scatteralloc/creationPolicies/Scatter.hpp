@@ -1,10 +1,16 @@
 /*
   ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU.
+  http://www.icg.tugraz.at/project/mvp
 
+  Copyright (C) 2012 Institute for Computer Graphics and Vision,
+                     Graz University of Technology
   Copyright (C) 2014 Institute of Radiation Physics,
                      Helmholtz-Zentrum Dresden - Rossendorf
 
-  Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
+  Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
+              Rene Widera - r.widera ( at ) hzdr.de
+              Axel Huebl - a.huebl ( at ) hzdr.de
+              Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
