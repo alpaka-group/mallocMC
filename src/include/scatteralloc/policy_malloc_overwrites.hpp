@@ -28,7 +28,7 @@ __host__  void finalizeHeap(                                                   \
 } /* end namespace PolicyMalloc */
 
 
-/** Provides the easily accessible functions getAvaliableSlots*
+/** Provides the easily accessible functions getAvaliableSlots
  *
  * Will use the global object defined by POLICYMALLOC_SET_ALLOCATOR_TYPE and
  * use it to generate global functions that use this type internally.

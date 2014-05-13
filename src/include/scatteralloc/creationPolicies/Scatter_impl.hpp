@@ -43,6 +43,15 @@ namespace ScatterKernelDetail{
       typedef boost::uint32_t uint32;
 
 
+/** Allow for a hierarchical validation of parameters:
+ *
+ * shipped default-parameters (in the inherited struct) have lowest precedence.
+ * They will be overridden by a given configuration struct. However, even the
+ * given configuration struct can be overridden by compile-time command line
+ * parameters (e.g. -D POLICYMALLOC_CP_SCATTER_PAGESIZE 1024)
+ *
+ * default-struct < template-struct < command-line parameter
+ */
 #ifndef POLICYMALLOC_CP_SCATTER_PAGESIZE
 #define POLICYMALLOC_CP_SCATTER_PAGESIZE  static_cast<uint32>(HeapProperties::pagesize::value)
 #endif
@@ -373,7 +382,6 @@ namespace ScatterKernelDetail{
         return 0;
       }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       /**
        * deallocChunked frees the chunk on the page and updates all data accordingly

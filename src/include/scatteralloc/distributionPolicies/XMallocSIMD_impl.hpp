@@ -27,6 +27,15 @@ namespace DistributionPolicies{
       typedef T_Config Properties;
 
     private:
+/** Allow for a hierarchical validation of parameters:
+ *
+ * shipped default-parameters (in the inherited struct) have lowest precedence.
+ * They will be overridden by a given configuration struct. However, even the
+ * given configuration struct can be overridden by compile-time command line
+ * parameters (e.g. -D POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE 1024)
+ *
+ * default-struct < template-struct < command-line parameter
+ */
 #ifndef POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE
 #define POLICYMALLOC_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
 #endif

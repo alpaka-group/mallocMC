@@ -10,6 +10,7 @@
   Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
               Rene Widera - r.widera ( at ) hzdr.de
               Axel Huebl - a.huebl ( at ) hzdr.de
+              Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
