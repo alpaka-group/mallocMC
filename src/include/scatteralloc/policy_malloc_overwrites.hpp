@@ -67,15 +67,10 @@ __host__  void finalizeHeap(                                                   \
  */
 #define POLICYMALLOC_AVAILABLESLOTS()                                          \
 namespace PolicyMalloc{                                                        \
-__host__ unsigned getAvailableSlotsHost(                                       \
+__host__ __device__ unsigned getAvailableSlots(                                \
     size_t slotSize,                                                           \
     PolicyMallocType &p = policyMallocGlobalObject){                           \
-    return p.getAvailableSlotsHost(slotSize);                                  \
-}                                                                              \
-__device__ unsigned getAvailableSlotsAccelerator(                              \
-    size_t slotSize,                                                           \
-    PolicyMallocType &p = policyMallocGlobalObject){                           \
-    return p.getAvailableSlotsAccelerator(slotSize);                           \
+    return p.getAvailableSlots(slotSize);                                      \
 }                                                                              \
 } /* end namespace PolicyMalloc */
 
