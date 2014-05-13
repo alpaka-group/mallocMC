@@ -8,12 +8,6 @@
 namespace PolicyMalloc{
 namespace DistributionPolicies{
     
-  /**
-   * @brief a policy that does nothing
-   *
-   * This DistributionPolicy will not perform any distribution, but only return
-   * its input (identity function)
-   */
   class Noop 
   {
     typedef boost::uint32_t uint32;
