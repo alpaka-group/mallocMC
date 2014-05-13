@@ -65,6 +65,7 @@ namespace CreationPolicies{
 
     template < typename T>
     static void finalizeHeap(const T& obj, void* pool){
+      return;
     }
 
     static std::string classname(){

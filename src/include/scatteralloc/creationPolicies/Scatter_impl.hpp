@@ -47,10 +47,11 @@ namespace PolicyMalloc{
 namespace CreationPolicies{
     
 namespace ScatterKernelDetail{
-  template < typename T_Allocator >
+  template <typename T_Allocator>
   __global__ void initKernel(T_Allocator* heap, void* heapmem, size_t memsize){
     heap->initDeviceFunction(heapmem, memsize);
   }
+
 
   template < typename T_Allocator >
   __global__ void getAvailableSlotsKernel(T_Allocator* heap, size_t slotSize, unsigned* slots){
@@ -59,7 +60,14 @@ namespace ScatterKernelDetail{
     unsigned temp = heap->getAvailaibleSlotsDeviceFunction(slotSize, gid, nWorker);
     if(temp) atomicAdd(slots, temp);
   }
-}
+
+
+  template <typename T_Allocator>
+  __global__ void finalizeKernel(T_Allocator* heap){
+    heap->finalizeDeviceFunction();
+  }
+
+} //namespace ScatterKernelDetail
 
   template<class T_Config, class T_Hashing>
   class Scatter
@@ -730,6 +738,44 @@ namespace ScatterKernelDetail{
 
       }
 
+      /** resets the heap data structures
+       *
+       * resets the pages, ptes, regions, firstfreedblock,firstfreepagebased
+       * and pagebaseMutex to a state similar to that after calling
+       * initDeviceFunction. The whole process of resetting is not strictly
+       * necessary, if initDeviceFunction is called before another request
+       * happens. However, this will leave the heap in a tidy state.
+       */
+      __device__ void finalizeDeviceFunction()
+      {
+        uint32 linid = threadIdx.x + blockDim.x*(threadIdx.y + threadIdx.z*blockDim.y);
+        uint32 threads = blockDim.x*blockDim.y*blockDim.z;
+        uint32 linblockid = blockIdx.x + gridDim.x*(blockIdx.y + blockIdx.z*gridDim.y);
+        uint32 blocks =  gridDim.x*gridDim.y*gridDim.z;
+        linid = linid + linblockid*threads;
+        threads = threads*blocks;
+
+        PTE* ptes = (PTE*)(_page + _numpages);
+
+        for(uint32 i = linid; i < _numpages; i+= threads)
+        {
+          ptes[i].init();
+          _page[i].init();
+        }
+
+        uint32 numregions = _numpages / regionsize;
+        for(uint32 i = linid; i < numregions; i+= numregions){
+          _regions[i] = 0;
+        }
+
+        if(linid == 0)
+        {
+          _ptes = (volatile PTE*)ptes;
+          _firstfreeblock = 0;
+          _pagebasedMutex = 0;
+          _firstFreePageBased = _numpages-1;
+        }
+      }
 
       __device__ bool isOOM(void* p){
         // all threads in a warp return get NULL
@@ -748,8 +794,9 @@ namespace ScatterKernelDetail{
 
       template < typename T_Obj >
       static void finalizeHeap(const T_Obj& obj, void* pool){
-        /* @TODO: Think about the necessity of a teardown... (inside the pool) */
-        //reset PAGE, memsize, numpages, regions, firstfreedblock, firstfreepagebased,numregions,ptes
+        T_Obj* heap;
+        SCATTERALLOC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
+        ScatterKernelDetail::finalizeKernel<<<1,256>>>(heap);
       }
 
 
