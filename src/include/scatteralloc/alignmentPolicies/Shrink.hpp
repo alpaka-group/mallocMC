@@ -11,8 +11,6 @@ namespace ShrinkConfig{
   };
 }
 
-}// namespace ShrinkNS
-
   /**
    * @brief Provides proper alignment of pool and pads memory requests
    *

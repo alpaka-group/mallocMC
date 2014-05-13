@@ -17,6 +17,7 @@ namespace Shrink2NS{
   template<int PSIZE> struct __PointerEquivalent{ typedef unsigned int type;};
   template<>
   struct __PointerEquivalent<8>{ typedef unsigned long long int type; };
+}// namespace ShrinkNS
 
   template<typename T_Config>
   class Shrink{
