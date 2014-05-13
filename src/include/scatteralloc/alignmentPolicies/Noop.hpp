@@ -1,8 +1,8 @@
 /*
   ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU.
 
-  Copyright (C) 2014 Institute of Radiation Physics,
-                     Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright 2014 Institute of Radiation Physics,
+                 Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
