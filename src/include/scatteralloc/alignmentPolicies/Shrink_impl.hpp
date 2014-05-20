@@ -101,11 +101,14 @@ namespace Shrink2NS{
       return boost::make_tuple(memory,memsize);
     }
 
-    __host__ __device__ static uint32 applyPadding(uint32 bytes){
+    PMMA_HOST
+    PMMA_ACCELERATOR
+    static uint32 applyPadding(uint32 bytes){
       return (bytes + dataAlignment - 1) & ~(dataAlignment-1);
     }
 
-    __host__ static std::string classname(){
+    PMMA_HOST
+    static std::string classname(){
       std::stringstream ss;
       ss << "Shrink[" << dataAlignment << "]";
       return ss.str();

@@ -1,8 +1,9 @@
 /*
   ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU.
+  https://www.hzdr.de/crp
 
-  Copyright 2014 Institute of Radiation Physics,
-                 Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright (C) 2014 Institute of Radiation Physics,
+                     Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
@@ -27,34 +28,6 @@
 
 #pragma once
 
-#include <boost/cstdint.hpp>
-#include <string>
+#define PMMA_HOST __host__
+#define PMMA_ACCELERATOR __device__
 
-#include "Noop.hpp"
-#include "../policy_malloc_hostclass.hpp"
-
-namespace PolicyMalloc{
-namespace AlignmentPolicies{
-
-  class Noop{
-    typedef boost::uint32_t uint32;
-
-    public:
-
-    static boost::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
-      return boost::make_tuple(memory,memsize);
-    }
-
-    PMMA_ACCELERATOR
-    static uint32 applyPadding(uint32 bytes){
-      return bytes;
-    }
-
-    static std::string classname(){
-      return "Noop";
-    }
-
-  };
-
-} //namespace AlignmentPolicies
-} //namespace PolicyMalloc

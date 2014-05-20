@@ -41,6 +41,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "policy_malloc_prefixes.hpp"
+
 
 namespace CUDA
 {
@@ -128,68 +130,68 @@ namespace PolicyMalloc
   typedef PolicyMalloc::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
 
-  __device__ inline uint32_richtig_huebsch laneid()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch laneid()
   {
     uint32_richtig_huebsch mylaneid;
     asm("mov.u32 %0, %laneid;" : "=r" (mylaneid));
     return mylaneid;
   }
 
-  __device__ inline uint32_richtig_huebsch warpid()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch warpid()
   {
     uint32_richtig_huebsch mywarpid;
     asm("mov.u32 %0, %warpid;" : "=r" (mywarpid));
     return mywarpid;
   }
-  __device__ inline uint32_richtig_huebsch nwarpid()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch nwarpid()
   {
     uint32_richtig_huebsch mynwarpid;
     asm("mov.u32 %0, %nwarpid;" : "=r" (mynwarpid));
     return mynwarpid;
   }
 
-  __device__ inline uint32_richtig_huebsch smid()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch smid()
   {
     uint32_richtig_huebsch mysmid;
     asm("mov.u32 %0, %smid;" : "=r" (mysmid));
     return mysmid;
   }
 
-  __device__ inline uint32_richtig_huebsch nsmid()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch nsmid()
   {
     uint32_richtig_huebsch mynsmid;
     asm("mov.u32 %0, %nsmid;" : "=r" (mynsmid));
     return mynsmid;
   }
-  __device__ inline uint32_richtig_huebsch lanemask()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch lanemask()
   {
     uint32_richtig_huebsch lanemask;
     asm("mov.u32 %0, %lanemask_eq;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint32_richtig_huebsch lanemask_le()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch lanemask_le()
   {
     uint32_richtig_huebsch lanemask;
     asm("mov.u32 %0, %lanemask_le;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint32_richtig_huebsch lanemask_lt()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch lanemask_lt()
   {
     uint32_richtig_huebsch lanemask;
     asm("mov.u32 %0, %lanemask_lt;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint32_richtig_huebsch lanemask_ge()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch lanemask_ge()
   {
     uint32_richtig_huebsch lanemask;
     asm("mov.u32 %0, %lanemask_ge;" : "=r" (lanemask));
     return lanemask;
   }
 
-  __device__ inline uint32_richtig_huebsch lanemask_gt()
+  PMMA_ACCELERATOR inline uint32_richtig_huebsch lanemask_gt()
   {
     uint32_richtig_huebsch lanemask;
     asm("mov.u32 %0, %lanemask_gt;" : "=r" (lanemask));
@@ -197,6 +199,6 @@ namespace PolicyMalloc
   }
 
   template<class T>
-  __host__ __device__ inline T divup(T a, T b) { return (a + b - 1)/b; }
+  PMMA_HOST PMMA_ACCELERATOR inline T divup(T a, T b) { return (a + b - 1)/b; }
 
 }

@@ -31,13 +31,15 @@
 #include <string>
 
 #include "BadAllocException.hpp"
+#include "../policy_malloc_prefixes.hpp"
 
 namespace PolicyMalloc{
 namespace OOMPolicies{
 
   struct BadAllocException
   {
-    __device__ static void* handleOOM(void* mem){
+    PMMA_ACCELERATOR
+    static void* handleOOM(void* mem){
 #ifdef __CUDACC__
 //#if __CUDA_ARCH__ < 350
 #define PM_EXCEPTIONS_NOT_SUPPORTED_HERE

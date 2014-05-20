@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include "policy_malloc_prefixes.hpp"
+
 /** Creates a global object of a policyBased memory allocator
  *
  * Will create a global object of the supplied type and use it to generate
@@ -42,16 +44,16 @@
 namespace PolicyMalloc{                                                        \
   typedef POLICYMALLOC_USER_DEFINED_TYPENAME PolicyMallocType;                 \
                                                                                \
-__device__ PolicyMallocType policyMallocGlobalObject;                          \
+PMMA_ACCELERATOR PolicyMallocType policyMallocGlobalObject;                    \
                                                                                \
-__host__  void* initHeap(                                                      \
+PMMA_HOST void* initHeap(                                                      \
     size_t heapsize = 8U*1024U*1024U,                                          \
     PolicyMallocType &p = policyMallocGlobalObject                             \
     )                                                                          \
 {                                                                              \
     return p.initHeap(heapsize);                                               \
 }                                                                              \
-__host__  void finalizeHeap(                                                   \
+PMMA_HOST void finalizeHeap(                                                   \
     PolicyMallocType &p = policyMallocGlobalObject                             \
     )                                                                          \
 {                                                                              \
@@ -67,7 +69,8 @@ __host__  void finalizeHeap(                                                   \
  */
 #define POLICYMALLOC_AVAILABLESLOTS()                                          \
 namespace PolicyMalloc{                                                        \
-__host__ __device__ unsigned getAvailableSlots(                                \
+PMMA_HOST PMMA_ACCELERATOR                                                     \
+unsigned getAvailableSlots(                                                    \
     size_t slotSize,                                                           \
     PolicyMallocType &p = policyMallocGlobalObject){                           \
     return p.getAvailableSlots(slotSize);                                      \
@@ -84,11 +87,13 @@ __host__ __device__ unsigned getAvailableSlots(                                \
  */
 #define POLICYMALLOC_PBMALLOC()                                                \
 namespace PolicyMalloc{                                                        \
-__device__ void* pbMalloc(size_t t) __THROW                                    \
+PMMA_ACCELERATOR                                                               \
+void* pbMalloc(size_t t) __THROW                                               \
 {                                                                              \
   return PolicyMalloc::malloc(t);                                              \
 }                                                                              \
-__device__ void  pbFree(void* p) __THROW                                       \
+PMMA_ACCELERATOR                                                               \
+void  pbFree(void* p) __THROW                                                  \
 {                                                                              \
   PolicyMalloc::free(p);                                                       \
 }                                                                              \
@@ -103,11 +108,13 @@ __device__ void  pbFree(void* p) __THROW                                       \
  */
 #define POLICYMALLOC_MALLOC()                                                  \
 namespace PolicyMalloc{                                                        \
-__device__ void* malloc(size_t t) __THROW                                      \
+PMMA_ACCELERATOR                                                               \
+void* malloc(size_t t) __THROW                                                 \
 {                                                                              \
   return PolicyMalloc::policyMallocGlobalObject.alloc(t);                      \
 }                                                                              \
-__device__ void  free(void* p) __THROW                                         \
+PMMA_ACCELERATOR                                                               \
+void  free(void* p) __THROW                                                    \
 {                                                                              \
   PolicyMalloc::policyMallocGlobalObject.dealloc(p);                           \
 }                                                                              \
@@ -127,19 +134,23 @@ __device__ void  free(void* p) __THROW                                         \
 #ifdef __CUDACC__
 #if __CUDA_ARCH__ >= 200
 #define POLICYMALLOC_OVERWRITE_NEW()                                           \
-__device__ void* operator new(size_t t, PolicyMalloc::PolicyMallocType &h)     \
+PMMA_ACCELERATOR                                                               \
+void* operator new(size_t t, PolicyMalloc::PolicyMallocType &h)                \
 {                                                                              \
   return h.alloc(t);                                                           \
 }                                                                              \
-__device__ void* operator new[](size_t t, PolicyMalloc::PolicyMallocType &h)   \
+PMMA_ACCELERATOR                                                               \
+void* operator new[](size_t t, PolicyMalloc::PolicyMallocType &h)              \
 {                                                                              \
   return h.alloc(t);                                                           \
 }                                                                              \
-__device__ void operator delete(void* p, PolicyMalloc::PolicyMallocType &h)    \
+PMMA_ACCELERATOR                                                               \
+void operator delete(void* p, PolicyMalloc::PolicyMallocType &h)               \
 {                                                                              \
   h.dealloc(p);                                                                \
 }                                                                              \
-__device__ void operator delete[](void* p, PolicyMalloc::PolicyMallocType &h)  \
+PMMA_ACCELERATOR                                                               \
+void operator delete[](void* p, PolicyMalloc::PolicyMallocType &h)             \
 {                                                                              \
   h.dealloc(p);                                                                \
 }
@@ -157,11 +168,13 @@ __device__ void operator delete[](void* p, PolicyMalloc::PolicyMallocType &h)  \
 #ifdef __CUDACC__
 #if __CUDA_ARCH__ >= 200
 #define POLICYMALLOC_OVERWRITE_MALLOC()                                        \
-__device__ void* malloc(size_t t) __THROW                                      \
+PMMA_ACCELERATOR                                                               \
+void* malloc(size_t t) __THROW                                                 \
 {                                                                              \
   return PolicyMalloc::malloc(t);                                              \
 }                                                                              \
-__device__ void  free(void* p) __THROW                                         \
+PMMA_ACCELERATOR                                                               \
+void  free(void* p) __THROW                                                    \
 {                                                                              \
   PolicyMalloc::free(p);                                                       \
 }

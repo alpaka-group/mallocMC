@@ -30,6 +30,8 @@
 
 #include "policy_malloc_utils.hpp"
 #include "policy_malloc_constraints.hpp"
+#include "policy_malloc_prefixes.hpp"
+
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/mpl/bool.hpp>
@@ -103,7 +105,8 @@ namespace PolicyMalloc{
       typedef PolicyAllocator<CreationPolicy,DistributionPolicy,
               OOMPolicy,ReservePoolPolicy,AlignmentPolicy> MyType;
 
-      __device__ void* alloc(size_t bytes){
+      PMMA_ACCELERATOR
+      void* alloc(size_t bytes){
         DistributionPolicy distributionPolicy;
 
         bytes            = AlignmentPolicy::applyPadding(bytes);
@@ -119,22 +122,26 @@ namespace PolicyMalloc{
         // }
       }
 
-      __device__ void dealloc(void* p){
+      PMMA_ACCELERATOR
+      void dealloc(void* p){
         CreationPolicy::destroy(p);
       }
 
-      __host__ void* initHeap(size_t size){
+      PMMA_HOST
+      void* initHeap(size_t size){
         pool = ReservePoolPolicy::setMemPool(size);
         boost::tie(pool,size) = AlignmentPolicy::alignPool(pool,size);
         return CreationPolicy::initHeap(*this,pool,size);
       }
 
-      __host__ void finalizeHeap(){
+      PMMA_HOST
+      void finalizeHeap(){
         CreationPolicy::finalizeHeap(*this,pool);
         ReservePoolPolicy::resetMemPool(pool);
       }
 
-      __host__ static std::string info(std::string linebreak = " "){
+      PMMA_HOST
+      static std::string info(std::string linebreak = " "){
         std::stringstream ss;
         ss << "CreationPolicy:      " << CreationPolicy::classname()     << linebreak;
         ss << "DistributionPolicy:  " << DistributionPolicy::classname() << linebreak;
@@ -146,21 +153,21 @@ namespace PolicyMalloc{
 
 
       // polymorphism over the availability of getAvailableSlots
-      __host__ __device__
+      PMMA_HOST PMMA_ACCELERATOR
       unsigned getAvailableSlots(size_t slotSize){
         return getAvailSlotsPoly(slotSize, boost::mpl::bool_<CreationPolicy::providesAvailableSlots::value>());
       }
 
     private:
-      __host__ __device__
-        unsigned getAvailSlotsPoly(size_t slotSize, boost::mpl::bool_<false>){
+      PMMA_HOST PMMA_ACCELERATOR
+      unsigned getAvailSlotsPoly(size_t slotSize, boost::mpl::bool_<false>){
 #ifdef __CUDA_ARCH__
         assert(false);
 #endif
         return 0;
       }
 
-      __host__ __device__
+      PMMA_HOST PMMA_ACCELERATOR
       unsigned getAvailSlotsPoly(size_t slotSize, boost::mpl::bool_<true>){
         slotSize = AlignmentPolicy::applyPadding(slotSize);
 #ifdef __CUDA_ARCH__

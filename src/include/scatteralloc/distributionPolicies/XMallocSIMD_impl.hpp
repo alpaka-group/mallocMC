@@ -40,6 +40,7 @@
 #include <sstream>
 
 #include "../policy_malloc_utils.hpp"
+#include "../policy_malloc_prefixes.hpp"
 #include "XMallocSIMD.hpp"
 
 namespace PolicyMalloc{
@@ -81,7 +82,8 @@ namespace DistributionPolicies{
     public:
       static const uint32 _pagesize = pagesize;
 
-      __device__ uint32 collect(uint32 bytes){
+      PMMA_ACCELERATOR
+      uint32 collect(uint32 bytes){
 
         can_use_coalescing = false;
         warpid = PolicyMalloc::warpid();
@@ -111,7 +113,8 @@ namespace DistributionPolicies{
       }
 
 
-      __device__ void* distribute(void* allocatedMem){
+      PMMA_ACCELERATOR
+      void* distribute(void* allocatedMem){
         __shared__ char* warp_res[32];
 
         char* myalloc = (char*) allocatedMem;
@@ -134,7 +137,8 @@ namespace DistributionPolicies{
         return myres;
       }
 
-      __host__ static std::string classname(){
+      PMMA_HOST
+      static std::string classname(){
         std::stringstream ss;
         ss << "XMallocSIMD[" << pagesize << "]";
         return ss.str();
