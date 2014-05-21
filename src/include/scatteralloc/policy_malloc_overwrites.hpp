@@ -75,6 +75,10 @@ unsigned getAvailableSlots(                                                    \
     PolicyMallocType &p = policyMallocGlobalObject){                           \
     return p.getAvailableSlots(slotSize);                                      \
 }                                                                              \
+PMMA_HOST PMMA_ACCELERATOR                                                     \
+bool providesAvailableSlots(){                                                 \
+    return Traits<PolicyMallocType>::providesAvailableSlots;                   \
+}                                                                              \
 } /* end namespace PolicyMalloc */
 
 
