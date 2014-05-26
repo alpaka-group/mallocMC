@@ -34,10 +34,22 @@
 
 namespace PolicyMalloc{
 
-  /** The default PolicyChecker (does always succeed)
+  /** The default PolicyCheckers (do always succeed)
    */
+  template<typename Policy1>
+  struct PolicyCheck1{};
+
   template<typename Policy1, typename Policy2>
-  struct PolicyChecker{};
+  struct PolicyCheck2{};
+
+  template<typename Policy1, typename Policy2, typename Policy3>
+  struct PolicyCheck3{};
+
+  template<typename Policy1, typename Policy2, typename Policy3, typename Policy4>
+  struct PolicyCheck4{};
+
+  template<typename Policy1, typename Policy2, typename Policy3, typename Policy4, typename Policy5>
+  struct PolicyCheck5{};
 
 
   /** Enforces constraints on policies or combinations of polices
@@ -52,7 +64,7 @@ namespace PolicyMalloc{
      typename T_AlignmentPolicy
        >
   class PolicyConstraints{
-      PolicyChecker<T_CreationPolicy, T_DistributionPolicy> c;
+      PolicyCheck2<T_CreationPolicy, T_DistributionPolicy> c;
   };
 
 
@@ -63,7 +75,7 @@ namespace PolicyMalloc{
    * the same value for their "pagesize"-parameter.
    */
   template<typename x, typename y, typename z >
-  struct PolicyChecker<
+  struct PolicyCheck2<
     typename CreationPolicies::Scatter<x,y>,
     typename DistributionPolicies::XMallocSIMD<z> 
   >{
