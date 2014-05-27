@@ -7,7 +7,7 @@ Step 1: include
 There is one header file that will include *all* necessary files:
 
 ```c++
-#include <scatteralloc/scatteralloc.hpp>
+#include <mallocMC/mallocMC.hpp>
 ```
 
 Step 2a: choose policies
@@ -44,7 +44,7 @@ to the policy class:
 
 ```c++
 // configure the AlignmentPolicy "Shrink"
-struct ShrinkConfig : PolicyMalloc::AlignmentPolicies::Shrink<>::Properties {
+struct ShrinkConfig : mallocMC::AlignmentPolicies::Shrink<>::Properties {
   typedef boost::mpl::int_<16> dataAlignment;
 };
 ```
@@ -55,9 +55,9 @@ After configuring the chosen policies, they can be used as template
 parameters to create the desired allocator type:
 
 ```c++
-using namespace PolicyMalloc;
+using namespace mallocMC;
 
-typedef PolicyAllocator<
+typedef mallocMC::Allocator<
   CreationPolicy::OldMalloc,
   DistributionPolicy::Noop,
   OOMPolicy::ReturnNull,
@@ -71,9 +71,9 @@ from NVIDIA CUDA since compute capability sm_20. To get a more novel allocator, 
 could create the following typedef instead:
 
 ```c++
-using namespace PolicyMalloc;
+using namespace mallocMC;
 
-typedef PolicyAllocator< 
+typedef mallocMC::Allocator< 
   CreationPolicies::Scatter<>,
   DistributionPolicies::XMallocSIMD<>,
   OOMPolicies::ReturnNull,
@@ -97,7 +97,7 @@ functions, the following Macro has to be executed:
 POLICYMALLOC_SET_ALLOCATOR_TYPE(ScatterAllocator)
 ```
 
-This will set up the following functions in the namespace `PolicyMalloc`:
+This will set up the following functions in the namespace `mallocMC`:
 
 | Name                  | description                                                                                                                                                                                                |
 |-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -105,7 +105,7 @@ This will set up the following functions in the namespace `PolicyMalloc`:
 | finalizeHeap()        | Destroys the heap again                                                                                                                                                                                    |
 | pbMalloc() / malloc() | Allocates memory on the accelerator                                                                                                                                                                        |
 | pbFree() / free()     | Frees memory on the accelerator                                                                                                                                                                            |
-| getAvailableSlots()   | Determines number of allocatable slots of a certain size. This only works, if the chose CreationPolicy supports it (can be found through `PolicyMalloc::Traits<ScatterAllocator>::providesAvailableSlots`) |
+| getAvailableSlots()   | Determines number of allocatable slots of a certain size. This only works, if the chose CreationPolicy supports it (can be found through `mallocMC::Traits<ScatterAllocator>::providesAvailableSlots`) |
 
 If the policy class `OldMalloc` is **not** used, it is also possible to execute
 the Macro
@@ -121,37 +121,37 @@ Step 4: use dynamic memory allocation
 -------------------------------------
 A simplistic example would look like this:
 ```c++
-#include <scatteralloc/scatteralloc.hpp>
+#include <mallocMC/mallocMC.hpp>
 
-namespace PolicyMalloc = PM;
+namespace mallocMC = MC;
 
-typedef PM::PolicyAllocator< 
-  PM::CreationPolicies::Scatter<>,
-  PM::DistributionPolicies::XMallocSIMD<>,
-  PM::OOMPolicies::ReturnNull,
-  PM::ReservePoolPolicies::SimpleCudaMalloc,
-  PM::AlignmentPolicies::Shrink<ShrinkConfig>
+typedef MC::Allocator< 
+  MC::CreationPolicies::Scatter<>,
+  MC::DistributionPolicies::XMallocSIMD<>,
+  MC::OOMPolicies::ReturnNull,
+  MC::ReservePoolPolicies::SimpleCudaMalloc,
+  MC::AlignmentPolicies::Shrink<ShrinkConfig>
   > ScatterAllocator;
 
-POLICYMALLOC_SET_ALLOCATOR_TYPE(ScatterAllocator)
+MALLOCMC_SET_ALLOCATOR_TYPE(ScatterAllocator)
 
 __global__ exampleKernel()
 {
   // some code ...
   
-  int* a = (int*) PM::malloc(sizeof(int)*42);
+  int* a = (int*) MC::malloc(sizeof(int)*42);
   
   // some more code, using *a
   
-  PM::free(a);
+  MC::free(a);
 }
 
 int main(){
-  PM::initHeap(512); // heapsize of 512MB
+  MC::initHeap(512); // heapsize of 512MB
 
   exampleKernel<<<32,32>>>();
 
-  PM::finalizeHeap();
+  MC::finalizeHeap();
   return 0;
 }
 ```

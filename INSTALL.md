@@ -29,19 +29,19 @@ Install
  - `BOOST_ROOT`: Boost installation directory, e.g. `export BOOST_ROOT=<BOOST_INSTALL>`
 
 ### Examples
-This is an example how to compile `scatteralloc` and test the example code snippets
+This is an example how to compile `mallocMC` and test the example code snippets
 
 1. **Setup directories:**
- - `mkdir ~/scatteralloc ~/scatterallocBuild`
+ - `mkdir -p build`
 2. **Download the source code:**
- -  `git clone https://github.com/ComputationalRadiationPhysics/scatteralloc.git ~/scatteralloc`
+ -  `git clone https://github.com/ComputationalRadiationPhysics/mallocMC.git`
 3. **Build**
- - `cd ~/scatterallocBuild`
- - `cmake ../scatteralloc -DCMAKE_INSTALL_PREFIX=$HOME/libs`
- - `make`
+ - `cd build`
+ - `cmake ../mallocMC -DCMAKE_INSTALL_PREFIX=$HOME/libs`
+ - `make examples`
  - `make install` (optional)
 4. **Run the examples**
- - `./PolicyAllocExample01`
- - `./PolicyAllocExample02`
+ - `./mallocMC_Example01`
+ - `./mallocMC_Example02`
  - `./VerifyHeap`
   - additional options: see `./VerifyHeap --help`

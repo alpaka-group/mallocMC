@@ -1,5 +1,5 @@
 /*
-  mallocMC: Memory Allocation for Many Core Architecture
+  mallocMC: Memory Allocator for Many Core Architectures.
   http://www.icg.tugraz.at/project/mvp
   https://www.hzdr.de/crp
 
@@ -33,3 +33,19 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+
+#pragma once
+
+// generic stuff
+#include "version.hpp"
+
+// core functionality
+#include "mallocMC_overwrites.hpp"
+#include "mallocMC_hostclass.hpp"
+
+// all the policies
+#include "CreationPolicies.hpp"
+#include "DistributionPolicies.hpp"
+#include "ReservePoolPolicies.hpp"
+#include "AlignmentPolicies.hpp"
+#include "OOMPolicies.hpp"
