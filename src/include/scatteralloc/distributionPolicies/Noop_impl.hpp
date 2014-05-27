@@ -31,6 +31,7 @@
 #include <string>
 
 #include "Noop.hpp"
+#include "../policy_malloc_prefixes.hpp"
 
 namespace PolicyMalloc{
 namespace DistributionPolicies{
@@ -41,11 +42,13 @@ namespace DistributionPolicies{
 
     public:
 
-    __device__ uint32 collect(uint32 bytes){
+    PMMA_ACCELERATOR
+    uint32 collect(uint32 bytes){
       return bytes;
     }
 
-    __device__ void* distribute(void* allocatedMem){
+    PMMA_ACCELERATOR
+    void* distribute(void* allocatedMem){
       return allocatedMem;
     }
 
