@@ -1,19 +1,10 @@
 /*
-  mallocMC: Memory Allocation for Many Core Architecture
-  http://www.icg.tugraz.at/project/mvp
-  https://www.hzdr.de/crp
+  mallocMC: Memory Allocator for Many Core Architectures.
 
-  Copyright (C) 2012 Institute for Computer Graphics and Vision,
-                     Graz University of Technology
-  Copyright (C) 2014 Institute of Radiation Physics,
-                     Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright 2014 Institute of Radiation Physics,
+                 Helmholtz-Zentrum Dresden - Rossendorf
 
-  Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
-              Bernhard Kainz - kainz ( at ) icg.tugraz.at
-              Michael Kenzel - kenzel ( at ) icg.tugraz.at
-              Rene Widera - r.widera ( at ) hzdr.de
-              Axel Huebl - a.huebl ( at ) hzdr.de
-              Carlchristian Eckert - c.eckert ( at ) hzdr.de
+  Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -33,3 +24,42 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+
+#pragma once
+
+#include <assert.h>
+#include <string>
+
+#include "BadAllocException.hpp"
+#include "../mallocMC_prefixes.hpp"
+
+namespace mallocMC{
+namespace OOMPolicies{
+
+  struct BadAllocException
+  {
+    MAMC_ACCELERATOR
+    static void* handleOOM(void* mem){
+#ifdef __CUDACC__
+//#if __CUDA_ARCH__ < 350
+#define PM_EXCEPTIONS_NOT_SUPPORTED_HERE
+//#endif
+#endif
+
+#ifdef PM_EXCEPTIONS_NOT_SUPPORTED_HERE
+#undef PM_EXCEPTIONS_NOT_SUPPORTED_HERE
+      assert(false);
+#else
+      std::bad_alloc exception;
+      throw exception;
+#endif
+      return mem;
+    }
+
+    static std::string classname(){
+      return "BadAllocException";
+    }
+  };
+
+} //namespace OOMPolicies
+} //namespace mallocMC

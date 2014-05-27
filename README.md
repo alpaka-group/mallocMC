@@ -1,10 +1,11 @@
-ScatterAlloc
-============
+mallocMC
+=============
 
-ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU
+mallocMC: Memory Allocator for Many Core Architectures
 
-This project provides a **fast memory manager** for **Nvidia GPUs** with
-compute capability `sm_20` or higher.
+This project provides a framework for **fast memory managers** on **many core
+accelerators**. Currently, it supports **NVIDIA GPUs** of compute capability
+`sm_20` or higher through the ScatterAlloc algorithm.
 
 From http://www.icg.tugraz.at/project/mvp/downloads :
 ```quote
@@ -28,7 +29,7 @@ Our Homepage: https://www.hzdr.de/crp
 About This Repository
 ---------------------
 
-This repository is a
+The currently implemented algorithm is a
 [fork](https://en.wikipedia.org/wiki/Fork_%28software_development%29)
 of the **ScatterAlloc** project from the
 [Managed Volume Processing](http://www.icg.tugraz.at/project/mvp)
