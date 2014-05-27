@@ -39,6 +39,7 @@
 #include <boost/tuple/tuple.hpp>
 
 #include "Shrink.hpp"
+#include "../policy_malloc_prefixes.hpp"
 
 namespace PolicyMalloc{
 namespace AlignmentPolicies{

@@ -31,7 +31,7 @@
 #include <string>
 
 #include "Noop.hpp"
-#include "../policy_malloc_hostclass.hpp"
+#include "../policy_malloc_prefixes.hpp"
 
 namespace PolicyMalloc{
 namespace AlignmentPolicies{
