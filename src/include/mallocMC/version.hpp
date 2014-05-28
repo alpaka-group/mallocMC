@@ -1,5 +1,5 @@
 /*
-  mallocMC: Memory Allocation for Many Core Architecture
+  mallocMC: Memory Allocator for Many Core Architectures.
   http://www.icg.tugraz.at/project/mvp
   https://www.hzdr.de/crp
 
@@ -33,3 +33,16 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+
+#pragma once
+
+/** the ScatterAlloc version: major API changes should be reflected here */
+#define SCATTERALLOC_VERSION_MAJOR 1
+#define SCATTERALLOC_VERSION_MINOR 0
+#define SCATTERALLOC_VERSION_PATCH 2
+
+/** the ScatterAlloc flavor is used to differenciate the releases
+ *  of the Computational Radiation Physics group (crp) from the original
+ *  release of the TU Graz group (mvp)
+ *  This should be useful to avoid versioning conflicts */
+#define SCATTERALLOC_FLAVOR "crp"

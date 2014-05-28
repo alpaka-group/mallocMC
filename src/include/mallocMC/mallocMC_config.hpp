@@ -78,3 +78,18 @@ typedef mallocMC::Allocator<
   mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
   mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>
   > ScatterAllocator;
+
+typedef mallocMC::Allocator< 
+  mallocMC::CreationPolicies::OldMalloc,
+  mallocMC::DistributionPolicies::Noop,
+  mallocMC::OOMPolicies::ReturnNull,
+  mallocMC::ReservePoolPolicies::CudaSetLimits,
+  mallocMC::AlignmentPolicies::Noop
+  > OldAllocator;
+
+// use "ScatterAllocator" as Allocator
+MALLOCMC_SET_ALLOCATOR_TYPE(ScatterAllocator)
+
+//MALLOCMC_SET_ALLOCATOR_TYPE(OldAllocator)
+
+//MALLOCMC_OVERWRITE_MALLOC()

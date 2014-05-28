@@ -1,19 +1,10 @@
 /*
-  mallocMC: Memory Allocation for Many Core Architecture
-  http://www.icg.tugraz.at/project/mvp
-  https://www.hzdr.de/crp
+  mallocMC: Memory Allocator for Many Core Architectures.
 
-  Copyright (C) 2012 Institute for Computer Graphics and Vision,
-                     Graz University of Technology
-  Copyright (C) 2014 Institute of Radiation Physics,
-                     Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright 2014 Institute of Radiation Physics,
+                 Helmholtz-Zentrum Dresden - Rossendorf
 
-  Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
-              Bernhard Kainz - kainz ( at ) icg.tugraz.at
-              Michael Kenzel - kenzel ( at ) icg.tugraz.at
-              Rene Widera - r.widera ( at ) hzdr.de
-              Axel Huebl - a.huebl ( at ) hzdr.de
-              Carlchristian Eckert - c.eckert ( at ) hzdr.de
+  Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -33,3 +24,21 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+
+#pragma once
+
+namespace mallocMC{
+namespace ReservePoolPolicies{
+
+  /**
+   * @brief set CUDA internal heap for device-side malloc calls
+   *
+   * This ReservePoolPolicy is intended for use with CUDA capable accelerators
+   * that support at least compute capability 2.0. It should be used in
+   * conjunction with a CreationPolicy that actually requires the CUDA-internal
+   * heap to be sized by calls to cudaDeviceSetLimit()
+   */
+  struct CudaSetLimits;
+
+} //namespace ReservePoolPolicies
+} //namespace mallocMC
