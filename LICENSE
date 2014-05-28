@@ -1,5 +1,9 @@
 /*
-  mallocMC: Memory Allocation for Many Core Architecture
+  mallocMC: Memory Allocation for Many Core Architectures
+  
+      based on the work of ScatterAlloc: 
+      Massively Parallel Dynamic Memory Allocation for the GPU
+
   http://www.icg.tugraz.at/project/mvp
   https://www.hzdr.de/crp
 
