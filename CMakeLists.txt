@@ -1,4 +1,4 @@
-project(ScatterAlloc)
+project(mallocMC)
 cmake_minimum_required(VERSION 2.8.5)
 
 # helper for libs and packages
@@ -48,29 +48,25 @@ INSTALL(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/include/."
   DESTINATION include
   PATTERN ".git" EXCLUDE
-  PATTERN "policy_malloc_config.hpp" EXCLUDE
+  PATTERN "mallocMC_config.hpp" EXCLUDE
   )
 
 
 ###############################################################################
 # Executables
 ###############################################################################
-add_custom_target(examples DEPENDS PolicyAllocExample01 PolicyAllocExample02 VerifyHeap)
+add_custom_target(examples DEPENDS mallocMC_Example01 mallocMC_Example02 VerifyHeap)
 
-cuda_add_executable(PolicyAllocExample
+cuda_add_executable(mallocMC_Example01
                     EXCLUDE_FROM_ALL
-                    examples/policy_example.cu )
-cuda_add_executable(PolicyAllocExample01
+                    examples/mallocMC_example01.cu )
+cuda_add_executable(mallocMC_Example02
                     EXCLUDE_FROM_ALL
-                    examples/policy_example01.cu )
-cuda_add_executable(PolicyAllocExample02
-                    EXCLUDE_FROM_ALL
-                    examples/policy_example02.cu )
+                    examples/mallocMC_example02.cu )
 cuda_add_executable(VerifyHeap
                     EXCLUDE_FROM_ALL
                     tests/verify_heap.cu )
 
-target_link_libraries(PolicyAllocExample ${LIBS})
-target_link_libraries(PolicyAllocExample01 ${LIBS})
-target_link_libraries(PolicyAllocExample02 ${LIBS})
+target_link_libraries(mallocMC_Example01 ${LIBS})
+target_link_libraries(mallocMC_Example02 ${LIBS})
 target_link_libraries(VerifyHeap ${LIBS})

@@ -1,5 +1,5 @@
 /*
-  ScatterAlloc: Massively Parallel Dynamic Memory Allocation for the GPU.
+  mallocMC: Memory Allocator for Many Core Architectures.
   https://www.hzdr.de/crp
 
   Copyright 2014 Institute of Radiation Physics,
@@ -47,12 +47,12 @@
 #include <vector>
 
 //include the Heap with the arguments given in the config
-#include "src/include/scatteralloc/policy_malloc_utils.hpp"
+#include "src/include/mallocMC/mallocMC_utils.hpp"
 #include "verify_heap_config.hpp"
 
 //use ScatterAllocator to replace malloc/free
-POLICYMALLOC_SET_ALLOCATOR_TYPE(ScatterAllocator)
-POLICYMALLOC_OVERWRITE_MALLOC()
+MALLOCMC_SET_ALLOCATOR_TYPE(ScatterAllocator)
+MALLOCMC_OVERWRITE_MALLOC()
 
 // global variable for verbosity, might change due to user input '--verbose'
 bool verbose = false;
@@ -331,7 +331,7 @@ __global__ void allocAll(
 
   unsigned long long sum=0;
   while(true){
-    allocElem_t* p = (allocElem_t*) PolicyMalloc::malloc(sizeof(allocElem_t) * ELEMS_PER_SLOT);
+    allocElem_t* p = (allocElem_t*) mallocMC::malloc(sizeof(allocElem_t) * ELEMS_PER_SLOT);
     if(p == NULL) break;
 
     size_t pos = atomicAdd(counter,1);
@@ -364,7 +364,7 @@ __global__ void deallocAll(
   while(true){
     size_t pos = atomicAdd(counter,1);
     if(pos >= nSlots) break;
-    PolicyMalloc::free(data[pos]);
+    mallocMC::free(data[pos]);
   }
 }
 
@@ -386,7 +386,7 @@ __global__ void damageElement(allocElem_t** data){
 /**
  * wrapper function to allocate memory on device
  *
- * allocates memory with scatterAlloc. Returns the number of
+ * allocates memory with mallocMC. Returns the number of
  * created elements as well as the sum of these elements
  *
  * @param d_testData the datastructure which will hold
@@ -411,15 +411,15 @@ void allocate(
   unsigned long long *d_sum;
   unsigned long long *d_nSlots;
 
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_sum,sizeof(unsigned long long)));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_nSlots, sizeof(unsigned long long)));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(d_sum,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(d_nSlots,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_sum,sizeof(unsigned long long)));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_nSlots, sizeof(unsigned long long)));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_sum,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_nSlots,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
 
   CUDA_CHECK_KERNEL_SYNC(allocAll<<<blocks,threads>>>(d_testData,d_nSlots,d_sum));
 
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(h_sum,d_sum,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(h_nSlots,d_nSlots,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(h_sum,d_sum,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(h_nSlots,d_nSlots,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
   cudaFree(d_sum);
   cudaFree(d_nSlots);
   dout() << "done" << std::endl;
@@ -454,12 +454,12 @@ bool verify(
   unsigned long long *d_sum;
   unsigned long long *d_counter;
 
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_sum, sizeof(unsigned long long)));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_counter, sizeof(unsigned long long)));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_correct, sizeof(int)));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(d_sum,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(d_counter,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(d_correct,&h_correct,sizeof(int),cudaMemcpyHostToDevice));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_sum, sizeof(unsigned long long)));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_counter, sizeof(unsigned long long)));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_correct, sizeof(int)));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_sum,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_counter,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_correct,&h_correct,sizeof(int),cudaMemcpyHostToDevice));
 
   // can be replaced by a call to check_content_fast,
   // if the gaussian sum (see below) is not used and you
@@ -471,7 +471,7 @@ bool verify(
         static_cast<size_t>(nSlots),
         d_correct
         ));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(&h_correct,d_correct,sizeof(int),cudaMemcpyDeviceToHost));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_correct,d_correct,sizeof(int),cudaMemcpyDeviceToHost));
 
   // This only works, if the type "allocElem_t"
   // can hold all the IDs (usually unsigned long long)
@@ -479,8 +479,8 @@ bool verify(
   dout() << "verifying on host...";
   unsigned long long h_sum, h_counter;
   unsigned long long gaussian_sum = (ELEMS_PER_SLOT*nSlots * (ELEMS_PER_SLOT*nSlots-1))/2;
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(&h_sum,d_sum,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(&h_counter,d_counter,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_sum,d_sum,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_counter,d_counter,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
   if(gaussian_sum != h_sum){
     dout() << "\nGaussian Sum doesn't match: is " << h_sum;
     dout() << " (should be " << gaussian_sum << ")" << std::endl;
@@ -588,7 +588,7 @@ void print_machine_readable(
 
 
 /**
- * Verify the heap allocation of ScatterAlloc
+ * Verify the heap allocation of mallocMC
  *
  * Allocates as much memory as the heap allows. Make sure that allocated
  * memory actually holds the correct values without corrupting them. Will
@@ -636,11 +636,11 @@ bool run_heap_verification(
   dout() << "maximum of elements:   "     << maxSlots                           << std::endl;
 
   // initializing the heap
-  PolicyMalloc::initHeap(heapSize);
+  mallocMC::initHeap(heapSize);
   allocElem_t** d_testData;
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_testData, nPointers*sizeof(allocElem_t*)));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_testData, nPointers*sizeof(allocElem_t*)));
 
-  // allocating with scatterAlloc
+  // allocating with mallocMC
   unsigned long long usedSlots = 0;
   unsigned long long sumAllocElems = 0;
   allocate(d_testData,&usedSlots,&sumAllocElems,blocks,threads);
@@ -668,12 +668,12 @@ bool run_heap_verification(
   // release all memory
   dout() << "deallocation...        ";
   unsigned long long* d_dealloc_counter;
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_dealloc_counter, sizeof(unsigned long long)));
-  SCATTERALLOC_CUDA_CHECKED_CALL(cudaMemcpy(d_dealloc_counter,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_dealloc_counter, sizeof(unsigned long long)));
+  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_dealloc_counter,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
   CUDA_CHECK_KERNEL_SYNC(deallocAll<<<blocks,threads>>>(d_testData,d_dealloc_counter,static_cast<size_t>(usedSlots)));
   cudaFree(d_dealloc_counter);
   cudaFree(d_testData);
-  PolicyMalloc::finalizeHeap();
+  mallocMC::finalizeHeap();
 
   dout() << "done "<< std::endl;
 
