@@ -131,7 +131,22 @@ namespace PolicyMalloc{
       void* initHeap(size_t size){
         pool = ReservePoolPolicy::setMemPool(size);
         boost::tie(pool,size) = AlignmentPolicy::alignPool(pool,size);
-        return CreationPolicy::initHeap(*this,pool,size);
+        void* h = CreationPolicy::initHeap(*this,pool,size);
+
+        /*
+        * This is a workaround for a bug with getAvailSlotsPoly:
+        * Due to some problems with conditional compilation (possibly a CUDA bug),
+        * this host function must explicitly be used from inside a host
+        * function at least once. Doing it here guarantees that it is executed
+        * and that this execution happens on the host. Usually, simply defining
+        * this inside a host function (without actually executing it) would be
+        * sufficient. However, due to the template nature of policy based
+        * design, functions are only compiled if they are actually used.
+        */
+        if(CreationPolicy::providesAvailableSlots::value)
+          CreationPolicy::getAvailableSlotsHost(1024,*this); //actual slot size does not matter
+
+        return h;
       }
 
       PMMA_HOST
@@ -161,9 +176,6 @@ namespace PolicyMalloc{
     private:
       PMMA_HOST PMMA_ACCELERATOR
       unsigned getAvailSlotsPoly(size_t slotSize, boost::mpl::bool_<false>){
-#ifdef __CUDA_ARCH__
-        assert(false);
-#endif
         return 0;
       }
 
