@@ -1,9 +1,5 @@
 /*
-  mallocMC: Memory Allocation for Many Core Architectures
-  
-      based on the work of ScatterAlloc: 
-      Massively Parallel Dynamic Memory Allocation for the GPU
-
+  mallocMC: Memory Allocator for Many Core Architectures.
   http://www.icg.tugraz.at/project/mvp
   https://www.hzdr.de/crp
 
@@ -37,3 +33,15 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+
+#pragma once
+
+/** the mallocMC version: major API changes should be reflected here */
+#define MALLOCMC_VERSION_MAJOR 2
+#define MALLOCMC_VERSION_MINOR 0
+#define MALLOCMC_VERSION_PATCH 0
+
+/** the mallocMC flavor is used to differenciate the releases of the
+ *  Computational Radiation Physics group (crp) from other releases
+ *  This should be useful to avoid versioning conflicts */
+#define MALLOCMC_FLAVOR "crp"

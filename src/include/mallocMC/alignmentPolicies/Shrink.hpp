@@ -1,11 +1,6 @@
 /*
-  mallocMC: Memory Allocation for Many Core Architectures
-  
-      based on the work of ScatterAlloc: 
-      Massively Parallel Dynamic Memory Allocation for the GPU
-
+  mallocMC: Memory Allocator for Many Core Architectures.
   http://www.icg.tugraz.at/project/mvp
-  https://www.hzdr.de/crp
 
   Copyright (C) 2012 Institute for Computer Graphics and Vision,
                      Graz University of Technology
@@ -13,10 +8,6 @@
                      Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
-              Bernhard Kainz - kainz ( at ) icg.tugraz.at
-              Michael Kenzel - kenzel ( at ) icg.tugraz.at
-              Rene Widera - r.widera ( at ) hzdr.de
-              Axel Huebl - a.huebl ( at ) hzdr.de
               Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -37,3 +28,34 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+
+#pragma once
+
+#include <boost/mpl/int.hpp>
+
+namespace mallocMC{
+namespace AlignmentPolicies{
+
+namespace ShrinkConfig{
+  struct DefaultShrinkConfig{
+    typedef boost::mpl::int_<16> dataAlignment;
+  };
+}
+
+  /**
+   * @brief Provides proper alignment of pool and pads memory requests
+   *
+   * This AlignmentPolicy is based on ideas from ScatterAlloc
+   * (http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6339604). It
+   * performs alignment operations on big memory pools and requests to allocate
+   * memory. Memory pools are truncated at the beginning until the pointer to
+   * the memory fits the alignment. Requests to allocate memory are padded
+   * until their size is a multiple of the alignment.
+   *
+   * @tparam T_Config (optional) The alignment to use
+   */
+  template<typename T_Config = ShrinkConfig::DefaultShrinkConfig>
+  class Shrink;
+
+} //namespace AlignmentPolicies
+} //namespace mallocMC
