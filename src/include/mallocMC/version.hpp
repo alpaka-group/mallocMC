@@ -36,13 +36,12 @@
 
 #pragma once
 
-/** the ScatterAlloc version: major API changes should be reflected here */
-#define SCATTERALLOC_VERSION_MAJOR 1
-#define SCATTERALLOC_VERSION_MINOR 0
-#define SCATTERALLOC_VERSION_PATCH 2
+/** the mallocMC version: major API changes should be reflected here */
+#define MALLOCMC_VERSION_MAJOR 2
+#define MALLOCMC_VERSION_MINOR 0
+#define MALLOCMC_VERSION_PATCH 0
 
-/** the ScatterAlloc flavor is used to differenciate the releases
- *  of the Computational Radiation Physics group (crp) from the original
- *  release of the TU Graz group (mvp)
+/** the mallocMC flavor is used to differenciate the releases of the
+ *  Computational Radiation Physics group (crp) from other releases
  *  This should be useful to avoid versioning conflicts */
-#define SCATTERALLOC_FLAVOR "crp"
+#define MALLOCMC_FLAVOR "crp"

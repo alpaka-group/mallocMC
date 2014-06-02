@@ -1,5 +1,32 @@
-Change Log / Release Log for ScatterAlloc
+Change Log / Release Log for mallocMC
 ================================================================
+
+2.0.0crp
+-------------
+**Date:** 2014-06-02
+
+This release introduces mallocMC, which contains the previous algorithm and
+much code from ScatterAlloc 1.0.2crp.
+We closed all issues documented in
+[Milestone *Get Lib ready for PIConGPU*](https://github.com/ComputationalRadiationPhysics/mallocMC/issues?milestone=2&state=closed)
+
+### Changes to ScatterAlloc 1.0.2crp
+
+**Features**
+ - completely split into policies #17
+ - configuration through structs instead of macro #17
+ - function `getAvailableSlots()` #5
+ - selectable data alignment #14
+ - function `finalizeHeap()` #11
+
+**Bug fixes:**
+ - build warning for cmake #33
+
+**Misc:**
+ - verification code and examples #35
+ - install routines #4
+ - See the full changes at https://github.com/ComputationalRadiationPhysics/mallocMC/compare/1.0.2crp...fa80d03e5f168cf35c6d18857830a1e0883f88c6
+
 
 1.0.2crp
 -------------
