@@ -45,8 +45,8 @@ Branches
 
 | *branch*    | *state* | *description*           |
 | ----------- | ------- | ----------------------- |
-| **master**  | [![Build Status Master](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc.png?branch=master)](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc "master") | our stable new releases |
-| **dev**     | [![Build Status Development](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc.png?branch=dev)](https://travis-ci.org/ComputationalRadiationPhysics/scatteralloc "dev") | our development branch - start and merge new branches here |
+| **master**  | [![Build Status Master](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC.png?branch=master)](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC "master") | our stable new releases |
+| **dev**     | [![Build Status Development](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC.png?branch=dev)](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC "dev") | our development branch - start and merge new branches here |
 | **tugraz**  | n/a | kind-of the "upstream" branch - only used to receive new releases from the TU Graz group |
 
 

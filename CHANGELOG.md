@@ -7,7 +7,7 @@ Change Log / Release Log for ScatterAlloc
 
 This is our first bug fix release.
 We closed all issues documented in
-[Milestone *Bug fixes*](https://github.com/ComputationalRadiationPhysics/scatteralloc/issues?milestone=1&state=closed)
+[Milestone *Bug fixes*](https://github.com/ComputationalRadiationPhysics/mallocMC/issues?milestone=1&state=closed)
 
 ### Changes to 1.0.1
 
