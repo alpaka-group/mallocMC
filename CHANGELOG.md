@@ -6,7 +6,9 @@ Change Log / Release Log for mallocMC
 **Date:** 2014-06-02
 
 This release introduces mallocMC, which contains the previous algorithm and
-much code from ScatterAlloc 1.0.2crp.
+much code from ScatterAlloc 1.0.2crp. The project was renamed due to massive
+restructurization and because the code uses ScatterAlloc as a reference
+algorithm, but can be extended to include other allocators in the future.
 We closed all issues documented in
 [Milestone *Get Lib ready for PIConGPU*](https://github.com/ComputationalRadiationPhysics/mallocMC/issues?milestone=2&state=closed)
 
@@ -25,7 +27,7 @@ We closed all issues documented in
 **Misc:**
  - verification code and examples #35
  - install routines #4
- - See the full changes at https://github.com/ComputationalRadiationPhysics/mallocMC/compare/1.0.2crp...fa80d03e5f168cf35c6d18857830a1e0883f88c6
+ - See the full changes at https://github.com/ComputationalRadiationPhysics/mallocMC/compare/1.0.2crp...2.0.0crp
 
 
 1.0.2crp
