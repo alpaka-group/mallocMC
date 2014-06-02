@@ -1,11 +1,22 @@
 mallocMC
 =============
 
-mallocMC: Memory Allocator for Many Core Architectures
+mallocMC: *Memory Allocator for Many Core Architectures*
 
 This project provides a framework for **fast memory managers** on **many core
 accelerators**. Currently, it supports **NVIDIA GPUs** of compute capability
-`sm_20` or higher through the ScatterAlloc algorithm.
+`sm_20` or higher through the *ScatterAlloc* algorithm.
+
+
+On the ScatterAlloc Algorithm
+-----------------------------
+
+This library implements the *ScatterAlloc* algorithm, originally
+[forked](https://en.wikipedia.org/wiki/Fork_%28software_development%29)
+from the **ScatterAlloc** project, developed by the
+[Managed Volume Processing](http://www.icg.tugraz.at/project/mvp)
+group at [Institute for Computer Graphics and Vision](http://www.icg.tugraz.at),
+TU Graz (kudos!).
 
 From http://www.icg.tugraz.at/project/mvp/downloads :
 ```quote
@@ -26,20 +37,6 @@ Original Homepage: http://www.icg.tugraz.at/project/mvp
 Our Homepage: https://www.hzdr.de/crp
 
 
-About This Repository
----------------------
-
-The currently implemented algorithm is a
-[fork](https://en.wikipedia.org/wiki/Fork_%28software_development%29)
-of the **ScatterAlloc** project from the
-[Managed Volume Processing](http://www.icg.tugraz.at/project/mvp)
-group at [Institute for Computer Graphics and Vision](http://www.icg.tugraz.at),
-TU Graz (kudos!).
-
-Our aim is to improve the implementation, add new features and to fix some
-minor bugs.
-
-
 Branches
 --------
 
@@ -47,7 +44,7 @@ Branches
 | ----------- | ------- | ----------------------- |
 | **master**  | [![Build Status Master](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC.png?branch=master)](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC "master") | our stable new releases |
 | **dev**     | [![Build Status Development](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC.png?branch=dev)](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC "dev") | our development branch - start and merge new branches here |
-| **tugraz**  | n/a | kind-of the "upstream" branch - only used to receive new releases from the TU Graz group |
+| **tugraz**  | n/a | *ScatterAlloc* "upstream" branch: not backwards compatible mirror for algorithmic changes |
 
 
 Install
