@@ -82,5 +82,5 @@ find_package(mallocMC REQUIRED)
 # where to find headers (-I includes for compiler)
 include_directories(SYSTEM ${mallocMC_INCLUDE_DIRS})
 
-# add_executable(yourBinary ${SOURCES})
-  ```
+add_executable(yourBinary ${SOURCES})
+```
