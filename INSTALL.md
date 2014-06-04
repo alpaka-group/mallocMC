@@ -50,7 +50,7 @@ This is an example how to compile `mallocMC` and test the example code snippets
 Linking to your Project
 -----------------------
 
-To use mallocMC in your project, you must include the header `mallocMC.hpp` and
+To use mallocMC in your project, you must include the header `mallocMC/mallocMC.hpp` and
 add the correct include path.
 
 Because we are linking to Boost and CUDA, the following **external dependencies** must be linked:
@@ -74,13 +74,18 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
 # find the packages that are required by mallocMC. This has to be done BEFORE
 # loading mallocMC
 find_package(Boost REQUIRED)
+set(LIBS ${LIBS} ${Boost_LIBRARIES})
+
 find_package(CUDA REQUIRED)
+cuda_include_directories(${CUDA_INCLUDE_DIRS})
 
 # find mallocMC installation
-find_package(mallocMC REQUIRED)
+find_package(mallocMC 2.0.0 REQUIRED)
 
 # where to find headers (-I includes for compiler)
-include_directories(SYSTEM ${mallocMC_INCLUDE_DIRS})
+include_directories(SYSTEM ${mallocMC_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_executable(yourBinary ${SOURCES})
+
+target_link_libraries(yourBinary ${LIBS})
 ```
