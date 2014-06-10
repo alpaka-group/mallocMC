@@ -781,9 +781,9 @@ namespace ScatterKernelDetail{
         }
       }
 
-      __device__ bool isOOM(void* p){
-        // all threads in a warp return get NULL
-        return  32 == __popc(__ballot(p == NULL));
+      __device__ bool isOOM(void* p, size_t s){
+        // one thread that requested memory returned null
+        return  s && (p == NULL);
       }
 
 
