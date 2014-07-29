@@ -869,7 +869,8 @@ namespace ScatterKernelDetail{
           if(gid > 0) return 0; //do this serially
           uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
           uint32 freecount = 0;
-          for(uint32 currentpage = _numpages; currentpage > 0; --currentpage){ //this already includes all superblocks
+          for(uint32 currentpage = _numpages; currentpage > 0;){ //this already includes all superblocks
+            --currentpage;
             if(_ptes[currentpage].chunksize == 0){
               if(++freecount == pagestoalloc){
                 freecount = 0;
