@@ -320,7 +320,7 @@ namespace ScatterKernelDetail{
       __device__ inline void* tryUsePage(uint32 page, uint32 chunksize)
       {
 
-        void* chunk_ptr = NULL
+        void* chunk_ptr = NULL;
 
         //increse the fill level
         uint32 filllevel = atomicAdd((uint32*)&(_ptes[page].count), 1);
