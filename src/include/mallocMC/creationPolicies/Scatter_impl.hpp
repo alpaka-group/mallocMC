@@ -319,6 +319,9 @@ namespace ScatterKernelDetail{
        */
       __device__ inline void* tryUsePage(uint32 page, uint32 chunksize)
       {
+
+        void* chunk_ptr = NULL;
+
         //increse the fill level
         uint32 filllevel = atomicAdd((uint32*)&(_ptes[page].count), 1);
         //recheck chunck size (it could be that the page got freed in the meanwhile...)
@@ -333,19 +336,21 @@ namespace ScatterKernelDetail{
             fullsegments = pagesize / segmentsize;
             additional_chunks = max(0,(int)pagesize - (int)fullsegments*segmentsize - (int)sizeof(uint32))/chunksize;
             if(filllevel < fullsegments * 32 + additional_chunks)
-              return addChunkHierarchy(chunksize, fullsegments, additional_chunks, page);
+              chunk_ptr = addChunkHierarchy(chunksize, fullsegments, additional_chunks, page);
           }
           else
           {
             uint32 chunksinpage = min(pagesize / chunksize, 32);
             if(filllevel < chunksinpage)
-              return addChunkNoHierarchy(chunksize, page, chunksinpage);
+              chunk_ptr = addChunkNoHierarchy(chunksize, page, chunksinpage);
           }
         }
 
         //this one is full/not useable
-        atomicSub((uint32*)&(_ptes[page].count), 1);
-        return 0;
+        if(chunk_ptr == NULL)
+          atomicSub((uint32*)&(_ptes[page].count), 1);
+
+        return chunk_ptr;
       }
 
 
