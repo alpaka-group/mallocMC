@@ -718,7 +718,7 @@ namespace ScatterKernelDetail{
           ptes[i].init();
           page[i].init();
         }
-        for(uint32 i = linid; i < numregions; i+= numregions)
+        for(uint32 i = linid; i < numregions; i+= threads)
           regions[i] = 0;
 
         if(linid == 0)
