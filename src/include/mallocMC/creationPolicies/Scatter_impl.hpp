@@ -449,9 +449,8 @@ namespace ScatterKernelDetail{
           uint32* onpagemasks = (uint32*)(_page[page].data + chunksize*(fullsegments*32 + additional_chunks));
           uint32 old = atomicAnd(onpagemasks + segment, ~(1 << withinsegment));
 
-          uint32 elementsinsegment = segment < fullsegments ? 32 : additional_chunks;
-          if(__popc(old) == elementsinsegment)
-            atomicAnd((uint32*)&_ptes[page].bitmask, ~(1 << segment));
+          // always do this, since it might fail due to a race-condition with addChunkHierarchy
+          atomicAnd((uint32*)&_ptes[page].bitmask, ~(1 << segment));
         }
         else
         {
