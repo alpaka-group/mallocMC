@@ -74,7 +74,7 @@ namespace Shrink2NS{
 #endif
     static const uint32 dataAlignment = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
 
-    BOOST_STATIC_ASSERT(dataAlignment > 0); 
+    BOOST_STATIC_ASSERT(static_cast<uint32>(dataAlignment) > 0);
     //dataAlignment must also be a power of 2!
     BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
 
