@@ -97,7 +97,7 @@ namespace DistributionPolicies{
         //second half: make sure that all coalesced allocations can fit within one page
         //necessary for offset calculation
         bool coalescible = bytes > 0 && bytes < (pagesize / 32);
-        uint32 threadcount = __popc(__ballot(coalescible));
+        threadcount = __popc(__ballot(coalescible));
 
         if (coalescible && threadcount > 1)
         {
