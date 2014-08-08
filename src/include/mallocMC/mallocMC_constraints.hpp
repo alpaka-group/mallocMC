@@ -63,8 +63,8 @@ namespace mallocMC{
      typename T_GetHeapPolicy,
      typename T_AlignmentPolicy
        >
-  class PolicyConstraints{
-      PolicyCheck2<T_CreationPolicy, T_DistributionPolicy> c;
+  struct PolicyConstraints:PolicyCheck2<T_CreationPolicy, T_DistributionPolicy>{
+
   };
 
 
