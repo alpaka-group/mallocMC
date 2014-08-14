@@ -112,7 +112,7 @@ namespace mallocMC{
         bytes            = AlignmentPolicy::applyPadding(bytes);
         uint32 req_size  = distributionPolicy.collect(bytes);
         void* memBlock   = CreationPolicy::create(req_size);
-        const bool oom   = CreationPolicy::isOOM(memBlock);
+        const bool oom   = CreationPolicy::isOOM(memBlock, req_size);
         if(oom) memBlock = OOMPolicy::handleOOM(memBlock);
         void* myPart     = distributionPolicy.distribute(memBlock);
 
