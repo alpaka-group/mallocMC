@@ -187,15 +187,11 @@ namespace ScatterKernelDetail{
          * bit fields when the page is used for a small chunk size
          * @param previous_chunksize the chunksize which was uses for the page before
          */
-        __device__ void init(uint32 previous_chunksize = 0)
+        __device__ void init()
         {
-          //TODO: we can speed this up for pages being freed, because we know the
-          //chunksize used before (these bits must be zero again) 
-
-          //init the entire data which can hold bitfields 
-          uint32 max_bits = min(32*32,pagesize/minChunkSize1);
-          uint32 max_entries = divup<uint32>(max_bits/8,sizeof(uint32))*sizeof(uint32);
-          uint32* write = (uint32*)(data+(pagesize-max_entries));
+          //clear the entire data which can hold bitfields
+          uint32 first_possible_metadata = 32*HierarchyThreshold;
+          uint32* write = (uint32*)(data+(pagesize-first_possible_metadata));
           while(write < (uint32*)(data + pagesize))
             *write++ = 0;
         }
