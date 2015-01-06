@@ -37,19 +37,19 @@ namespace mallocMC{
   /** The default PolicyCheckers (do always succeed)
    */
   template<typename Policy1>
-  struct PolicyCheck1{};
+  class PolicyCheck1{};
 
   template<typename Policy1, typename Policy2>
-  struct PolicyCheck2{};
+  class PolicyCheck2{};
 
   template<typename Policy1, typename Policy2, typename Policy3>
-  struct PolicyCheck3{};
+  class PolicyCheck3{};
 
   template<typename Policy1, typename Policy2, typename Policy3, typename Policy4>
-  struct PolicyCheck4{};
+  class PolicyCheck4{};
 
   template<typename Policy1, typename Policy2, typename Policy3, typename Policy4, typename Policy5>
-  struct PolicyCheck5{};
+  class PolicyCheck5{};
 
 
   /** Enforces constraints on policies or combinations of polices
@@ -63,7 +63,8 @@ namespace mallocMC{
      typename T_GetHeapPolicy,
      typename T_AlignmentPolicy
        >
-  struct PolicyConstraints:PolicyCheck2<T_CreationPolicy, T_DistributionPolicy>{
+
+  class PolicyConstraints:PolicyCheck2<T_CreationPolicy, T_DistributionPolicy>{
 
   };
 
@@ -75,7 +76,7 @@ namespace mallocMC{
    * the same value for their "pagesize"-parameter.
    */
   template<typename x, typename y, typename z >
-  struct PolicyCheck2<
+  class PolicyCheck2<
     typename CreationPolicies::Scatter<x,y>,
     typename DistributionPolicies::XMallocSIMD<z> 
   >{
