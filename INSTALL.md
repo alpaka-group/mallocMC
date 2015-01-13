@@ -80,7 +80,7 @@ find_package(CUDA REQUIRED)
 cuda_include_directories(${CUDA_INCLUDE_DIRS})
 
 # find mallocMC installation
-find_package(mallocMC 2.0.0 REQUIRED)
+find_package(mallocMC 2.0.1 REQUIRED)
 
 # where to find headers (-I includes for compiler)
 include_directories(SYSTEM ${mallocMC_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
