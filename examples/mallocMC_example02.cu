@@ -92,9 +92,6 @@ typedef mallocMC::Allocator<
 // use "ScatterAllocator" as mallocMC
 MALLOCMC_SET_ALLOCATOR_TYPE(ScatterAllocator)
 
-// replace all standard malloc()-calls on the device by mallocMC calls
-// This will not work with the CreationPolicy "OldMalloc"!
-MALLOCMC_OVERWRITE_MALLOC()
 
 ///////////////////////////////////////////////////////////////////////////////
 // End of mallocMC configuration
@@ -108,7 +105,7 @@ int main()
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
 
-  if( deviceProp.major < 2 ) {
+  if( deviceProp.major < int(2) ) {
     std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
     std::cerr << deviceProp.major << "."<< deviceProp.minor << ")" << std::endl;
     return 1;
@@ -128,20 +125,18 @@ __device__ int** c;
 
 
 __global__ void createArrays(int x, int y){
-  a = (int**) malloc(sizeof(int*) * x*y); 
-  b = (int**) malloc(sizeof(int*) * x*y); 
-  c = (int**) malloc(sizeof(int*) * x*y); 
+  a = (int**) mallocMC::malloc(sizeof(int*) * x*y);
+  b = (int**) mallocMC::malloc(sizeof(int*) * x*y);
+  c = (int**) mallocMC::malloc(sizeof(int*) * x*y);
 }
 
 
 __global__ void fillArrays(int length, int* d){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
 
-  // using the MALLOCMC_OVERWRITE_MALLOC() macro
-  // allows also the use of "new" 
-  a[id] = new int[length];
-  b[id] = new int[length];
-  c[id] = new int[length];
+  a[id] = (int*) mallocMC::malloc(sizeof(int)*length);
+  b[id] = (int*) mallocMC::malloc(sizeof(int)*length);
+  c[id] = (int*) mallocMC::malloc(sizeof(int)*length);
   
   for(int i=0 ; i<length; ++i){
     a[id][i] = id*length+i; 
@@ -163,9 +158,9 @@ __global__ void addArrays(int length, int* d){
 
 __global__ void freeArrays(){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
-  delete(a[id]);
-  delete(b[id]);
-  delete(c[id]);
+  mallocMC::free(a[id]);
+  mallocMC::free(b[id]);
+  mallocMC::free(c[id]);
 }
 
 
@@ -174,7 +169,7 @@ void run()
   size_t block = 32;
   size_t grid = 32;
   int length = 100;
-  assert(length<= block*grid); //necessary for used algorithm
+  assert((unsigned)length <= block*grid); //necessary for used algorithm
 
   //init the heap
   std::cerr << "initHeap...";
