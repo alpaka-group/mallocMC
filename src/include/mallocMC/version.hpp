@@ -39,7 +39,7 @@
 /** the mallocMC version: major API changes should be reflected here */
 #define MALLOCMC_VERSION_MAJOR 2
 #define MALLOCMC_VERSION_MINOR 0
-#define MALLOCMC_VERSION_PATCH 0
+#define MALLOCMC_VERSION_PATCH 1
 
 /** the mallocMC flavor is used to differenciate the releases of the
  *  Computational Radiation Physics group (crp) from other releases
