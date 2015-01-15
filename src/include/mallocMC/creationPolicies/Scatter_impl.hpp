@@ -187,15 +187,11 @@ namespace ScatterKernelDetail{
          * bit fields when the page is used for a small chunk size
          * @param previous_chunksize the chunksize which was uses for the page before
          */
-        __device__ void init(uint32 previous_chunksize = 0)
+        __device__ void init()
         {
-          //TODO: we can speed this up for pages being freed, because we know the
-          //chunksize used before (these bits must be zero again) 
-
-          //init the entire data which can hold bitfields 
-          uint32 max_bits = min(32*32,pagesize/minChunkSize1);
-          uint32 max_entries = divup<uint32>(max_bits/8,sizeof(uint32))*sizeof(uint32);
-          uint32* write = (uint32*)(data+(pagesize-max_entries));
+          //clear the entire data which can hold bitfields
+          uint32 first_possible_metadata = 32*HierarchyThreshold;
+          uint32* write = (uint32*)(data+(pagesize-first_possible_metadata));
           while(write < (uint32*)(data + pagesize))
             *write++ = 0;
         }
@@ -319,6 +315,9 @@ namespace ScatterKernelDetail{
        */
       __device__ inline void* tryUsePage(uint32 page, uint32 chunksize)
       {
+
+        void* chunk_ptr = NULL;
+
         //increse the fill level
         uint32 filllevel = atomicAdd((uint32*)&(_ptes[page].count), 1);
         //recheck chunck size (it could be that the page got freed in the meanwhile...)
@@ -333,19 +332,21 @@ namespace ScatterKernelDetail{
             fullsegments = pagesize / segmentsize;
             additional_chunks = max(0,(int)pagesize - (int)fullsegments*segmentsize - (int)sizeof(uint32))/chunksize;
             if(filllevel < fullsegments * 32 + additional_chunks)
-              return addChunkHierarchy(chunksize, fullsegments, additional_chunks, page);
+              chunk_ptr = addChunkHierarchy(chunksize, fullsegments, additional_chunks, page);
           }
           else
           {
             uint32 chunksinpage = min(pagesize / chunksize, 32);
             if(filllevel < chunksinpage)
-              return addChunkNoHierarchy(chunksize, page, chunksinpage);
+              chunk_ptr = addChunkNoHierarchy(chunksize, page, chunksinpage);
           }
         }
 
         //this one is full/not useable
-        atomicSub((uint32*)&(_ptes[page].count), 1);
-        return 0;
+        if(chunk_ptr == NULL)
+          atomicSub((uint32*)&(_ptes[page].count), 1);
+
+        return chunk_ptr;
       }
 
 
@@ -444,9 +445,8 @@ namespace ScatterKernelDetail{
           uint32* onpagemasks = (uint32*)(_page[page].data + chunksize*(fullsegments*32 + additional_chunks));
           uint32 old = atomicAnd(onpagemasks + segment, ~(1 << withinsegment));
 
-          uint32 elementsinsegment = segment < fullsegments ? 32 : additional_chunks;
-          if(__popc(old) == elementsinsegment)
-            atomicAnd((uint32*)&_ptes[page].bitmask, ~(1 << segment));
+          // always do this, since it might fail due to a race-condition with addChunkHierarchy
+          atomicAnd((uint32*)&_ptes[page].bitmask, ~(1 << segment));
         }
         else
         {
@@ -718,7 +718,7 @@ namespace ScatterKernelDetail{
           ptes[i].init();
           page[i].init();
         }
-        for(uint32 i = linid; i < numregions; i+= numregions)
+        for(uint32 i = linid; i < numregions; i+= threads)
           regions[i] = 0;
 
         if(linid == 0)
@@ -777,9 +777,9 @@ namespace ScatterKernelDetail{
         }
       }
 
-      __device__ bool isOOM(void* p){
-        // all threads in a warp return get NULL
-        return  32 == __popc(__ballot(p == NULL));
+      __device__ bool isOOM(void* p, size_t s){
+        // one thread that requested memory returned null
+        return  s && (p == NULL);
       }
 
 
@@ -869,7 +869,8 @@ namespace ScatterKernelDetail{
           if(gid > 0) return 0; //do this serially
           uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
           uint32 freecount = 0;
-          for(uint32 currentpage = _numpages; currentpage > 0; --currentpage){ //this already includes all superblocks
+          for(uint32 currentpage = _numpages; currentpage > 0;){ //this already includes all superblocks
+            --currentpage;
             if(_ptes[currentpage].chunksize == 0){
               if(++freecount == pagestoalloc){
                 freecount = 0;

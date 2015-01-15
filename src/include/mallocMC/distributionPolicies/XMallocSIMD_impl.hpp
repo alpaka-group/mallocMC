@@ -77,7 +77,7 @@ namespace DistributionPolicies{
 
       //all the properties must be unsigned integers > 0
       BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::pagesize::type>::is_signed);
-      BOOST_STATIC_ASSERT(pagesize > 0);
+      BOOST_STATIC_ASSERT(static_cast<uint32>(pagesize) > 0);
 
     public:
       static const uint32 _pagesize = pagesize;
@@ -97,7 +97,7 @@ namespace DistributionPolicies{
         //second half: make sure that all coalesced allocations can fit within one page
         //necessary for offset calculation
         bool coalescible = bytes > 0 && bytes < (pagesize / 32);
-        uint32 threadcount = __popc(__ballot(coalescible));
+        threadcount = __popc(__ballot(coalescible));
 
         if (coalescible && threadcount > 1)
         {

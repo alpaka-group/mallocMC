@@ -83,7 +83,8 @@ namespace mallocMC{
     public T_CreationPolicy, 
     public T_OOMPolicy, 
     public T_ReservePoolPolicy,
-    public T_AlignmentPolicy
+    public T_AlignmentPolicy,
+    public PolicyConstraints<T_CreationPolicy,T_DistributionPolicy,T_OOMPolicy,T_ReservePoolPolicy,T_AlignmentPolicy>
   {
     public:
       typedef T_CreationPolicy CreationPolicy;
@@ -95,10 +96,6 @@ namespace mallocMC{
     private:
       typedef boost::uint32_t uint32;
       void* pool;
-
-      //Instantiating the constraints checker will execute the check
-      PolicyConstraints<CreationPolicy,DistributionPolicy,
-        OOMPolicy,ReservePoolPolicy,AlignmentPolicy> c;
 
     public:
 
@@ -112,7 +109,7 @@ namespace mallocMC{
         bytes            = AlignmentPolicy::applyPadding(bytes);
         uint32 req_size  = distributionPolicy.collect(bytes);
         void* memBlock   = CreationPolicy::create(req_size);
-        const bool oom   = CreationPolicy::isOOM(memBlock);
+        const bool oom   = CreationPolicy::isOOM(memBlock, req_size);
         if(oom) memBlock = OOMPolicy::handleOOM(memBlock);
         void* myPart     = distributionPolicy.distribute(memBlock);
 

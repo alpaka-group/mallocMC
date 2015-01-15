@@ -1,6 +1,29 @@
 Change Log / Release Log for mallocMC
 ================================================================
 
+2.0.1crp
+-------------
+**Date:** 2015-01-13
+
+This release fixes several bugs that occured after the release of 2.0.0crp.
+We closed all issues documented in
+[Milestone *Bugfixes*](https://github.com/ComputationalRadiationPhysics/mallocMC/issues?milestone=4&state=closed)
+
+### Changes to mallocMC 2.0.0crp
+
+**Bug fixes**
+ - page table metadata was not correctly initialized with 0 #70
+ - freeing pages would not work under certain circumstances #66
+ - the bitmask in a page table entry could be wrong due to a racecondition #62
+ - not all regions were initialized correctly #60
+ - getAvailableSlots could sometimes miss blocks #59
+ - the counter for elements in a page could get too high due to a racecondition #61
+ - Out of Memory (OOM) Policy sometimes did not recognize allocation failures correctly #67
+
+**Misc:**
+ - See the full changes at https://github.com/ComputationalRadiationPhysics/mallocMC/compare/2.0.0crp...2.0.1crp
+
+
 2.0.0crp
 -------------
 **Date:** 2014-06-02

@@ -45,3 +45,47 @@ This is an example how to compile `mallocMC` and test the example code snippets
  - `./mallocMC_Example02`
  - `./VerifyHeap`
   - additional options: see `./VerifyHeap --help`
+
+
+Linking to your Project
+-----------------------
+
+To use mallocMC in your project, you must include the header `mallocMC/mallocMC.hpp` and
+add the correct include path.
+
+Because we are linking to Boost and CUDA, the following **external dependencies** must be linked:
+- `-lboost`, `-lcudart`
+
+If you are using CMake you can download our `FindmallocMC.cmake` module with
+```bash
+wget https://raw.githubusercontent.com/ComputationalRadiationPhysics/picongpu/dev/src/cmake/FindmallocMC.cmake
+# read the documentation
+cmake -DCMAKE_MODULE_PATH=. --help-module FindmallocMC | less
+```
+
+and use the following lines in your `CMakeLists.txt`:
+```cmake
+# this example will require at least CMake 2.8.5
+cmake_minimum_required(VERSION 2.8.5)
+
+# add path to FindmallocMC.cmake, e.g. in the directory in cmake/
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
+
+# find the packages that are required by mallocMC. This has to be done BEFORE
+# loading mallocMC
+find_package(Boost REQUIRED)
+set(LIBS ${LIBS} ${Boost_LIBRARIES})
+
+find_package(CUDA REQUIRED)
+cuda_include_directories(${CUDA_INCLUDE_DIRS})
+
+# find mallocMC installation
+find_package(mallocMC 2.0.1 REQUIRED)
+
+# where to find headers (-I includes for compiler)
+include_directories(SYSTEM ${mallocMC_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+
+add_executable(yourBinary ${SOURCES})
+
+target_link_libraries(yourBinary ${LIBS})
+```

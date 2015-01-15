@@ -52,8 +52,8 @@ namespace CreationPolicies{
       free(mem);
     }
 
-    __device__ bool isOOM(void* p){
-      return  32 == __popc(__ballot(p == NULL));
+    __device__ bool isOOM(void* p, size_t s){
+      return s && (p == NULL);
     }
 
     template < typename T>
