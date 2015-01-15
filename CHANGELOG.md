@@ -11,9 +11,6 @@ We closed all issues documented in
 
 ### Changes to mallocMC 2.0.0crp
 
-**Features**
- - Overwriting of the default CUDA allocator is no longer possible. This allows to build more complex allocator policies in the future #72
-
 **Bug fixes**
  - page table metadata was not correctly initialized with 0 #70
  - freeing pages would not work under certain circumstances #66
