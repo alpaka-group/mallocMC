@@ -132,6 +132,8 @@ namespace ScatterKernelDetail{
       //static const uint32 minChunkSize0 = pagesize/(32*32);
       static const uint32 minChunkSize1 = 0x10;
       static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
+      static const uint32 tmp_maxOPM = minChunkSize1 > HierarchyThreshold ? 0 : pagesize/(32*minChunkSize1 + 1);
+      static const uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGK
 #define MALLOCMC_CP_SCATTER_HASHINGK    static_cast<uint32>(HashingProperties::hashingK::value)
@@ -190,8 +192,7 @@ namespace ScatterKernelDetail{
         __device__ void init()
         {
           //clear the entire data which can hold bitfields
-          uint32 first_possible_metadata = 32*HierarchyThreshold;
-          uint32* write = (uint32*)(data+(pagesize-first_possible_metadata));
+          uint32* write = (uint32*)(data + pagesize - (int)(sizeof(uint32)*maxOnPageMasks));
           while(write < (uint32*)(data + pagesize))
             *write++ = 0;
         }
@@ -239,6 +240,23 @@ namespace ScatterKernelDetail{
         return (spot + step) % spots;
       }
 
+
+      /**
+       * onPageMasksPosition returns a pointer to the beginning of the onpagemasks inside a page.
+       * @param page the page that holds the masks
+       * @param the number of hierarchical page tables (bitfields) that are used inside this mask.
+       * @return pointer to the first address inside the page that holds metadata bitfields.
+       */
+      __device__ inline uint32* onPageMasksPosition(uint32 page, uint32 nMasks){
+        //uint32* x = (uint32*)(_page[page].data + pagesize - (int)sizeof(uint32)*nMasks);
+        //uint32* s = (uint32*)_page[page].data;
+        //uint32* e = (uint32*)(_page[page].data+pagesize);
+        //  printf("start %p end %p. diff=%lld  masks: %p diff_to_begin: %lld diff to end: %lld (pagesize is %d, there are %d masks)\n",
+        //          s, e, e-s, x, x-s, e-x, pagesize,nMasks);
+        //return x;
+        return (uint32*)(_page[page].data + pagesize - (int)sizeof(uint32)*nMasks);
+      }
+
       /**
        * usespot marks finds one free spot in the bitfield, marks it and returns its offset
        * @param bitfield pointer to the bitfield to use
@@ -279,7 +297,7 @@ namespace ScatterKernelDetail{
         if((mask & (1 << spot)) != 0)
           spot = nextspot(mask, spot, segments);
         uint32 tries = segments - __popc(mask);
-        uint32* onpagemasks = (uint32*)(_page[page].data + chunksize*(fullsegments*32 + additional_chunks));
+        uint32* onpagemasks = onPageMasksPosition(page,segments);
         for(uint32 i = 0; i < tries; ++i)
         {
           int hspot = usespot(onpagemasks + spot, spot < fullsegments ? 32 : additional_chunks);
@@ -442,7 +460,8 @@ namespace ScatterKernelDetail{
           uint32 segment = inpage_offset / (chunksize*32);
           uint32 withinsegment = (inpage_offset - segment*(chunksize*32))/chunksize;
           //mark it as free
-          uint32* onpagemasks = (uint32*)(_page[page].data + chunksize*(fullsegments*32 + additional_chunks));
+          uint32 nMasks = fullsegments + (additional_chunks > 0 ? 1 : 0);
+          uint32* onpagemasks = onPageMasksPosition(page,nMasks);
           uint32 old = atomicAnd(onpagemasks + segment, ~(1 << withinsegment));
 
           // always do this, since it might fail due to a race-condition with addChunkHierarchy
