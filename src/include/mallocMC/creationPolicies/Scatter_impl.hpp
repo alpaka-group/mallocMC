@@ -132,7 +132,8 @@ namespace ScatterKernelDetail{
       //static const uint32 minChunkSize0 = pagesize/(32*32);
       static const uint32 minChunkSize1 = 0x10;
       static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
-      static const uint32 tmp_maxOPM = minChunkSize1 > HierarchyThreshold ? 0 : pagesize/(32*minChunkSize1 + 1);
+      static const uint32 minSegmentSize = 32*minChunkSize1 + sizeof(uint32);
+      static const uint32 tmp_maxOPM = minChunkSize1 > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize-1)) / minSegmentSize;
       static const uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGK
