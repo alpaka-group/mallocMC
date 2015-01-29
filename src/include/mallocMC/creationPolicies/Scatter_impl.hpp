@@ -249,12 +249,6 @@ namespace ScatterKernelDetail{
        * @return pointer to the first address inside the page that holds metadata bitfields.
        */
       __device__ inline uint32* onPageMasksPosition(uint32 page, uint32 nMasks){
-        //uint32* x = (uint32*)(_page[page].data + pagesize - (int)sizeof(uint32)*nMasks);
-        //uint32* s = (uint32*)_page[page].data;
-        //uint32* e = (uint32*)(_page[page].data+pagesize);
-        //  printf("start %p end %p. diff=%lld  masks: %p diff_to_begin: %lld diff to end: %lld (pagesize is %d, there are %d masks)\n",
-        //          s, e, e-s, x, x-s, e-x, pagesize,nMasks);
-        //return x;
         return (uint32*)(_page[page].data + pagesize - (int)sizeof(uint32)*nMasks);
       }
 
