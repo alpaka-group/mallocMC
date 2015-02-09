@@ -1,6 +1,27 @@
 Change Log / Release Log for mallocMC
 ================================================================
 
+2.1.0crp
+-------------
+**Date:** 2015-02-09
+
+This release fixes some bugs that occured after the release of 2.0.1crp and reduces the interface to improve interoperability with the default CUDA allocator.
+We closed all issues documented in
+[Milestone *New Features*](https://github.com/ComputationalRadiationPhysics/mallocMC/issues?milestone=3&state=closed)
+
+### Changes to mallocMC 2.0.1crp
+
+**Features**
+ - the possibility to overwrite the default implementation of new/delete and malloc/free was removed #72. **This changes the interface**, since users are now always forced to call `mallocMC::malloc()` and `mallocMC::free()`. This is intended to improve readability and allows to use the CUDA allocator inside mallocMC.
+ - the policy *Scatter* now places the onpagetables data structure at the end of a page. This can greatly improve performance when using large pages and `resetfreedpages=true` #80
+
+**Bug fixes**
+ - in the policy *Scatter*, `fullsegments` and `additional_chunks` could grow too large in certain configurations #79
+
+**Misc:**
+ - See the full changes at https://github.com/ComputationalRadiationPhysics/mallocMC/compare/2.0.1crp...2.1.0crp
+
+
 2.0.1crp
 -------------
 **Date:** 2015-01-13

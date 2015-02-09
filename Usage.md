@@ -94,27 +94,18 @@ To create a default instance of the ScatterAllocator type and add the necessary
 functions, the following Macro has to be executed:
 
 ```c++
-POLICYMALLOC_SET_ALLOCATOR_TYPE(ScatterAllocator)
+MALLOCMC_SET_ALLOCATOR_TYPE(ScatterAllocator)
 ```
 
 This will set up the following functions in the namespace `mallocMC`:
 
 | Name                  | description                                                                                                                                                                                                |
 |-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| InitHeap()            | Initializes the heap. Must be called before any other calls to the allocator are permitted. Can take the desired size of the heap as a parameter                                                           |
-| finalizeHeap()        | Destroys the heap again                                                                                                                                                                                    |
-| pbMalloc() / malloc() | Allocates memory on the accelerator                                                                                                                                                                        |
-| pbFree() / free()     | Frees memory on the accelerator                                                                                                                                                                            |
-| getAvailableSlots()   | Determines number of allocatable slots of a certain size. This only works, if the chose CreationPolicy supports it (can be found through `mallocMC::Traits<ScatterAllocator>::providesAvailableSlots`) |
-
-If the policy class `OldMalloc` is **not** used, it is also possible to execute
-the Macro
-```c++
-POLICYMALLOC_OVERWRITE_MALLOC()
-```
-
-which will overwrite the global functions `malloc()`/`free()` on the accelerator
-(for NVIDIA CUDA accelerators, this will also replace calls to `new` and `delete`).
+| mallocMC::initHeap()            | Initializes the heap. Must be called before any other calls to the allocator are permitted. Can take the desired size of the heap as a parameter                                                           |
+| mallocMC::finalizeHeap()        | Destroys the heap again                     |
+| mallocMC::malloc() | Allocates memory on the accelerator              |
+| mallocMC::free()     | Frees memory on the accelerator     |
+| mallocMC::getAvailableSlots()   | Determines number of allocatable slots of a certain size. This only works, if the chosen CreationPolicy supports it (can be found through `mallocMC::Traits<ScatterAllocator>::providesAvailableSlots`) |
 
 
 Step 4: use dynamic memory allocation
