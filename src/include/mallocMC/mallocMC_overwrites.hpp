@@ -82,28 +82,6 @@ bool providesAvailableSlots(){                                                 \
 } /* end namespace mallocMC */
 
 
-
-/** Create the functions mallocMC() and mcfree() inside a namespace
- *
- * This allows to use a function without bothering with name-clashes when
- * including a namespace in the global scope. It will call the namespaced
- * version of malloc() inside.
- */
-#define MALLOCMC_MALLOCMC()                                                      \
-namespace mallocMC{                                                             \
-MAMC_ACCELERATOR                                                                \
-void* mallocMC(size_t t) __THROW                                                \
-{                                                                              \
-  return mallocMC::malloc(t);                                                   \
-}                                                                              \
-MAMC_ACCELERATOR                                                                \
-void  mcfree(void* p) __THROW                                                  \
-{                                                                              \
-  mallocMC::free(p);                                                            \
-}                                                                              \
-} /* end namespace mallocMC */
-
-
 /** Create the functions malloc() and free() inside a namespace
  *
  * This allows for a peaceful coexistence between different functions called
@@ -126,86 +104,12 @@ void  free(void* p) __THROW                                                    \
 
 
 
-/** Override/replace the global implementation of placement new/delete on CUDA
- *
- * These overrides are for device-side new and delete and need a pointer to the
- * memory-allocator object on device (this will be mostly useful when using
- * more advanced techniques and managing your own global object instead of
- * using the provided macros).
- *
- * @param h the allocator as returned by initHeap()
- */
-#ifdef __CUDACC__
-#if __CUDA_ARCH__ >= 200
-#define MALLOCMC_OVERWRITE_NEW()                                                \
-MAMC_ACCELERATOR                                                                \
-void* operator new(size_t t, mallocMC::mallocMCType &h)                          \
-{                                                                              \
-  return h.alloc(t);                                                           \
-}                                                                              \
-MAMC_ACCELERATOR                                                                \
-void* operator new[](size_t t, mallocMC::mallocMCType &h)                        \
-{                                                                              \
-  return h.alloc(t);                                                           \
-}                                                                              \
-MAMC_ACCELERATOR                                                                \
-void operator delete(void* p, mallocMC::mallocMCType &h)                         \
-{                                                                              \
-  h.dealloc(p);                                                                \
-}                                                                              \
-MAMC_ACCELERATOR                                                                \
-void operator delete[](void* p, mallocMC::mallocMCType &h)                       \
-{                                                                              \
-  h.dealloc(p);                                                                \
-}
-#endif
-#endif
-
-
-
-/** Override/replace the global implementation of malloc/free on CUDA devices
- *
- * Attention: This will also replace "new", "new[]", "delete" and "delete[]",
- * since CUDA uses the same malloc/free functions for that. Needs at least
- * ComputeCapability 2.0
- */
-#ifdef __CUDACC__
-#if __CUDA_ARCH__ >= 200
-#define MALLOCMC_OVERWRITE_MALLOC()                                             \
-MAMC_ACCELERATOR                                                                \
-void* malloc(size_t t) __THROW                                                 \
-{                                                                              \
-  return mallocMC::malloc(t);                                                   \
-}                                                                              \
-MAMC_ACCELERATOR                                                                \
-void  free(void* p) __THROW                                                    \
-{                                                                              \
-  mallocMC::free(p);                                                            \
-}
-#endif
-#endif
-
-
-
 /* if the defines do not exist (wrong CUDA version etc),
  * create at least empty defines
  */
-#ifndef MALLOCMC_MALLOCMC
-#define MALLOCMC_MALLOCMC()
-#endif
-
 #ifndef MALLOCMC_MALLOC
 #define MALLOCMC_MALLOC()
 #endif
-
-#ifndef MALLOCMC_OVERWRITE_NEW
-#define MALLOCMC_OVERWRITE_NEW()
-#endif
-
-#ifndef MALLOCMC_OVERWRITE_MALLOC
-#define MALLOCMC_OVERWRITE_MALLOC()
-#endif
-
 
 
 /** Set up the global variables and functions
@@ -217,8 +121,4 @@ void  free(void* p) __THROW                                                    \
 #define MALLOCMC_SET_ALLOCATOR_TYPE(MALLOCMC_USER_DEFINED_TYPE)                  \
 MALLOCMC_GLOBAL_FUNCTIONS(MALLOCMC_USER_DEFINED_TYPE)                            \
 MALLOCMC_MALLOC()                                                               \
-MALLOCMC_MALLOCMC()                                                              \
 MALLOCMC_AVAILABLESLOTS()
-
-//MALLOCMC_OVERWRITE_NEW()
-

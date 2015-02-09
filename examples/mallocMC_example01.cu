@@ -105,7 +105,7 @@ void run()
   size_t block = 32;
   size_t grid = 32;
   int length = 100;
-  assert(length<= block*grid); //necessary for used algorithm
+  assert((unsigned)length<= block*grid); //necessary for used algorithm
 
   //init the heap
   std::cerr << "initHeap...";
