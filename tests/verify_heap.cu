@@ -50,9 +50,8 @@
 #include "src/include/mallocMC/mallocMC_utils.hpp"
 #include "verify_heap_config.hpp"
 
-//use ScatterAllocator to replace malloc/free
+//use ScatterAllocator
 MALLOCMC_SET_ALLOCATOR_TYPE(ScatterAllocator)
-MALLOCMC_OVERWRITE_MALLOC()
 
 // global variable for verbosity, might change due to user input '--verbose'
 bool verbose = false;

@@ -5,8 +5,8 @@
 
   Copyright (C) 2012 Institute for Computer Graphics and Vision,
                      Graz University of Technology
-  Copyright (C) 2014 Institute of Radiation Physics,
-                     Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright (C) 2014-2015 Institute of Radiation Physics,
+                          Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
               Bernhard Kainz - kainz ( at ) icg.tugraz.at
@@ -38,8 +38,8 @@
 
 /** the mallocMC version: major API changes should be reflected here */
 #define MALLOCMC_VERSION_MAJOR 2
-#define MALLOCMC_VERSION_MINOR 0
-#define MALLOCMC_VERSION_PATCH 1
+#define MALLOCMC_VERSION_MINOR 1
+#define MALLOCMC_VERSION_PATCH 0
 
 /** the mallocMC flavor is used to differenciate the releases of the
  *  Computational Radiation Physics group (crp) from other releases
