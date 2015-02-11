@@ -3,7 +3,7 @@ Change Log / Release Log for mallocMC
 
 2.1.0crp
 -------------
-**Date:** 2015-02-09
+**Date:** 2015-02-11
 
 This release fixes some bugs that occured after the release of 2.0.1crp and reduces the interface to improve interoperability with the default CUDA allocator.
 We closed all issues documented in
