@@ -33,6 +33,7 @@
 #pragma once
 
 #include "mallocMC_prefixes.hpp"
+#include <vector>
 
 /** Creates a global object of a many core memory allocator
  *
