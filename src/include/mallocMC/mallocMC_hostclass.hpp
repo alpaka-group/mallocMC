@@ -39,6 +39,7 @@
 #include <cassert>
 
 #include <boost/mpl/assert.hpp>
+#include <vector>
 
 namespace mallocMC{
 
@@ -97,6 +98,8 @@ namespace mallocMC{
       typedef T_OOMPolicy OOMPolicy;
       typedef T_ReservePoolPolicy ReservePoolPolicy;
       typedef T_AlignmentPolicy AlignmentPolicy;
+
+      typedef std::vector<HeapInfo> HeapInfoVector;
 
     private:
       typedef boost::uint32_t uint32;
@@ -179,8 +182,8 @@ namespace mallocMC{
       }
 
       MAMC_HOST
-      std::vector<mallocMC::HeapInfo> getHeapLocations(){
-        std::vector<mallocMC::HeapInfo> v;
+      HeapInfoVector getHeapLocations(){
+        HeapInfoVector v;
         v.push_back(heapInfos);
         return v;
       }
