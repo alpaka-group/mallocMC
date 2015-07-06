@@ -41,7 +41,7 @@
 #define MALLOCMC_VERSION_MINOR 1
 #define MALLOCMC_VERSION_PATCH 0
 
-/** the mallocMC flavor is used to differenciate the releases of the
+/** the mallocMC flavor is used to differentiate the releases of the
  *  Computational Radiation Physics group (crp) from other releases
  *  This should be useful to avoid versioning conflicts */
 #define MALLOCMC_FLAVOR "crp"
