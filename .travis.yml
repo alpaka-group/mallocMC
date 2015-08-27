@@ -9,7 +9,7 @@ env:
 
 script:
   - mkdir build_tmp && cd build_tmp
-  - cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR $TRAVIS_BUILD_DIR
+  - CXXFLAGS="-Werror" cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR $TRAVIS_BUILD_DIR
   - make
   - make install
   - make examples

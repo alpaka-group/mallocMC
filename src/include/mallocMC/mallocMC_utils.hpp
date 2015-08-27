@@ -49,20 +49,20 @@ namespace CUDA
   class error : public std::runtime_error
   {
   private:
-    static std::string genErrorString(cudaError error, const char* file, int line)
+    static std::string genErrorString(cudaError errorValue, const char* file, int line)
     {
       std::ostringstream msg;
-      msg << file << '(' << line << "): error: " << cudaGetErrorString(error);
+      msg << file << '(' << line << "): error: " << cudaGetErrorString(errorValue);
       return msg.str();
     }
   public:
-    error(cudaError error, const char* file, int line)
-      : runtime_error(genErrorString(error, file, line))
+    error(cudaError errorValue, const char* file, int line)
+      : runtime_error(genErrorString(errorValue, file, line))
     {
     }
 
-    error(cudaError error)
-      : runtime_error(cudaGetErrorString(error))
+    error(cudaError errorValue)
+      : runtime_error(cudaGetErrorString(errorValue))
     {
     }
 
@@ -72,11 +72,11 @@ namespace CUDA
     }
   };
 
-  inline void checkError(cudaError error, const char* file, int line)
+  inline void checkError(cudaError errorValue, const char* file, int line)
   {
 #ifdef _DEBUG
-    if (error != cudaSuccess)
-      throw CUDA::error(error, file, line);
+    if (errorValue != cudaSuccess)
+      throw CUDA::error(errorValue, file, line);
 #endif
   }
 
@@ -88,9 +88,9 @@ namespace CUDA
   inline void checkError()
   {
 #ifdef _DEBUG
-    cudaError error = cudaGetLastError();
-    if (error != cudaSuccess)
-      throw CUDA::error(error);
+    cudaError errorValue = cudaGetLastError();
+    if (errorValue != cudaSuccess)
+      throw CUDA::error(errorValue);
 #endif
   }
 
