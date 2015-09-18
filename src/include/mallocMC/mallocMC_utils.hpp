@@ -101,7 +101,7 @@ namespace CUDA
 
 
 #define warp_serial                                    \
-  for (uint32_t __mask = __ballot(1),                    \
+  for (unsigned int __mask = __ballot(1),                    \
             __num = __popc(__mask),                    \
             __lanemask = mallocMC::lanemask_lt(),      \
             __local_id = __popc(__lanemask & __mask),  \
