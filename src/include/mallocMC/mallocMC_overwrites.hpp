@@ -33,6 +33,7 @@
 #pragma once
 
 #include "mallocMC_prefixes.hpp"
+#include <vector>
 
 /** Creates a global object of a many core memory allocator
  *
@@ -82,6 +83,12 @@ bool providesAvailableSlots(){                                                 \
 } /* end namespace mallocMC */
 
 
+/** __THROW is defined in Glibc so it is not available on all platforms.
+ */
+#ifndef __THROW
+  #define __THROW
+#endif 
+
 /** Create the functions malloc() and free() inside a namespace
  *
  * This allows for a peaceful coexistence between different functions called
@@ -103,6 +110,20 @@ void  free(void* p) __THROW                                                    \
 } /* end namespace mallocMC */
 
 
+/** Create the function getHeapLocations inside a namespace
+ *
+ * This returns a vector of type mallocMC::HeapInfo. The HeapInfo should at least
+ * contain the pointer to the heap (on device) and its size.
+ */
+#define MALLOCMC_HEAPLOC()                                                     \
+namespace mallocMC{                                                            \
+MAMC_HOST                                                                      \
+std::vector<mallocMC::HeapInfo> getHeapLocations()                             \
+{                                                                              \
+  return mallocMC::mallocMCGlobalObject.getHeapLocations();                    \
+}                                                                              \
+} /* end namespace mallocMC */
+
 
 /* if the defines do not exist (wrong CUDA version etc),
  * create at least empty defines
@@ -121,4 +142,5 @@ void  free(void* p) __THROW                                                    \
 #define MALLOCMC_SET_ALLOCATOR_TYPE(MALLOCMC_USER_DEFINED_TYPE)                  \
 MALLOCMC_GLOBAL_FUNCTIONS(MALLOCMC_USER_DEFINED_TYPE)                            \
 MALLOCMC_MALLOC()                                                               \
+MALLOCMC_HEAPLOC()                                                              \
 MALLOCMC_AVAILABLESLOTS()
