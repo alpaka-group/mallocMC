@@ -119,28 +119,28 @@ int main()
 }
 
 
-__device__ int** a;
-__device__ int** b;
-__device__ int** c;
+__device__ int** arA;
+__device__ int** arB;
+__device__ int** arC;
 
 
 __global__ void createArrays(int x, int y){
-  a = (int**) mallocMC::malloc(sizeof(int*) * x*y);
-  b = (int**) mallocMC::malloc(sizeof(int*) * x*y);
-  c = (int**) mallocMC::malloc(sizeof(int*) * x*y);
+  arA = (int**) mallocMC::malloc(sizeof(int*) * x*y);
+  arB = (int**) mallocMC::malloc(sizeof(int*) * x*y);
+  arC = (int**) mallocMC::malloc(sizeof(int*) * x*y);
 }
 
 
 __global__ void fillArrays(int length, int* d){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
 
-  a[id] = (int*) mallocMC::malloc(sizeof(int)*length);
-  b[id] = (int*) mallocMC::malloc(sizeof(int)*length);
-  c[id] = (int*) mallocMC::malloc(sizeof(int)*length);
+  arA[id] = (int*) mallocMC::malloc(sizeof(int)*length);
+  arB[id] = (int*) mallocMC::malloc(sizeof(int)*length);
+  arC[id] = (int*) mallocMC::malloc(sizeof(int)*length);
   
   for(int i=0 ; i<length; ++i){
-    a[id][i] = id*length+i; 
-    b[id][i] = id*length+i;
+    arA[id][i] = id*length+i; 
+    arB[id][i] = id*length+i;
   }
 }
 
@@ -150,17 +150,17 @@ __global__ void addArrays(int length, int* d){
 
   d[id] = 0;
   for(int i=0 ; i<length; ++i){
-    c[id][i] = a[id][i] + b[id][i];
-    d[id] += c[id][i];
+    arC[id][i] = arA[id][i] + arB[id][i];
+    d[id] += arC[id][i];
   }
 }
 
 
 __global__ void freeArrays(){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
-  mallocMC::free(a[id]);
-  mallocMC::free(b[id]);
-  mallocMC::free(c[id]);
+  mallocMC::free(arA[id]);
+  mallocMC::free(arB[id]);
+  mallocMC::free(arC[id]);
 }
 
 
