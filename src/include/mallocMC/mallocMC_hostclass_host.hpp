@@ -1,0 +1,204 @@
+/*
+  mallocMC: Memory Allocator for Many Core Architectures.
+  https://www.hzdr.de/crp
+
+  Copyright 2014 - 2015 Institute of Radiation Physics,
+                        Helmholtz-Zentrum Dresden - Rossendorf
+
+  Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+*/
+
+#pragma once
+
+#include "mallocMC_utils.hpp"
+#include "mallocMC_constraints.hpp"
+#include "mallocMC_prefixes.hpp"
+#include "mallocMC_hostclass_device.hpp"
+#include "mallocMC_traits.hpp"
+
+#include <boost/cstdint.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <sstream>
+#include <vector>
+
+namespace mallocMC{
+
+namespace detail{
+
+    template<
+        typename T_Allocator,
+        bool T_providesAvailableSlots
+    >
+    struct GetAvailableSlotsIfAvailHost
+    {
+        MAMC_HOST static
+        unsigned
+        getAvailableSlots(
+            size_t,
+            T_Allocator &
+        )
+        {
+            return 0;
+        }
+    };
+
+    template<class T_Allocator>
+    struct GetAvailableSlotsIfAvailHost<T_Allocator, true>
+    {
+        MAMC_HOST
+        static unsigned
+        getAvailableSlots(
+            size_t slotSize,
+            T_Allocator& alloc
+        ){
+            return alloc.T_Allocator::CreationPolicy
+                ::getAvailableSlotsHost(slotSize, alloc.devAllocator);
+        }
+    };
+
+}
+
+    struct HeapInfo
+    {
+        void* p;
+        size_t size;
+    };
+
+    /**
+     * @brief "HostClass" that combines all policies to a useful allocator
+     *
+     * This class implements the necessary glue-logic to form an actual allocator
+     * from the provided policies. It implements the public interface and
+     * executes some constraint checking based on an instance of the class
+     * PolicyConstraints.
+     *
+     * @tparam T_CreationPolicy The desired type of a CreationPolicy
+     * @tparam T_DistributionPolicy The desired type of a DistributionPolicy
+     * @tparam T_OOMPolicy The desired type of a OOMPolicy
+     * @tparam T_ReservePoolPolicy The desired type of a ReservePoolPolicy
+     * @tparam T_AlignmentPolicy The desired type of a AlignmentPolicy
+     */
+    template<
+       typename T_CreationPolicy,
+       typename T_DistributionPolicy,
+       typename T_OOMPolicy,
+       typename T_ReservePoolPolicy,
+       typename T_AlignmentPolicy
+    >
+    struct Allocator :
+        public T_CreationPolicy,
+        public T_OOMPolicy,
+        public T_ReservePoolPolicy,
+        public T_AlignmentPolicy,
+        public PolicyConstraints<
+            T_CreationPolicy,
+            T_DistributionPolicy,
+            T_OOMPolicy,
+            T_ReservePoolPolicy,
+            T_AlignmentPolicy
+        >
+    {
+        typedef boost::uint32_t uint32;
+
+    public:
+        typedef T_CreationPolicy CreationPolicy;
+        typedef T_DistributionPolicy DistributionPolicy;
+        typedef T_OOMPolicy OOMPolicy;
+        typedef T_ReservePoolPolicy ReservePoolPolicy;
+        typedef T_AlignmentPolicy AlignmentPolicy;
+        typedef std::vector< HeapInfo > HeapInfoVector;
+        typedef DeviceAllocator<
+            CreationPolicy,
+            DistributionPolicy,
+            OOMPolicy,
+            ReservePoolPolicy,
+            AlignmentPolicy
+        > DevAllocator;
+
+        HeapInfo heapInfos;
+        DevAllocator* devAllocator;
+
+        MAMC_HOST
+        void*
+        initHeap(
+            size_t size
+        )
+        {
+            void* pool = ReservePoolPolicy::setMemPool( size );
+            boost::tie( pool, size ) = AlignmentPolicy::alignPool( pool, size );
+            cudaMalloc( (void**) &devAllocator, sizeof(DevAllocator) );
+            void* h = CreationPolicy::initHeap( devAllocator, pool, size );
+            heapInfos.p = pool;
+            heapInfos.size = size;
+            return h;
+        }
+
+        MAMC_HOST
+        void
+        finalizeHeap( )
+        {
+            CreationPolicy::finalizeHeap( devAllocator, heapInfos.p );
+            cudaFree( devAllocator );
+            ReservePoolPolicy::resetMemPool( heapInfos.p );
+        }
+
+        MAMC_HOST static
+        std::string
+        info(
+            std::string linebreak = " "
+        )
+        {
+            std::stringstream ss;
+            ss << "CreationPolicy:      " << CreationPolicy::classname( ) << "    " << linebreak;
+            ss << "DistributionPolicy:  " << DistributionPolicy::classname( ) << "" << linebreak;
+            ss << "OOMPolicy:           " << OOMPolicy::classname( ) << "         " << linebreak;
+            ss << "ReservePoolPolicy:   " << ReservePoolPolicy::classname( ) << " " << linebreak;
+            ss << "AlignmentPolicy:     " << AlignmentPolicy::classname( ) << "   " << linebreak;
+            return ss.str();
+        }
+
+        // polymorphism over the availability of getAvailableSlots for calling from the host
+        MAMC_HOST
+        unsigned
+        getAvailableSlots(
+            size_t slotSize
+        )
+        {
+            slotSize = AlignmentPolicy::applyPadding( slotSize );
+            return detail::GetAvailableSlotsIfAvailHost<
+                Allocator,
+                Traits<Allocator>::providesAvailableSlots
+            >::getAvailableSlots( slotSize, *this );
+        }
+
+        MAMC_HOST
+        HeapInfoVector
+        getHeapLocations( )
+        {
+          HeapInfoVector v;
+          v.push_back( heapInfos );
+          return v;
+        }
+
+    };
+
+} //namespace mallocMC
+

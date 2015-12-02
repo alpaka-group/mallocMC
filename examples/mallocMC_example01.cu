@@ -60,22 +60,22 @@ __device__ int** arB;
 __device__ int** arC;
 
 
-__global__ void createArrays(int x, int y){
-  arA = (int**) mallocMC::malloc(sizeof(int*) * x*y); 
-  arB = (int**) mallocMC::malloc(sizeof(int*) * x*y); 
-  arC = (int**) mallocMC::malloc(sizeof(int*) * x*y); 
+__global__ void createArrays(int x, int y, ScatterAllocator::DevAllocator* mMC){
+  arA = (int**) mMC->malloc(sizeof(int*) * x*y);
+  arB = (int**) mMC->malloc(sizeof(int*) * x*y);
+  arC = (int**) mMC->malloc(sizeof(int*) * x*y);
 }
 
 
-__global__ void fillArrays(int length, int* d){
+__global__ void fillArrays(int length, int* d, ScatterAllocator::DevAllocator* mMC){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
 
-  arA[id] = (int*) mallocMC::malloc(length*sizeof(int));
-  arB[id] = (int*) mallocMC::malloc(length*sizeof(int));
-  arC[id] = (int*) mallocMC::malloc(sizeof(int)*length);
-  
+  arA[id] = (int*) mMC->malloc(length*sizeof(int));
+  arB[id] = (int*) mMC->malloc(length*sizeof(int));
+  arC[id] = (int*) mMC->malloc(sizeof(int)*length);
+
   for(int i=0 ; i<length; ++i){
-    arA[id][i] = id*length+i; 
+    arA[id][i] = id*length+i;
     arB[id][i] = id*length+i;
   }
 }
@@ -92,11 +92,11 @@ __global__ void addArrays(int length, int* d){
 }
 
 
-__global__ void freeArrays(){
+__global__ void freeArrays(ScatterAllocator::DevAllocator* mMC){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
-  mallocMC::free(arA[id]);
-  mallocMC::free(arB[id]);
-  mallocMC::free(arC[id]);
+  mMC->free(arA[id]);
+  mMC->free(arB[id]);
+  mMC->free(arC[id]);
 }
 
 
@@ -109,7 +109,8 @@ void run()
 
   //init the heap
   std::cerr << "initHeap...";
-  mallocMC::initHeap(1U*1024U*1024U*1024U); //1GB for device-side malloc
+  ScatterAllocator mMC;
+  mMC.initHeap(1U*1024U*1024U*1024U); //1GB for device-side malloc
   std::cerr << "done" << std::endl;
 
   std::cout << ScatterAllocator::info("\n") << std::endl;
@@ -122,10 +123,10 @@ void run()
   std::vector<int> array_sums(block*grid,0);
 
   // create arrays of arrays on the device
-  createArrays<<<1,1>>>(grid,block);
+  createArrays<<<1,1>>>(grid,block, mMC.devAllocator);
 
   // fill 2 of them all with ascending values
-  fillArrays<<<grid,block>>>(length, d);
+  fillArrays<<<grid,block>>>(length, d, mMC.devAllocator);
 
   // add the 2 arrays (vector addition within each thread)
   // and do a thread-wise reduce to d
@@ -133,7 +134,7 @@ void run()
 
   cudaMemcpy(&array_sums[0],d,sizeof(int)*block*grid,cudaMemcpyDeviceToHost);
 
-  mallocMC::getAvailableSlots(1024U*1024U); //get available megabyte-sized slots
+  mMC.getAvailableSlots(1024U*1024U); //get available megabyte-sized slots
 
   int sum = std::accumulate(array_sums.begin(),array_sums.end(),0);
   std::cout << "The sum of the arrays on GPU is " << sum << std::endl;
@@ -142,8 +143,8 @@ void run()
   int gaussian = n*(n-1);
   std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
 
-  freeArrays<<<grid,block>>>();
+  freeArrays<<<grid,block>>>(mMC.devAllocator);
   cudaFree(d);
   //finalize the heap again
-  mallocMC::finalizeHeap();
+  mMC.finalizeHeap();
 }

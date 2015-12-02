@@ -1,19 +1,11 @@
 /*
   mallocMC: Memory Allocator for Many Core Architectures.
-  http://www.icg.tugraz.at/project/mvp
   https://www.hzdr.de/crp
 
-  Copyright (C) 2012 Institute for Computer Graphics and Vision,
-                     Graz University of Technology
-  Copyright (C) 2014 Institute of Radiation Physics,
-                     Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright 2014 - 2015 Institute of Radiation Physics,
+                        Helmholtz-Zentrum Dresden - Rossendorf
 
-  Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
-              Bernhard Kainz - kainz ( at ) icg.tugraz.at
-              Michael Kenzel - kenzel ( at ) icg.tugraz.at
-              Rene Widera - r.widera ( at ) hzdr.de
-              Axel Huebl - a.huebl ( at ) hzdr.de
-              Carlchristian Eckert - c.eckert ( at ) hzdr.de
+  Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -36,15 +28,12 @@
 
 #pragma once
 
-// generic stuff
-#include "version.hpp"
+namespace mallocMC{
 
-// core functionality
-#include "mallocMC_hostclass.hpp"
+    template <class T_Allocator>
+    struct  Traits{
+        static const bool providesAvailableSlots = T_Allocator::CreationPolicy::providesAvailableSlots::value;
+    };
 
-// all the policies
-#include "CreationPolicies.hpp"
-#include "DistributionPolicies.hpp"
-#include "ReservePoolPolicies.hpp"
-#include "AlignmentPolicies.hpp"
-#include "OOMPolicies.hpp"
+} //namespace mallocMC
+
