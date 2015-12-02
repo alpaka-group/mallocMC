@@ -75,10 +75,8 @@ namespace CUDA
 
   inline void checkError(cudaError errorValue, const char* file, int line)
   {
-#ifdef _DEBUG
     if (errorValue != cudaSuccess)
       throw CUDA::error(errorValue, file, line);
-#endif
   }
 
   inline void checkError(const char* file, int line)
@@ -88,11 +86,9 @@ namespace CUDA
 
   inline void checkError()
   {
-#ifdef _DEBUG
     cudaError errorValue = cudaGetLastError();
     if (errorValue != cudaSuccess)
       throw CUDA::error(errorValue);
-#endif
   }
 
 #define MALLOCMC_CUDA_CHECKED_CALL(call) CUDA::checkError(call, __FILE__, __LINE__)
