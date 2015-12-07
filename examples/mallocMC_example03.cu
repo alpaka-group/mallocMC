@@ -108,8 +108,7 @@ __global__ void createArrays(ScatterAllocator::DevAllocator* mMC){
 
 int main()
 {
-    ScatterAllocator mMC;
-    mMC.initHeap(1U*1024U*1024U*1024U); //1GB for device-side malloc
+    ScatterAllocator mMC(1U*1024U*1024U*1024U); //1GB for device-side malloc
 
     createArrays<<<1,32>>>(mMC.devAllocator);
     std::cout << "Slots from Host: " << mMC.getAvailableSlots(1) << std::endl;

@@ -169,8 +169,7 @@ void run()
 
     //init the heap
     std::cerr << "initHeap...";
-    ScatterAllocator mMC;
-    mMC.initHeap(1U*1024U*1024U*1024U); //1GB for device-side malloc
+    ScatterAllocator mMC(1U*1024U*1024U*1024U); //1GB for device-side malloc
     std::cerr << "done" << std::endl;
 
     // device-side pointers

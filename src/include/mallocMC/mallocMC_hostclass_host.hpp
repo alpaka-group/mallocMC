@@ -36,6 +36,7 @@
 
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/static_assert.hpp>
 #include <sstream>
 #include <vector>
 
@@ -137,18 +138,16 @@ namespace detail{
         DevAllocator* devAllocator;
 
         MAMC_HOST
-        void*
-        initHeap(
-            size_t size
+        Allocator(
+            size_t size = 8U * 1024U * 1024U
         )
         {
             void* pool = ReservePoolPolicy::setMemPool( size );
             boost::tie( pool, size ) = AlignmentPolicy::alignPool( pool, size );
             cudaMalloc( (void**) &devAllocator, sizeof(DevAllocator) );
-            void* h = CreationPolicy::initHeap( devAllocator, pool, size );
+            CreationPolicy::initHeap( devAllocator, pool, size );
             heapInfos.p = pool;
             heapInfos.size = size;
-            return h;
         }
 
         MAMC_HOST

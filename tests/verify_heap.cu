@@ -635,8 +635,7 @@ bool run_heap_verification(
   dout() << "maximum of elements:   "     << maxSlots                           << std::endl;
 
   // initializing the heap
-  ScatterAllocator mMC;
-  mMC.initHeap(heapSize);
+  ScatterAllocator mMC(heapSize);
   allocElem_t** d_testData;
   MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_testData, nPointers*sizeof(allocElem_t*)));
 
