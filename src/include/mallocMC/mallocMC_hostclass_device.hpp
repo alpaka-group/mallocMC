@@ -82,12 +82,13 @@ namespace detail{
         )
         {
             return alloc.T_Allocator::CreationPolicy
-                ::getAvailableSlotsAccelerator(slotSize);
+                ::getAvailableSlotsAccelerator( slotSize );
         }
 
     };
 
 } // namespace detail
+
 
     /**
      * @brief "HostClass" that combines all policies to a useful allocator
@@ -128,24 +129,28 @@ namespace detail{
 
         MAMC_ACCELERATOR
         void*
-        malloc( size_t bytes )
+        malloc(
+            size_t bytes
+        )
         {
             DistributionPolicy distributionPolicy;
-            bytes = AlignmentPolicy::applyPadding(bytes);
-            uint32 req_size = distributionPolicy.collect(bytes);
-            void* memBlock = CreationPolicy::create(req_size);
-            const bool oom = CreationPolicy::isOOM(memBlock, req_size);
-            if(oom)
-                memBlock = OOMPolicy::handleOOM(memBlock);
-            void* myPart = distributionPolicy.distribute(memBlock);
+            bytes = AlignmentPolicy::applyPadding( bytes );
+            uint32 req_size = distributionPolicy.collect( bytes );
+            void* memBlock = CreationPolicy::create( req_size );
+            const bool oom = CreationPolicy::isOOM( memBlock, req_size );
+            if( oom )
+                memBlock = OOMPolicy::handleOOM( memBlock );
+            void* myPart = distributionPolicy.distribute( memBlock );
             return myPart;
         }
 
         MAMC_ACCELERATOR
         void
-        free( void* p )
+        free(
+            void* p
+        )
         {
-            CreationPolicy::destroy(p);
+            CreationPolicy::destroy( p );
         }
 
 
@@ -154,13 +159,15 @@ namespace detail{
          */
         MAMC_ACCELERATOR
         unsigned
-        getAvailableSlots( size_t slotSize )
+        getAvailableSlots(
+            size_t slotSize 
+        )
         {
-            slotSize = AlignmentPolicy::applyPadding(slotSize);
+            slotSize = AlignmentPolicy::applyPadding( slotSize );
             return detail::GetAvailableSlotsIfAvailAcc<
                 DeviceAllocator,
-                Traits<DeviceAllocator>::providesAvailableSlots
-            >::getAvailableSlots(slotSize, *this);
+                Traits< DeviceAllocator >::providesAvailableSlots
+            >::getAvailableSlots( slotSize, *this );
         }
 
     };

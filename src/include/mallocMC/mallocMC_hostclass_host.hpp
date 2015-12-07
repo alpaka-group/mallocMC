@@ -33,6 +33,7 @@
 #include "mallocMC_prefixes.hpp"
 #include "mallocMC_hostclass_device.hpp"
 #include "mallocMC_traits.hpp"
+#include "mallocMC_allocator_handle.hpp"
 
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -71,11 +72,12 @@ namespace detail{
             T_Allocator& alloc
         ){
             return alloc.T_Allocator::CreationPolicy
-                ::getAvailableSlotsHost(slotSize, alloc.devAllocator);
+                ::getAvailableSlotsHost(slotSize, alloc.getAllocatorHandle().devAllocator);
         }
     };
 
 }
+
 
     struct HeapInfo
     {
@@ -133,19 +135,47 @@ namespace detail{
             ReservePoolPolicy,
             AlignmentPolicy
         > DevAllocator;
+        typedef AllocatorHandleImpl<Allocator> AllocatorHandle;
 
+    private:
+        AllocatorHandle allocatorHandle;
         HeapInfo heapInfos;
-        DevAllocator* devAllocator;
+
+    public:
+
+        MAMC_HOST
+        AllocatorHandle
+        getAllocatorHandle( )
+        {
+            return allocatorHandle;
+        }
 
         MAMC_HOST
         Allocator(
             size_t size = 8U * 1024U * 1024U
-        )
+        ) :
+            allocatorHandle( NULL )
         {
             void* pool = ReservePoolPolicy::setMemPool( size );
-            boost::tie( pool, size ) = AlignmentPolicy::alignPool( pool, size );
-            cudaMalloc( (void**) &devAllocator, sizeof(DevAllocator) );
-            CreationPolicy::initHeap( devAllocator, pool, size );
+            boost::tie(
+                pool,
+                size
+            ) = AlignmentPolicy::alignPool(
+                pool,
+                size
+            );
+            DevAllocator* devAllocatorPtr;
+            cudaMalloc(
+                ( void** ) &devAllocatorPtr,
+                sizeof( DevAllocator )
+            );
+            CreationPolicy::initHeap(
+                devAllocatorPtr,
+                pool,
+                size
+            );
+
+            allocatorHandle.devAllocator = devAllocatorPtr;
             heapInfos.p = pool;
             heapInfos.size = size;
         }
@@ -154,8 +184,8 @@ namespace detail{
         void
         finalizeHeap( )
         {
-            CreationPolicy::finalizeHeap( devAllocator, heapInfos.p );
-            cudaFree( devAllocator );
+            CreationPolicy::finalizeHeap( allocatorHandle.devAllocator, heapInfos.p );
+            cudaFree( allocatorHandle.devAllocator );
             ReservePoolPolicy::resetMemPool( heapInfos.p );
         }
 

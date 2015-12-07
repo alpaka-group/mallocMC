@@ -93,24 +93,24 @@ mallocMC::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
 
 __device__ int* arA;
 
-__global__ void createArrays(ScatterAllocator::DevAllocator* mMC){
+__global__ void createArrays(ScatterAllocator::AllocatorHandle mMC){
     unsigned x = 42;
     if(threadIdx.x==0){
-        arA = (int*) mMC->malloc(sizeof(int) * 32);
+        arA = (int*) mMC.malloc(sizeof(int) * 32);
     }
-    x = mMC->getAvailableSlots(1);
+    x = mMC.getAvailableSlots(1);
     __syncthreads();
     arA[threadIdx.x] = threadIdx.x;
     printf("tid: %d array: %d slots %d\n", threadIdx.x, arA[threadIdx.x],x);
     if(threadIdx.x == 0)
-        mMC->free(arA);
+        mMC.free(arA);
 }
 
 int main()
 {
     ScatterAllocator mMC(1U*1024U*1024U*1024U); //1GB for device-side malloc
 
-    createArrays<<<1,32>>>(mMC.devAllocator);
+    createArrays<<<1,32>>>(mMC.getAllocatorHandle());
     std::cout << "Slots from Host: " << mMC.getAvailableSlots(1) << std::endl;
 
     mMC.finalizeHeap();

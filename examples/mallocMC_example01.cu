@@ -60,19 +60,19 @@ __device__ int** arB;
 __device__ int** arC;
 
 
-__global__ void createArrays(int x, int y, ScatterAllocator::DevAllocator* mMC){
-  arA = (int**) mMC->malloc(sizeof(int*) * x*y);
-  arB = (int**) mMC->malloc(sizeof(int*) * x*y);
-  arC = (int**) mMC->malloc(sizeof(int*) * x*y);
+__global__ void createArrays(int x, int y, ScatterAllocator::AllocatorHandle mMC){
+  arA = (int**) mMC.malloc(sizeof(int*) * x*y);
+  arB = (int**) mMC.malloc(sizeof(int*) * x*y);
+  arC = (int**) mMC.malloc(sizeof(int*) * x*y);
 }
 
 
-__global__ void fillArrays(int length, int* d, ScatterAllocator::DevAllocator* mMC){
+__global__ void fillArrays(int length, int* d, ScatterAllocator::AllocatorHandle mMC){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
 
-  arA[id] = (int*) mMC->malloc(length*sizeof(int));
-  arB[id] = (int*) mMC->malloc(length*sizeof(int));
-  arC[id] = (int*) mMC->malloc(sizeof(int)*length);
+  arA[id] = (int*) mMC.malloc(length*sizeof(int));
+  arB[id] = (int*) mMC.malloc(length*sizeof(int));
+  arC[id] = (int*) mMC.malloc(sizeof(int)*length);
 
   for(int i=0 ; i<length; ++i){
     arA[id][i] = id*length+i;
@@ -92,11 +92,11 @@ __global__ void addArrays(int length, int* d){
 }
 
 
-__global__ void freeArrays(ScatterAllocator::DevAllocator* mMC){
+__global__ void freeArrays(ScatterAllocator::AllocatorHandle mMC){
   int id = threadIdx.x + blockIdx.x*blockDim.x;
-  mMC->free(arA[id]);
-  mMC->free(arB[id]);
-  mMC->free(arC[id]);
+  mMC.free(arA[id]);
+  mMC.free(arB[id]);
+  mMC.free(arC[id]);
 }
 
 
@@ -122,10 +122,10 @@ void run()
   std::vector<int> array_sums(block*grid,0);
 
   // create arrays of arrays on the device
-  createArrays<<<1,1>>>(grid,block, mMC.devAllocator);
+  createArrays<<<1,1>>>(grid,block, mMC.getAllocatorHandle());
 
   // fill 2 of them all with ascending values
-  fillArrays<<<grid,block>>>(length, d, mMC.devAllocator);
+  fillArrays<<<grid,block>>>(length, d, mMC.getAllocatorHandle());
 
   // add the 2 arrays (vector addition within each thread)
   // and do a thread-wise reduce to d
@@ -142,7 +142,7 @@ void run()
   int gaussian = n*(n-1);
   std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
 
-  freeArrays<<<grid,block>>>(mMC.devAllocator);
+  freeArrays<<<grid,block>>>(mMC.getAllocatorHandle());
   cudaFree(d);
   //finalize the heap again
   mMC.finalizeHeap();
