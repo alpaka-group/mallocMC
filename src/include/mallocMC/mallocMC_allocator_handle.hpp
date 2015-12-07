@@ -65,7 +65,7 @@ namespace mallocMC{
         }
 
         MAMC_ACCELERATOR
-        size_t
+        unsigned
         getAvailableSlots(
             size_t slotSize
         )
