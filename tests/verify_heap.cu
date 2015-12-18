@@ -415,7 +415,7 @@ void allocate(
   MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_sum,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
   MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_nSlots,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
 
-  CUDA_CHECK_KERNEL_SYNC(allocAll<<<blocks,threads>>>(d_testData, d_nSlots, d_sum, mMC.getAllocatorHandle()));
+  CUDA_CHECK_KERNEL_SYNC(allocAll<<<blocks,threads>>>(d_testData, d_nSlots, d_sum, mMC ));
 
   MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(h_sum,d_sum,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
   MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(h_nSlots,d_nSlots,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
@@ -669,7 +669,7 @@ bool run_heap_verification(
   unsigned long long* d_dealloc_counter;
   MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_dealloc_counter, sizeof(unsigned long long)));
   MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_dealloc_counter,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  CUDA_CHECK_KERNEL_SYNC(deallocAll<<<blocks,threads>>>(d_testData,d_dealloc_counter,static_cast<size_t>(usedSlots), mMC.getAllocatorHandle()));
+  CUDA_CHECK_KERNEL_SYNC(deallocAll<<<blocks,threads>>>(d_testData,d_dealloc_counter,static_cast<size_t>(usedSlots), mMC ));
   cudaFree(d_dealloc_counter);
   cudaFree(d_testData);
   mMC.finalizeHeap();

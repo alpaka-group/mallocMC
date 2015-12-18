@@ -136,12 +136,6 @@ namespace detail{
 
     public:
 
-        MAMC_HOST
-        AllocatorHandle
-        getAllocatorHandle( )
-        {
-            return allocatorHandle;
-        }
 
         MAMC_HOST
         Allocator(
@@ -180,6 +174,19 @@ namespace detail{
             CreationPolicy::finalizeHeap( allocatorHandle.devAllocator, heapInfos.p );
             cudaFree( allocatorHandle.devAllocator );
             ReservePoolPolicy::resetMemPool( heapInfos.p );
+        }
+
+        MAMC_HOST
+        AllocatorHandle
+        getAllocatorHandle( )
+        {
+            return allocatorHandle;
+        }
+
+        MAMC_HOST
+        operator AllocatorHandle()
+        {
+            return getAllocatorHandle();
         }
 
         MAMC_HOST static

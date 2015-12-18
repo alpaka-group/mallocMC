@@ -78,13 +78,12 @@ struct AlignmentConfig{
 // Define a new mMCator and call it ScatterAllocator
 // which resembles the behaviour of ScatterAlloc
 typedef mallocMC::Allocator<
-mallocMC::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
+    mallocMC::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
     mallocMC::DistributionPolicies::Noop,
     mallocMC::OOMPolicies::ReturnNull,
     mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>
     > ScatterAllocator;
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // End of mallocMC configuration
@@ -110,7 +109,7 @@ int main()
 {
     ScatterAllocator mMC(1U*1024U*1024U*1024U); //1GB for device-side malloc
 
-    createArrays<<<1,32>>>(mMC.getAllocatorHandle());
+    createArrays<<<1,32>>>( mMC );
     std::cout << "Slots from Host: " << mMC.getAvailableSlots(1) << std::endl;
 
     mMC.finalizeHeap();

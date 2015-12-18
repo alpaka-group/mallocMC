@@ -122,10 +122,10 @@ void run()
   std::vector<int> array_sums(block*grid,0);
 
   // create arrays of arrays on the device
-  createArrays<<<1,1>>>(grid,block, mMC.getAllocatorHandle());
+  createArrays<<<1,1>>>(grid,block, mMC );
 
   // fill 2 of them all with ascending values
-  fillArrays<<<grid,block>>>(length, d, mMC.getAllocatorHandle());
+  fillArrays<<<grid,block>>>(length, d, mMC );
 
   // add the 2 arrays (vector addition within each thread)
   // and do a thread-wise reduce to d
@@ -142,7 +142,7 @@ void run()
   int gaussian = n*(n-1);
   std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
 
-  freeArrays<<<grid,block>>>(mMC.getAllocatorHandle());
+  freeArrays<<<grid,block>>>( mMC );
   cudaFree(d);
   //finalize the heap again
   mMC.finalizeHeap();
