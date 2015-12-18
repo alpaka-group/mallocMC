@@ -31,7 +31,6 @@
 #include "mallocMC_utils.hpp"
 #include "mallocMC_constraints.hpp"
 #include "mallocMC_prefixes.hpp"
-#include "mallocMC_hostclass_device.hpp"
 #include "mallocMC_traits.hpp"
 #include "mallocMC_allocator_handle.hpp"
 
@@ -71,8 +70,7 @@ namespace detail{
             size_t slotSize,
             T_Allocator& alloc
         ){
-            return alloc.T_Allocator::CreationPolicy
-                ::getAvailableSlotsHost(slotSize, alloc.getAllocatorHandle().devAllocator);
+            return T_Allocator::CreationPolicy::getAvailableSlotsHost(slotSize, alloc.getAllocatorHandle().devAllocator);
         }
     };
 
@@ -106,11 +104,7 @@ namespace detail{
        typename T_ReservePoolPolicy,
        typename T_AlignmentPolicy
     >
-    struct Allocator :
-        public T_CreationPolicy,
-        public T_OOMPolicy,
-        public T_ReservePoolPolicy,
-        public T_AlignmentPolicy,
+    class Allocator :
         public PolicyConstraints<
             T_CreationPolicy,
             T_DistributionPolicy,
@@ -132,7 +126,6 @@ namespace detail{
             CreationPolicy,
             DistributionPolicy,
             OOMPolicy,
-            ReservePoolPolicy,
             AlignmentPolicy
         > DevAllocator;
         typedef AllocatorHandleImpl<Allocator> AllocatorHandle;

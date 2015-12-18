@@ -29,5 +29,5 @@
 #pragma once
 
 #include "mallocMC_traits.hpp"
-#include "mallocMC_hostclass_device.hpp"
-#include "mallocMC_hostclass_host.hpp"
+#include "device_allocator.hpp"
+#include "allocator.hpp"

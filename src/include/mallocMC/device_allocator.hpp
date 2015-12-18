@@ -108,21 +108,16 @@ namespace detail{
         typename T_CreationPolicy,
         typename T_DistributionPolicy,
         typename T_OOMPolicy,
-        typename T_ReservePoolPolicy,
         typename T_AlignmentPolicy
     >
     class DeviceAllocator :
-        public T_CreationPolicy,
-        public T_OOMPolicy,
-        public T_ReservePoolPolicy,
-        public T_AlignmentPolicy
+        public T_CreationPolicy
     {
         typedef boost::uint32_t uint32;
     public:
         typedef T_CreationPolicy CreationPolicy;
         typedef T_DistributionPolicy DistributionPolicy;
         typedef T_OOMPolicy OOMPolicy;
-        typedef T_ReservePoolPolicy ReservePoolPolicy;
         typedef T_AlignmentPolicy AlignmentPolicy;
 
         void* pool;
@@ -160,7 +155,7 @@ namespace detail{
         MAMC_ACCELERATOR
         unsigned
         getAvailableSlots(
-            size_t slotSize 
+            size_t slotSize
         )
         {
             slotSize = AlignmentPolicy::applyPadding( slotSize );

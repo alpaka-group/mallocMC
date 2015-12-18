@@ -45,7 +45,7 @@
 
 namespace mallocMC{
 namespace CreationPolicies{
-    
+
 namespace ScatterKernelDetail{
   template <typename T_Allocator>
   __global__ void initKernel(T_Allocator* heap, void* heapmem, size_t memsize){
@@ -79,7 +79,7 @@ namespace ScatterKernelDetail{
       typedef T_Hashing HashingProperties;
       struct  Properties : HeapProperties, HashingProperties{};
       typedef boost::mpl::bool_<true>  providesAvailableSlots;
-      
+
     private:
       typedef boost::uint32_t uint32;
 
@@ -815,15 +815,15 @@ namespace ScatterKernelDetail{
       }
 
 
-      template < typename T_Obj>
-      static void* initHeap(T_Obj* heap, void* pool, size_t memsize){
+      template < typename T_DeviceAllocator >
+      static void* initHeap( T_DeviceAllocator* heap, void* pool, size_t memsize){
         ScatterKernelDetail::initKernel<<<1,256>>>(heap, pool, memsize);
         return heap;
       }
 
 
-      template < typename T_Obj >
-      static void finalizeHeap(T_Obj* heap, void* pool){
+      template < typename T_DeviceAllocator >
+      static void finalizeHeap(T_DeviceAllocator* heap, void* pool){
         ScatterKernelDetail::finalizeKernel<<<1,256>>>(heap);
       }
 
@@ -926,15 +926,14 @@ namespace ScatterKernelDetail{
        * @param slotSize the size of allocatable elements to count
        * @param obj a reference to the allocator instance (host-side)
        */
-      template <typename T_Obj>
-      static unsigned getAvailableSlotsHost(size_t const slotSize, T_Obj* obj){
-        T_Obj* heap = obj;
-        //MALLOCMC_CUDA_CHECKED_CALL(cudaGetSymbolAddress((void**)&heap,obj));
+    public:
+      template<typename T_DeviceAllocator>
+      static unsigned getAvailableSlotsHost(size_t const slotSize, T_DeviceAllocator* heap){
         unsigned h_slots = 0;
         unsigned* d_slots;
         cudaMalloc((void**) &d_slots, sizeof(unsigned));
         cudaMemcpy(d_slots, &h_slots, sizeof(unsigned), cudaMemcpyHostToDevice);
-      
+
         ScatterKernelDetail::getAvailableSlotsKernel<<<64,256>>>(heap, slotSize, d_slots);
 
         cudaMemcpy(&h_slots, d_slots, sizeof(unsigned), cudaMemcpyDeviceToHost);
