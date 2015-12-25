@@ -46,6 +46,9 @@
 #include <typeinfo>
 #include <vector>
 
+// includes for commandline parsing
+#include <boost/program_options.hpp>
+
 //include the Heap with the arguments given in the config
 #include "src/include/mallocMC/mallocMC_utils.hpp"
 #include "verify_heap_config.hpp"
@@ -75,11 +78,6 @@ std::ostream& dout() {
   return verbose ? std::cout : n;
 }
 
-// define some defaults
-static const unsigned threads_default = 128;
-static const unsigned blocks_default  = 64; 
-static const size_t heapInMB_default  = 1024; // 1GB
-
 
 /**
  * will do a basic verification of scatterAlloc.
@@ -93,9 +91,9 @@ static const size_t heapInMB_default  = 1024; // 1GB
 int main(int argc, char** argv){
   bool correct          = false;
   bool machine_readable = false;
-  size_t heapInMB       = heapInMB_default;
-  unsigned threads      = threads_default;
-  unsigned blocks       = blocks_default;
+  size_t heapInMB       = 0;
+  unsigned threads      = 0;
+  unsigned blocks       = 0;
 
   parse_cmdline(argc, argv, &heapInMB, &threads, &blocks, &machine_readable);
 
@@ -127,13 +125,11 @@ int main(int argc, char** argv){
 /**
  * will parse command line arguments
  *
- * for more details, see print_help()
- *
  * @param argc argc from main()
  * @param argv argv from main()
- * @param heapInMP will be filled with the heapsize, if given as a parameter
- * @param threads will be filled with number of threads, if given as a parameter
- * @param blocks will be filled with number of blocks, if given as a parameter
+ * @param heapInMP will be filled with the heapsize
+ * @param threads will be filled with number of threads
+ * @param blocks will be filled with number of blocks
  */
 void parse_cmdline(
     const int argc,
@@ -144,89 +140,41 @@ void parse_cmdline(
     bool *machine_readable
     ){
 
-  std::vector<std::pair<std::string, std::string> > parameters;
+    namespace po = boost::program_options;
 
-  // Parse Commandline, tokens are shaped like ARG=PARAM or ARG
-  // This requires to use '=', if you want to supply a value with a parameter
-  for (int i = 1; i < argc; ++i) {
-    char* pos = strtok(argv[i], "=");
-    std::pair < std::string, std::string > p(std::string(pos), std::string(""));
-    pos = strtok(NULL, "=");
-    if (pos != NULL) {
-      p.second = std::string(pos);
-    }
-    parameters.push_back(p);
-  }
+    std::stringstream desc_stream;
+    desc_stream << "Usage: " << argv[0] << " [options]\nAllowed options";
+    po::options_description desc( desc_stream.str() );
+    desc.add_options()
+      ( "help,h", "Print this help message and exit" )
+      ( "verbose,v", "Print information about parameters and progress" )
+      ( "machine_readable,m", "Print all relevant parameters as CSV. This will suppress all other output unless explicitly requested with --verbose or -v" )
+      ( "threads,t", po::value<unsigned> ( threads )->default_value(128),
+        "Set the number of threads per block" )
+      ( "blocks,b", po::value<unsigned> ( blocks )->default_value(64),
+        "Set the number of blocks in the grid" )
+      ( "heapsize,s", po::value<size_t> ( heapInMB )->default_value(1024),
+        "Set the heapsize to N Megabyte" )
+    ;
 
-  // go through all parameters that were found
-  for (unsigned i = 0; i < parameters.size(); ++i) {
-    std::pair < std::string, std::string > p = parameters.at(i);
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+    po::notify( vm );
 
-    if (p.first == "-v" || p.first == "--verbose") {
-      verbose = true;
-    }
-
-    if (p.first == "--threads") {
-      *threads = atoi(p.second.c_str());
-    }
-
-    if (p.first == "--blocks") {
-      *blocks = atoi(p.second.c_str());
-    }
-
-    if(p.first == "--heapsize") {
-      *heapInMB = size_t(atoi(p.second.c_str()));
-    }
-
-    if(p.first == "-h" || p.first == "--help"){
-      print_help(argv);
+    if ( vm.count( "help" ) ){
+      std::cerr << desc << std::endl;
       exit(0);
     }
 
-    if(p.first == "-m" || p.first == "--machine_readable"){
+    if( vm.count("verbose") ){
+      verbose = true;
+    }
+
+    if( vm.count("machine_readable") ){
       *machine_readable = true;
     }
-  }
 }
 
-
-/**
- * prints a helpful message about program use
- *
- * @param argv the argv-parameter from main, used to find the program name
- */
-void print_help(char** argv){
-  std::stringstream s;
-
-  s << "SYNOPSIS:"                                              << std::endl;
-  s << argv[0] << " [OPTIONS]"                                  << std::endl;
-  s << ""                                                       << std::endl;
-  s << "OPTIONS:"                                               << std::endl;
-  s << "  -h, --help"                                           << std::endl;
-  s << "    Print this help message and exit"                   << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  -v, --verbose"                                        << std::endl;
-  s << "    Print information about parameters and progress"    << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  -m, --machine_readable"                               << std::endl;
-  s << "    Print all relevant parameters as CSV. This will"    << std::endl;
-  s << "    suppress all other output unless explicitly"        << std::endl;
-  s << "    requested with --verbose or -v"                     << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  --threads=N"                                          << std::endl;
-  s << "    Set the number of threads per block (default "                  ;
-  s <<                               threads_default << "128)"  << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  --blocks=N"                                           << std::endl;
-  s << "    Set the number of blocks in the grid (default "                 ;
-  s <<                                   blocks_default << ")"  << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  --heapsize=N"                                         << std::endl;
-  s << "    Set the heapsize to N Megabyte (default "                       ;
-  s <<                         heapInMB_default << "1024)"      << std::endl;
-
-  std::cout << s.str();
-}
 
 
 /**

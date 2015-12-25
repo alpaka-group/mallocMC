@@ -26,6 +26,7 @@ before_script:
   - sudo apt-get install -qq nvidia-current
   - sudo apt-get install -qq nvidia-cuda-toolkit nvidia-cuda-dev
   - sudo apt-get install -qq libboost1.48-dev
+  - sudo apt-get install -qq libboost-program-options1.48-dev
   - sudo find /usr/ -name libcuda*.so
 
 after_script:
