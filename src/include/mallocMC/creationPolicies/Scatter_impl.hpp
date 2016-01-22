@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 #include <boost/cstdint.hpp> /* uint32_t */
 #include <iostream>
 #include <string>
