@@ -42,7 +42,7 @@
 
 #include <cuda.h>
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
 #include <typeinfo>
 #include <vector>
 
