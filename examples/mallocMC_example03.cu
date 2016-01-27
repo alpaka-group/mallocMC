@@ -78,12 +78,12 @@ struct AlignmentConfig{
 // Define a new mMCator and call it ScatterAllocator
 // which resembles the behaviour of ScatterAlloc
 typedef mallocMC::Allocator<
-    mallocMC::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
+    mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
     mallocMC::DistributionPolicies::Noop,
     mallocMC::OOMPolicies::ReturnNull,
     mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>
-    > ScatterAllocator;
+> ScatterAllocator;
 
 ///////////////////////////////////////////////////////////////////////////////
 // End of mallocMC configuration
@@ -92,24 +92,27 @@ typedef mallocMC::Allocator<
 
 __device__ int* arA;
 
-__global__ void createArrays(ScatterAllocator::AllocatorHandle mMC){
+
+__global__ void exampleKernel(ScatterAllocator::AllocatorHandle mMC){
     unsigned x = 42;
-    if(threadIdx.x==0){
+    if(threadIdx.x==0)
         arA = (int*) mMC.malloc(sizeof(int) * 32);
-    }
+
     x = mMC.getAvailableSlots(1);
     __syncthreads();
     arA[threadIdx.x] = threadIdx.x;
     printf("tid: %d array: %d slots %d\n", threadIdx.x, arA[threadIdx.x],x);
+
     if(threadIdx.x == 0)
         mMC.free(arA);
 }
+
 
 int main()
 {
     ScatterAllocator mMC(1U*1024U*1024U*1024U); //1GB for device-side malloc
 
-    createArrays<<<1,32>>>( mMC );
+    exampleKernel<<<1,32>>>( mMC );
     std::cout << "Slots from Host: " << mMC.getAvailableSlots(1) << std::endl;
 
     mMC.finalizeHeap();

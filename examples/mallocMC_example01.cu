@@ -60,7 +60,7 @@ __device__ int** arB;
 __device__ int** arC;
 
 
-__global__ void createArrays(int x, int y, ScatterAllocator::AllocatorHandle mMC){
+__global__ void createArrayPointers(int x, int y, ScatterAllocator::AllocatorHandle mMC){
   arA = (int**) mMC.malloc(sizeof(int*) * x*y);
   arB = (int**) mMC.malloc(sizeof(int*) * x*y);
   arC = (int**) mMC.malloc(sizeof(int*) * x*y);
@@ -100,6 +100,13 @@ __global__ void freeArrays(ScatterAllocator::AllocatorHandle mMC){
 }
 
 
+__global__ void freeArrayPointers(ScatterAllocator::AllocatorHandle mMC){
+  mMC.free(arA);
+  mMC.free(arB);
+  mMC.free(arC);
+}
+
+
 void run()
 {
   size_t block = 32;
@@ -122,7 +129,7 @@ void run()
   std::vector<int> array_sums(block*grid,0);
 
   // create arrays of arrays on the device
-  createArrays<<<1,1>>>(grid,block, mMC );
+  createArrayPointers<<<1,1>>>(grid,block, mMC );
 
   // fill 2 of them all with ascending values
   fillArrays<<<grid,block>>>(length, d, mMC );
@@ -143,7 +150,9 @@ void run()
   std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
 
   freeArrays<<<grid,block>>>( mMC );
+  freeArrayPointers<<<1,1>>>( mMC );
   cudaFree(d);
+
   //finalize the heap again
   mMC.finalizeHeap();
 }
