@@ -96,66 +96,66 @@ namespace ScatterKernelDetail{
 #ifndef MALLOCMC_CP_SCATTER_PAGESIZE
 #define MALLOCMC_CP_SCATTER_PAGESIZE  static_cast<uint32>(HeapProperties::pagesize::value)
 #endif
-      static const uint32 pagesize      = MALLOCMC_CP_SCATTER_PAGESIZE;
+      BOOST_STATIC_CONSTEXPR uint32 pagesize      = MALLOCMC_CP_SCATTER_PAGESIZE;
 
 #ifndef MALLOCMC_CP_SCATTER_ACCESSBLOCKS
 #define MALLOCMC_CP_SCATTER_ACCESSBLOCKS static_cast<uint32>(HeapProperties::accessblocks::value)
 #endif
-      static const uint32 accessblocks  = MALLOCMC_CP_SCATTER_ACCESSBLOCKS;
+      BOOST_STATIC_CONSTEXPR uint32 accessblocks  = MALLOCMC_CP_SCATTER_ACCESSBLOCKS;
 
 #ifndef MALLOCMC_CP_SCATTER_REGIONSIZE
 #define MALLOCMC_CP_SCATTER_REGIONSIZE static_cast<uint32>(HeapProperties::regionsize::value)
 #endif
-      static const uint32 regionsize    = MALLOCMC_CP_SCATTER_REGIONSIZE;
+      BOOST_STATIC_CONSTEXPR uint32 regionsize    = MALLOCMC_CP_SCATTER_REGIONSIZE;
 
 #ifndef MALLOCMC_CP_SCATTER_WASTEFACTOR
 #define MALLOCMC_CP_SCATTER_WASTEFACTOR static_cast<uint32>(HeapProperties::wastefactor::value)
 #endif
-      static const uint32 wastefactor   = MALLOCMC_CP_SCATTER_WASTEFACTOR;
+      BOOST_STATIC_CONSTEXPR uint32 wastefactor   = MALLOCMC_CP_SCATTER_WASTEFACTOR;
 
 #ifndef MALLOCMC_CP_SCATTER_RESETFREEDPAGES
 #define MALLOCMC_CP_SCATTER_RESETFREEDPAGES static_cast<bool>(HeapProperties::resetfreedpages::value)
 #endif
-      static const bool resetfreedpages = MALLOCMC_CP_SCATTER_RESETFREEDPAGES;
+      BOOST_STATIC_CONSTEXPR bool resetfreedpages = MALLOCMC_CP_SCATTER_RESETFREEDPAGES;
 
 
     public:
-      static const uint32 _pagesize       = pagesize;
-      static const uint32 _accessblocks   = accessblocks;
-      static const uint32 _regionsize     = regionsize;
-      static const uint32 _wastefactor    = wastefactor;
-      static const bool _resetfreedpages  = resetfreedpages;
+      BOOST_STATIC_CONSTEXPR uint32 _pagesize       = pagesize;
+      BOOST_STATIC_CONSTEXPR uint32 _accessblocks   = accessblocks;
+      BOOST_STATIC_CONSTEXPR uint32 _regionsize     = regionsize;
+      BOOST_STATIC_CONSTEXPR uint32 _wastefactor    = wastefactor;
+      BOOST_STATIC_CONSTEXPR bool _resetfreedpages  = resetfreedpages;
 
     private:
 #if _DEBUG || ANALYSEHEAP
     public:
 #endif
-      //static const uint32 minChunkSize0 = pagesize/(32*32);
-      static const uint32 minChunkSize1 = 0x10;
-      static const uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
-      static const uint32 minSegmentSize = 32*minChunkSize1 + sizeof(uint32);
-      static const uint32 tmp_maxOPM = minChunkSize1 > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize-1)) / minSegmentSize;
-      static const uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
+      //BOOST_STATIC_CONSTEXPR uint32 minChunkSize0 = pagesize/(32*32);
+      BOOST_STATIC_CONSTEXPR uint32 minChunkSize1 = 0x10;
+      BOOST_STATIC_CONSTEXPR uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
+      BOOST_STATIC_CONSTEXPR uint32 minSegmentSize = 32*minChunkSize1 + sizeof(uint32);
+      BOOST_STATIC_CONSTEXPR uint32 tmp_maxOPM = minChunkSize1 > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize-1)) / minSegmentSize;
+      BOOST_STATIC_CONSTEXPR uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGK
 #define MALLOCMC_CP_SCATTER_HASHINGK    static_cast<uint32>(HashingProperties::hashingK::value)
 #endif
-     static const uint32 hashingK       = MALLOCMC_CP_SCATTER_HASHINGK;
+     BOOST_STATIC_CONSTEXPR uint32 hashingK       = MALLOCMC_CP_SCATTER_HASHINGK;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGDISTMP
 #define MALLOCMC_CP_SCATTER_HASHINGDISTMP static_cast<uint32>(HashingProperties::hashingDistMP::value)
 #endif
-     static const uint32 hashingDistMP  = MALLOCMC_CP_SCATTER_HASHINGDISTMP;
+     BOOST_STATIC_CONSTEXPR uint32 hashingDistMP  = MALLOCMC_CP_SCATTER_HASHINGDISTMP;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGDISTWP
 #define MALLOCMC_CP_SCATTER_HASHINGDISTWP static_cast<uint32>(HashingProperties::hashingDistWP::value)
 #endif
-     static const uint32 hashingDistWP  = MALLOCMC_CP_SCATTER_HASHINGDISTWP;
+     BOOST_STATIC_CONSTEXPR uint32 hashingDistWP  = MALLOCMC_CP_SCATTER_HASHINGDISTWP;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGDISTWPREL
 #define MALLOCMC_CP_SCATTER_HASHINGDISTWPREL static_cast<uint32>(HashingProperties::hashingDistWPRel::value)
 #endif
-     static const uint32 hashingDistWPRel = MALLOCMC_CP_SCATTER_HASHINGDISTWPREL;
+     BOOST_STATIC_CONSTEXPR uint32 hashingDistWPRel = MALLOCMC_CP_SCATTER_HASHINGDISTWPREL;
 
 
       /**
