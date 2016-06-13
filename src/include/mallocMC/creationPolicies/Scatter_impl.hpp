@@ -4,8 +4,8 @@
 
   Copyright (C) 2012 Institute for Computer Graphics and Vision,
                      Graz University of Technology
-  Copyright (C) 2014 Institute of Radiation Physics,
-                     Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright (C) 2014-2016 Institute of Radiation Physics,
+                          Helmholtz-Zentrum Dresden - Rossendorf
 
   Author(s):  Markus Steinberger - steinberger ( at ) icg.tugraz.at
               Rene Widera - r.widera ( at ) hzdr.de
@@ -38,6 +38,7 @@
 #include <iostream>
 #include <string>
 #include <cassert>
+#include <stdexcept>
 #include <boost/mpl/bool.hpp>
 
 #include "../mallocMC_utils.hpp"
@@ -817,6 +818,13 @@ namespace ScatterKernelDetail{
 
       template < typename T_DeviceAllocator >
       static void* initHeap( T_DeviceAllocator* heap, void* pool, size_t memsize){
+        if( pool == NULL && memsize != 0 )
+        {
+          throw std::invalid_argument(
+            "Scatter policy cannot use NULL for non-empty memory pools.\
+             Maybe you are using an incompatible ReservePoolPolicy or AlignmentPolicy."
+          );
+        }
         ScatterKernelDetail::initKernel<<<1,256>>>(heap, pool, memsize);
         return heap;
       }
