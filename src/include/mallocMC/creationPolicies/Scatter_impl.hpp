@@ -821,8 +821,8 @@ namespace ScatterKernelDetail{
         if( pool == NULL && memsize != 0 )
         {
           throw std::invalid_argument(
-            "Scatter policy cannot use NULL for non-empty memory pools.\
-             Maybe you are using an incompatible ReservePoolPolicy or AlignmentPolicy."
+            "Scatter policy cannot use NULL for non-empty memory pools. "
+            "Maybe you are using an incompatible ReservePoolPolicy or AlignmentPolicy."
           );
         }
         ScatterKernelDetail::initKernel<<<1,256>>>(heap, pool, memsize);
