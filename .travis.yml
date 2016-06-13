@@ -10,10 +10,12 @@ compiler:
 env:
   global:
     - INSTALL_DIR=~/mylibs
+    - CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=\"-Werror\" -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR"
+  # - CMAKE_FLAGS="-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR"
 
 script:
   - mkdir build_tmp && cd build_tmp
-  - CXXFLAGS="-Werror" cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR $TRAVIS_BUILD_DIR
+  - cmake $CMAKE_FLAGS $TRAVIS_BUILD_DIR
   - make
   - make install
   - make examples
