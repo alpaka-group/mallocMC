@@ -93,7 +93,7 @@ Step 3: instantiate allocator
 To use the defined allocator type, create an instance with the desired heap size:
 
 ```c++
-ScatterAllocator sa(512U * 1024U * 1024U); // heap size of 512MB
+ScatterAllocator sa( 512U * 1024U * 1024U ); // heap size of 512MiB
 ```
 
 The allocator object offers the following methods
@@ -149,12 +149,12 @@ __global__ exampleKernel(ScatterAllocator::AllocatorHandle sah)
 }
 
 int main(){
-  ScatterAllocator sa(1U*512U*1024U*1024U); // heapsize of 512MB
-  exampleKernel<<<32,32>>>(sa);
+  ScatterAllocator sa( 1U * 512U * 1024U * 1024U ); // heap size of 512MiB
+  exampleKernel<<< 32, 32 >>>(sa);
 
   sa.finalizeHeap();
   return 0;
 }
 ```
 
-For more usage examples, have a look at the [examples](examples)
+For more usage examples, have a look at the [examples](examples).
