@@ -171,6 +171,10 @@ namespace detail{
     public:
 
 
+        /** create allocator
+         *
+         * @param size size in bytes
+         */
         MAMC_HOST
         Allocator(
             size_t size = 8U * 1024U * 1024U
@@ -178,6 +182,13 @@ namespace detail{
             allocatorHandle( NULL )
         {
             alloc( size );
+        }
+
+        /** free all allocated memory */
+        MAMC_HOST
+        ~Allocator( )
+        {
+            finalizeHeap( );
         }
 
         /** destroy current heap data and resize the heap
