@@ -13,7 +13,7 @@ There is one header file that will include *all* necessary files:
 Step 2a: choose policies
 -----------------------
 
-Each instance of a policy based allocator is composed through 5 **policies**. Each policy is expressed as a **policy class**. 
+Each instance of a policy based allocator is composed through 5 **policies**. Each policy is expressed as a **policy class**.
 
 Currently, there are the following policy classes available:
 
@@ -73,7 +73,7 @@ could create the following typedef instead:
 ```c++
 using namespace mallocMC;
 
-typedef mallocMC::Allocator< 
+typedef mallocMC::Allocator<
   CreationPolicies::Scatter<>,
   DistributionPolicies::XMallocSIMD<>,
   OOMPolicies::ReturnNull,
@@ -98,29 +98,22 @@ ScatterAllocator sa( 512U * 1024U * 1024U ); // heap size of 512MiB
 
 The allocator object offers the following methods
 
-| Name | description | 
+| Name | description |
 |---------------------- |-------------------------|
 | getAvailableSlots(size_t)   | Determines number of allocatable slots of a certain size. This only works, if the chosen CreationPolicy supports it (can be found through `mallocMC::Traits<ScatterAllocator>::providesAvailableSlots`) |
-| finalizeHeap()     | Frees the heap on the accelerator |   
-
-Note, that the heap needs to be freed explicitly after it is no longer used:
-
-```c++
-sa.finalizeHeap();
-```
 
 
 Step 4: use dynamic memory allocation in a kernel
 -------------------------------------------------
 
-A handle to the allocator object must be passed to each kernel. The handle type is defined as an internal type of the allocator. Inside the kernel, this handle can be used to request memory.  
+A handle to the allocator object must be passed to each kernel. The handle type is defined as an internal type of the allocator. Inside the kernel, this handle can be used to request memory.
 
 The handle offers the following methods:
 
-| Name | description | 
+| Name | description |
 |---------------------- |-------------------------|
-| malloc(size_t) | Allocates memory on the accelerator  |   
-| free(size_t)     | Frees memory on the accelerator    |   
+| malloc(size_t) | Allocates memory on the accelerator  |
+| free(size_t)     | Frees memory on the accelerator    |
 | getAvailableSlots()   | Determines number of allocatable slots of a certain size. This only works, if the chosen CreationPolicy supports it (can be found through `mallocMC::Traits<ScatterAllocator>::providesAvailableSlots`) |
 
 A simplistic example would look like this:
@@ -129,7 +122,7 @@ A simplistic example would look like this:
 
 namespace mallocMC = MC;
 
-typedef MC::Allocator< 
+typedef MC::Allocator<
   MC::CreationPolicies::Scatter<>,
   MC::DistributionPolicies::XMallocSIMD<>,
   MC::OOMPolicies::ReturnNull,
@@ -140,11 +133,11 @@ typedef MC::Allocator<
 __global__ exampleKernel(ScatterAllocator::AllocatorHandle sah)
 {
   // some code ...
-  
+
   int* a = (int*) sah.malloc(sizeof(int)*42);
-  
+
   // some more code, using *a
-  
+
   sah.free(a);
 }
 
@@ -152,7 +145,6 @@ int main(){
   ScatterAllocator sa( 1U * 512U * 1024U * 1024U ); // heap size of 512MiB
   exampleKernel<<< 32, 32 >>>(sa);
 
-  sa.finalizeHeap();
   return 0;
 }
 ```
