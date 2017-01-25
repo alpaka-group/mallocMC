@@ -168,6 +168,25 @@ namespace detail{
             heapInfos.size = size;
         }
 
+        /** free all data structures
+         *
+         * Free all allocated memory.
+         * After this call the instance is an in invalid state
+         */
+        MAMC_HOST
+        void free()
+        {
+            cudaFree( allocatorHandle.devAllocator );
+            ReservePoolPolicy::resetMemPool( heapInfos.p );
+            allocatorHandle.devAllocator = NULL;
+            heapInfos.size = 0;
+            heapInfos.p = NULL;
+        }
+
+        /* forbid to copy the allocator */
+        MAMC_HOST
+        Allocator( const Allocator& );
+
     public:
 
 
@@ -180,6 +199,12 @@ namespace detail{
             alloc( size );
         }
 
+        MAMC_HOST
+        ~Allocator( )
+        {
+            free( );
+        }
+
         /** destroy current heap data and resize the heap
          *
          * @param size number of bytes
@@ -190,18 +215,8 @@ namespace detail{
             size_t size
         )
         {
-            finalizeHeap( );
+            free( );
             alloc( size );
-        }
-
-        MAMC_HOST
-        void
-        finalizeHeap( )
-        {
-            CreationPolicy::finalizeHeap( allocatorHandle.devAllocator, heapInfos.p );
-            cudaFree( allocatorHandle.devAllocator );
-            ReservePoolPolicy::resetMemPool( heapInfos.p );
-            heapInfos.size = 0;
         }
 
         MAMC_HOST
