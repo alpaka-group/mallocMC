@@ -216,6 +216,4 @@ void run()
     freeArrayPointers<<<1, 1>>>( mMC );
     cudaFree(d);
 
-    //finalize the heap again
-    mMC.finalizeHeap();
 }
