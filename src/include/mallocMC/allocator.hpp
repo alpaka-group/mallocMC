@@ -201,6 +201,7 @@ namespace detail{
             CreationPolicy::finalizeHeap( allocatorHandle.devAllocator, heapInfos.p );
             cudaFree( allocatorHandle.devAllocator );
             ReservePoolPolicy::resetMemPool( heapInfos.p );
+            heapInfos.size = 0;
         }
 
         MAMC_HOST
