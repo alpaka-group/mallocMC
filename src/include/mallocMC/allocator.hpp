@@ -134,14 +134,15 @@ namespace detail{
         AllocatorHandle allocatorHandle;
         HeapInfo heapInfos;
 
-    public:
-
-
+        /** allocate heap memory
+         *
+         * @param size number of bytes
+         */
         MAMC_HOST
-        Allocator(
-            size_t size = 8U * 1024U * 1024U
-        ) :
-            allocatorHandle( NULL )
+        void
+        alloc(
+            size_t size
+        )
         {
             void* pool = ReservePoolPolicy::setMemPool( size );
             boost::tie(
@@ -165,6 +166,32 @@ namespace detail{
             allocatorHandle.devAllocator = devAllocatorPtr;
             heapInfos.p = pool;
             heapInfos.size = size;
+        }
+
+    public:
+
+
+        MAMC_HOST
+        Allocator(
+            size_t size = 8U * 1024U * 1024U
+        ) :
+            allocatorHandle( NULL )
+        {
+            alloc( size );
+        }
+
+        /** destroy current heap data and resize the heap
+         *
+         * @param size number of bytes
+         */
+        MAMC_HOST
+        void
+        destructiveResize(
+            size_t size
+        )
+        {
+            finalizeHeap( );
+            alloc( size );
         }
 
         MAMC_HOST
