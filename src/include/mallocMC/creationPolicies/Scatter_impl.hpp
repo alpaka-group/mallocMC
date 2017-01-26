@@ -270,7 +270,7 @@ namespace ScatterKernelDetail{
           uint32 old = atomicOr(bitfield, mask);
           if( (old & mask) == 0)
             return spot;
-          // note: __popc(old) == spots should be sufficient, 
+          // note: __popc(old) == spots should be sufficient,
           //but if someone corrupts the memory we end up in an endless loop in here...
           if(__popc(old) >= spots)
             return -1;
@@ -410,7 +410,7 @@ namespace ScatterKernelDetail{
                 {
                   uint32 chunksize = _ptes[ptetry].chunksize;
                   if(chunksize >= bytes && chunksize <= maxchunksize)
-                  {            
+                  {
                     void * res = tryUsePage(ptetry, chunksize);
                     if(res != 0)  return res;
                   }
@@ -514,7 +514,7 @@ namespace ScatterKernelDetail{
         if(oldfilllevel == pagesize / 2 / chunksize)
         {
           uint32 region = page / regionsize;
-          _regions[region] = 0;        
+          _regions[region] = 0;
           uint32 block = region * regionsize * accessblocks / _numpages ;
           if(warpid() + laneid() == 0)
             atomicMin((uint32*)&_firstfreeblock, block);
@@ -653,7 +653,7 @@ namespace ScatterKernelDetail{
         //take care of padding
         //bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1); // in alignment-policy
         if(bytes < pagesize)
-          //chunck based 
+          //chunck based
           return allocChunked(bytes);
         else
           //allocate a range of pages
@@ -771,45 +771,6 @@ namespace ScatterKernelDetail{
 
       }
 
-      /** resets the heap data structures
-       *
-       * resets the pages, ptes, regions, firstfreedblock,firstfreepagebased
-       * and pagebaseMutex to a state similar to that after calling
-       * initDeviceFunction. The whole process of resetting is not strictly
-       * necessary, if initDeviceFunction is called before another request
-       * happens. However, this will leave the heap in a tidy state.
-       */
-      __device__ void finalizeDeviceFunction()
-      {
-        uint32 linid = threadIdx.x + blockDim.x*(threadIdx.y + threadIdx.z*blockDim.y);
-        uint32 threads = blockDim.x*blockDim.y*blockDim.z;
-        uint32 linblockid = blockIdx.x + gridDim.x*(blockIdx.y + blockIdx.z*gridDim.y);
-        uint32 blocks =  gridDim.x*gridDim.y*gridDim.z;
-        linid = linid + linblockid*threads;
-        threads = threads*blocks;
-
-        PTE* ptes = (PTE*)(_page + _numpages);
-
-        for(uint32 i = linid; i < _numpages; i+= threads)
-        {
-          ptes[i].init();
-          _page[i].init();
-        }
-
-        uint32 numregions = _numpages / regionsize;
-        for(uint32 i = linid; i < numregions; i+= numregions){
-          _regions[i] = 0;
-        }
-
-        if(linid == 0)
-        {
-          _ptes = (volatile PTE*)ptes;
-          _firstfreeblock = 0;
-          _pagebasedMutex = 0;
-          _firstFreePageBased = _numpages-1;
-        }
-      }
-
       __device__ bool isOOM(void* p, size_t s){
         // one thread that requested memory returned null
         return  s && (p == NULL);
@@ -828,13 +789,6 @@ namespace ScatterKernelDetail{
         ScatterKernelDetail::initKernel<<<1,256>>>(heap, pool, memsize);
         return heap;
       }
-
-
-      template < typename T_DeviceAllocator >
-      static void finalizeHeap(T_DeviceAllocator* heap, void* pool){
-        ScatterKernelDetail::finalizeKernel<<<1,256>>>(heap);
-      }
-
 
       /** counts how many elements of a size fit inside a given page
        *

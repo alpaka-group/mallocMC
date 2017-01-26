@@ -61,11 +61,6 @@ namespace CreationPolicies{
       return dAlloc;
     }
 
-    template < typename T>
-    static void finalizeHeap(const T*, void*){
-      return;
-    }
-
     static std::string classname(){
       return "OldMalloc";
     }

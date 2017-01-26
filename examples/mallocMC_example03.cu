@@ -115,6 +115,5 @@ int main()
     exampleKernel<<<1,32>>>( mMC );
     std::cout << "Slots from Host: " << mMC.getAvailableSlots(1) << std::endl;
 
-    mMC.finalizeHeap();
     return 0;
 }
