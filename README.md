@@ -8,6 +8,20 @@ accelerators**. Currently, it supports **NVIDIA GPUs** of compute capability
 `sm_20` or higher through the *ScatterAlloc* algorithm.
 
 
+Usage
+-------
+
+Follow the step-by-step instructions in [Usage.md](Usage.md) to replace your
+`new`/`malloc` calls with a *blacingly fast* mallocMC heap! :rocket:
+
+
+Install
+-------
+
+mallocMC is header-only, but requires a few other C++ libraries to be
+available. Our installation notes can be found in [INSTALL.md](INSTALL.md).
+
+
 On the ScatterAlloc Algorithm
 -----------------------------
 
@@ -46,11 +60,6 @@ Branches
 | **dev**     | [![Build Status Development](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC.png?branch=dev)](https://travis-ci.org/ComputationalRadiationPhysics/mallocMC "dev") | our development branch - start and merge new branches here |
 | **tugraz**  | n/a | *ScatterAlloc* "upstream" branch: not backwards compatible mirror for algorithmic changes |
 
-
-Install
--------
-
-Installation notes can be found in [INSTALL.md](INSTALL.md).
 
 
 Literature
