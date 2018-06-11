@@ -75,10 +75,8 @@ namespace CUDA
 
   inline void checkError(cudaError errorValue, const char* file, int line)
   {
-#ifdef _DEBUG
     if (errorValue != cudaSuccess)
       throw CUDA::error(errorValue, file, line);
-#endif
   }
 
   inline void checkError(const char* file, int line)
@@ -88,11 +86,9 @@ namespace CUDA
 
   inline void checkError()
   {
-#ifdef _DEBUG
     cudaError errorValue = cudaGetLastError();
     if (errorValue != cudaSuccess)
       throw CUDA::error(errorValue);
-#endif
   }
 
 #define MALLOCMC_CUDA_CHECKED_CALL(call) CUDA::checkError(call, __FILE__, __LINE__)
@@ -100,18 +96,7 @@ namespace CUDA
 }
 
 
-#define warp_serial                                    \
-  for (unsigned int __mask = __ballot(1),              \
-            __num = __popc(__mask),                    \
-            __lanemask = mallocMC::lanemask_lt(),      \
-            __local_id = __popc(__lanemask & __mask),  \
-            __active = 0;                              \
-       __active < __num;                               \
-       ++__active)                                     \
-    if (__active == __local_id)
-
-
-namespace mallocMC 
+namespace mallocMC
 {
 
   template<int PSIZE>
@@ -130,71 +115,71 @@ namespace mallocMC
   typedef mallocMC::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
 
-  MAMC_ACCELERATOR inline uint32_t laneid()
+  MAMC_ACCELERATOR inline boost::uint32_t laneid()
   {
-    uint32_t mylaneid;
-    asm("mov.u32 %0, %laneid;" : "=r" (mylaneid));
+    boost::uint32_t mylaneid;
+    asm("mov.u32 %0, %%laneid;" : "=r" (mylaneid));
     return mylaneid;
   }
 
-  MAMC_ACCELERATOR inline uint32_t warpid()
+  MAMC_ACCELERATOR inline boost::uint32_t warpid()
   {
-    uint32_t mywarpid;
-    asm("mov.u32 %0, %warpid;" : "=r" (mywarpid));
+    boost::uint32_t mywarpid;
+    asm("mov.u32 %0, %%warpid;" : "=r" (mywarpid));
     return mywarpid;
   }
-  MAMC_ACCELERATOR inline uint32_t nwarpid()
+  MAMC_ACCELERATOR inline boost::uint32_t nwarpid()
   {
-    uint32_t mynwarpid;
-    asm("mov.u32 %0, %nwarpid;" : "=r" (mynwarpid));
+    boost::uint32_t mynwarpid;
+    asm("mov.u32 %0, %%nwarpid;" : "=r" (mynwarpid));
     return mynwarpid;
   }
 
-  MAMC_ACCELERATOR inline uint32_t smid()
+  MAMC_ACCELERATOR inline boost::uint32_t smid()
   {
-    uint32_t mysmid;
-    asm("mov.u32 %0, %smid;" : "=r" (mysmid));
+    boost::uint32_t mysmid;
+    asm("mov.u32 %0, %%smid;" : "=r" (mysmid));
     return mysmid;
   }
 
-  MAMC_ACCELERATOR inline uint32_t nsmid()
+  MAMC_ACCELERATOR inline boost::uint32_t nsmid()
   {
-    uint32_t mynsmid;
-    asm("mov.u32 %0, %nsmid;" : "=r" (mynsmid));
+    boost::uint32_t mynsmid;
+    asm("mov.u32 %0, %%nsmid;" : "=r" (mynsmid));
     return mynsmid;
   }
-  MAMC_ACCELERATOR inline uint32_t lanemask()
+  MAMC_ACCELERATOR inline boost::uint32_t lanemask()
   {
-    uint32_t lanemask;
-    asm("mov.u32 %0, %lanemask_eq;" : "=r" (lanemask));
+    boost::uint32_t lanemask;
+    asm("mov.u32 %0, %%lanemask_eq;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline uint32_t lanemask_le()
+  MAMC_ACCELERATOR inline boost::uint32_t lanemask_le()
   {
-    uint32_t lanemask;
-    asm("mov.u32 %0, %lanemask_le;" : "=r" (lanemask));
+    boost::uint32_t lanemask;
+    asm("mov.u32 %0, %%lanemask_le;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline uint32_t lanemask_lt()
+  MAMC_ACCELERATOR inline boost::uint32_t lanemask_lt()
   {
-    uint32_t lanemask;
-    asm("mov.u32 %0, %lanemask_lt;" : "=r" (lanemask));
+    boost::uint32_t lanemask;
+    asm("mov.u32 %0, %%lanemask_lt;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline uint32_t lanemask_ge()
+  MAMC_ACCELERATOR inline boost::uint32_t lanemask_ge()
   {
-    uint32_t lanemask;
-    asm("mov.u32 %0, %lanemask_ge;" : "=r" (lanemask));
+    boost::uint32_t lanemask;
+    asm("mov.u32 %0, %%lanemask_ge;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline uint32_t lanemask_gt()
+  MAMC_ACCELERATOR inline boost::uint32_t lanemask_gt()
   {
-    uint32_t lanemask;
-    asm("mov.u32 %0, %lanemask_gt;" : "=r" (lanemask));
+    boost::uint32_t lanemask;
+    asm("mov.u32 %0, %%lanemask_gt;" : "=r" (lanemask));
     return lanemask;
   }
 
