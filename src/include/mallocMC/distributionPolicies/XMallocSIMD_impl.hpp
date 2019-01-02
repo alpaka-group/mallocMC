@@ -89,7 +89,7 @@ namespace DistributionPolicies{
       uint32 collect(uint32 bytes){
 
         can_use_coalescing = false;
-        warpid = mallocMC::warpid();
+        warpid = threadIdx.x >> 5;
         myoffset = 0;
         threadcount = 0;
 
