@@ -186,4 +186,39 @@ namespace mallocMC
   template<class T>
   MAMC_HOST MAMC_ACCELERATOR inline T divup(T a, T b) { return (a + b - 1)/b; }
 
+  /** the maximal number threads per block
+   *
+   * https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
+   */
+  struct MaxThreadsPerBlock
+  {
+	// valid for sm_2.X - sm_7.5
+    BOOST_STATIC_ASSERT uint32_t value = 1024;
+  };
+
+  /** the maximal number threads per block
+   *
+   * https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
+   */
+  struct WarpSize
+  {
+	// valid for sm_2.X - sm_7.5
+    BOOST_STATIC_ASSERT uint32_t value = 32;
+  };
+
+  /** warp id within a block
+   *
+   * The id is constant over the livetime of the thread.
+   * The id is not equal to warpid().
+   *
+   * @return warp id within the block
+   */
+  MAMC_ACCELERATOR inline boost::uint32_t warpid_withinblock()
+  {
+    return (
+      threadIdx.z * blockDim.y * blockDim.x +
+      threadIdx.y * blockDim.x +
+	  threadIdx.x
+    ) / WarpSize::value;
+  }
 }
