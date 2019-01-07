@@ -122,12 +122,24 @@ namespace mallocMC
     return mylaneid;
   }
 
+  /** warp index within a multiprocessor
+   *
+   * Index of the warp within the multiprocessor at the moment of the query.
+   * The result is volatile and can be different with each query.
+   *
+   * @return current index of the warp
+   */
   MAMC_ACCELERATOR inline boost::uint32_t warpid()
   {
     boost::uint32_t mywarpid;
     asm("mov.u32 %0, %%warpid;" : "=r" (mywarpid));
     return mywarpid;
   }
+
+  /** maximum number of warps on a multiprocessor
+   *
+   * @return maximum number of warps on a multiprocessor
+   */
   MAMC_ACCELERATOR inline boost::uint32_t nwarpid()
   {
     boost::uint32_t mynwarpid;
@@ -192,23 +204,23 @@ namespace mallocMC
    */
   struct MaxThreadsPerBlock
   {
-	// valid for sm_2.X - sm_7.5
-    BOOST_STATIC_ASSERT uint32_t value = 1024;
+    // valid for sm_2.X - sm_7.5
+    BOOST_STATIC_CONSTEXPR uint32_t value = 1024;
   };
 
-  /** the maximal number threads per block
+  /** number of threads within a warp
    *
    * https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
    */
   struct WarpSize
   {
-	// valid for sm_2.X - sm_7.5
-    BOOST_STATIC_ASSERT uint32_t value = 32;
+    // valid for sm_2.X - sm_7.5
+    BOOST_STATIC_CONSTEXPR uint32_t value = 32;
   };
 
-  /** warp id within a block
+  /** warp id within a cuda block
    *
-   * The id is constant over the livetime of the thread.
+   * The id is constant over the lifetime of the thread.
    * The id is not equal to warpid().
    *
    * @return warp id within the block
@@ -218,7 +230,7 @@ namespace mallocMC
     return (
       threadIdx.z * blockDim.y * blockDim.x +
       threadIdx.y * blockDim.x +
-	  threadIdx.x
+      threadIdx.x
     ) / WarpSize::value;
   }
 }

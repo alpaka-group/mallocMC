@@ -60,10 +60,10 @@ namespace DistributionPolicies{
     public:
       typedef T_Config Properties;
 
-	  MAMC_ACCELERATOR
-	  XMallocSIMD() : can_use_coalescing(false), warpid(warpid_withinblock()),
-		myoffset(0), threadcount(0), req_size(0)
-	  {}
+      MAMC_ACCELERATOR
+      XMallocSIMD() : can_use_coalescing(false), warpid(warpid_withinblock()),
+        myoffset(0), threadcount(0), req_size(0)
+      {}
 
     private:
 /** Allow for a hierarchical validation of parameters:
