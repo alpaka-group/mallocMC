@@ -1,6 +1,22 @@
 project(mallocMC)
 cmake_minimum_required(VERSION 2.8.12.2)
 
+################################################################################
+# CMake policies
+#
+# Search in <PackageName>_ROOT:
+#   https://cmake.org/cmake/help/v3.12/policy/CMP0074.html
+################################################################################
+
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
+
+################################################################################
+# Common.
+################################################################################
+
 # helper for libs and packages
 set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/"
     "$ENV{CUDA_ROOT}" "$ENV{BOOST_ROOT}")
