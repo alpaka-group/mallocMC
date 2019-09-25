@@ -22,7 +22,12 @@ endif()
 # CUDA
 ###############################################################################
 find_package(CUDA REQUIRED)
-set(CUDA_NVCC_FLAGS "-arch=sm_20;-use_fast_math;")
+if(CUDA_VERSION VERSION_LESS 9.0)
+    set(COMPUTE_CAPABILITY "20")
+else()
+    set(COMPUTE_CAPABILITY "30")
+endif()
+set(CUDA_NVCC_FLAGS "-arch=sm_${COMPUTE_CAPABILITY};-use_fast_math;")
 set(CUDA_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CUDA_INCLUDE_DIRS})
 cuda_include_directories(${CUDA_INCLUDE_DIRS})
