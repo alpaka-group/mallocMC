@@ -98,12 +98,14 @@ void run();
 
 int main()
 {
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, 0);
+    int computeCapabilityMajor = 0;
+    cudaDeviceGetAttribute(&computeCapabilityMajor, cudaDevAttrComputeCapabilityMajor, 0);
+    int computeCapabilityMinor = 0;
+    cudaDeviceGetAttribute(&computeCapabilityMinor, cudaDevAttrComputeCapabilityMinor, 0);
 
-    if( deviceProp.major < int(2) ) {
+    if( computeCapabilityMajor < int(2) ) {
         std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
-        std::cerr << deviceProp.major << "."<< deviceProp.minor << ")" << std::endl;
+        std::cerr << computeCapabilityMajor << "."<< computeCapabilityMinor << ")" << std::endl;
         return 1;
     }
 
