@@ -28,7 +28,6 @@
 #pragma once
 
 #include <cstdint>
-#include <boost/mpl/bool.hpp>
 
 #include "OldMalloc.hpp"
 
@@ -40,7 +39,7 @@ namespace CreationPolicies{
     using uint32 = std::uint32_t;
 
     public:
-    typedef boost::mpl::bool_<false> providesAvailableSlots;
+    static constexpr auto providesAvailableSlots = false;
 
     __device__ void* create(uint32 bytes) const
     {

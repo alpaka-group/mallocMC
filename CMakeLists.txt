@@ -49,19 +49,6 @@ if(NOT ${CUDA_OPTIMIZATION_TYPE} STREQUAL  "unset")
 endif()
 
 
-###############################################################################
-# Boost
-###############################################################################
-find_package(Boost 1.48.0 REQUIRED)
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
-
-# nvcc + boost 1.55 work around
-if(Boost_VERSION EQUAL 105500)
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
-endif()
-
-
 ################################################################################
 # Warnings
 ################################################################################
@@ -117,8 +104,3 @@ cuda_add_executable(mallocMC_Example03
 cuda_add_executable(VerifyHeap
                     EXCLUDE_FROM_ALL
                     tests/verify_heap.cu )
-
-target_link_libraries(mallocMC_Example01 ${LIBS})
-target_link_libraries(mallocMC_Example02 ${LIBS})
-target_link_libraries(mallocMC_Example03 ${LIBS})
-target_link_libraries(VerifyHeap ${LIBS})

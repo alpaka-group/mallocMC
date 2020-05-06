@@ -75,16 +75,16 @@ namespace DistributionPolicies{
  * default-struct < template-struct < command-line parameter
  */
 #ifndef MALLOCMC_DP_XMALLOCSIMD_PAGESIZE
-#define MALLOCMC_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
+#define MALLOCMC_DP_XMALLOCSIMD_PAGESIZE (Properties::pagesize)
 #endif
       static constexpr uint32 pagesize      = MALLOCMC_DP_XMALLOCSIMD_PAGESIZE;
 
       //all the properties must be unsigned integers > 0
-      static_assert(!std::numeric_limits<typename Properties::pagesize::type>::is_signed, "");
+      static_assert(!std::numeric_limits<decltype(Properties::pagesize)>::is_signed, ""); // TODO(bgruber): I think this is too strict. std::is_convertible_v should be enough
 
       // \TODO: The static_cast can be removed once the minimal dependencies of
       //        this project is are at least CUDA 7.0 and gcc 4.8.2
-      static_assert(static_cast<uint32>(pagesize) > 0, "");
+      static_assert(pagesize > 0, "");
 
     public:
       static constexpr uint32 _pagesize = pagesize;

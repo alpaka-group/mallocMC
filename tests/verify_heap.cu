@@ -620,11 +620,11 @@ bool run_heap_verification(
   const unsigned long long zero = 0;
 
   dout() << "CreationPolicy Arguments:\n";
-  dout() << "Pagesize:              "     << ScatterConfig::pagesize::value        << '\n';
-  dout() << "Accessblocks:          "     << ScatterConfig::accessblocks::value    << '\n';
-  dout() << "Regionsize:            "     << ScatterConfig::regionsize::value      << '\n';
-  dout() << "Wastefactor:           "     << ScatterConfig::wastefactor::value     << '\n';
-  dout() << "ResetFreedPages        "     << ScatterConfig::resetfreedpages::value << '\n';
+  dout() << "Pagesize:              "     << ScatterConfig::pagesize        << '\n';
+  dout() << "Accessblocks:          "     << ScatterConfig::accessblocks    << '\n';
+  dout() << "Regionsize:            "     << ScatterConfig::regionsize      << '\n';
+  dout() << "Wastefactor:           "     << ScatterConfig::wastefactor     << '\n';
+  dout() << "ResetFreedPages        "     << ScatterConfig::resetfreedpages << '\n';
   dout() << "\n";
   dout() << "Gridsize:              "     << blocks                             << '\n';
   dout() << "Blocksize:             "     << threads                            << '\n';
@@ -680,11 +680,11 @@ bool run_heap_verification(
 
   if(machine_readable){
     print_machine_readable(
-        ScatterConfig::pagesize::value,
-        ScatterConfig::accessblocks::value,
-        ScatterConfig::regionsize::value,
-        ScatterConfig::wastefactor::value,
-        ScatterConfig::resetfreedpages::value,
+        ScatterConfig::pagesize,
+        ScatterConfig::accessblocks,
+        ScatterConfig::regionsize,
+        ScatterConfig::wastefactor,
+        ScatterConfig::resetfreedpages,
         blocks,
         threads,
         ELEMS_PER_SLOT,

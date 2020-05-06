@@ -33,25 +33,22 @@
 
 #pragma once
 
-#include <boost/mpl/bool.hpp>
-#include <boost/mpl/int.hpp>
-
 namespace mallocMC{
 namespace CreationPolicies{
 namespace ScatterConf{
   struct DefaultScatterConfig{
-    typedef boost::mpl::int_<4096>  pagesize;
-    typedef boost::mpl::int_<8>     accessblocks;
-    typedef boost::mpl::int_<16>    regionsize;
-    typedef boost::mpl::int_<2>     wastefactor;
-    typedef boost::mpl::bool_<false> resetfreedpages;
+    static constexpr auto pagesize = 4096;
+    static constexpr auto accessblocks = 8;
+    static constexpr auto regionsize = 16;
+    static constexpr auto wastefactor = 2;
+    static constexpr auto resetfreedpages = false;
   };
 
   struct DefaultScatterHashingParams{
-    typedef boost::mpl::int_<38183> hashingK;
-    typedef boost::mpl::int_<17497> hashingDistMP;
-    typedef boost::mpl::int_<1>     hashingDistWP;
-    typedef boost::mpl::int_<1>     hashingDistWPRel;
+    static constexpr auto hashingK = 38183;
+    static constexpr auto hashingDistMP = 17497;
+    static constexpr auto hashingDistWP = 1;
+    static constexpr auto hashingDistWPRel = 1;
   };  
 }
 
