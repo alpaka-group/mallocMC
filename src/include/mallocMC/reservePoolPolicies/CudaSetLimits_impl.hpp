@@ -38,10 +38,10 @@ namespace ReservePoolPolicies{
   struct CudaSetLimits{
     static void* setMemPool(size_t memsize){
       cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
-      return NULL;
+      return nullptr;
     }
 
-    static void resetMemPool(void *p=NULL){
+    static void resetMemPool(void *p=nullptr){
       cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
     }
 

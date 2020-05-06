@@ -40,7 +40,7 @@ namespace OOMPolicies{
     public:
       MAMC_ACCELERATOR
       static void* handleOOM(void* mem){
-        return NULL;
+        return nullptr;
       }
 
       static std::string classname(){

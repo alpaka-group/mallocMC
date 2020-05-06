@@ -50,8 +50,7 @@ namespace OOMPolicies{
 #undef PM_EXCEPTIONS_NOT_SUPPORTED_HERE
       assert(false);
 #else
-      std::bad_alloc exception;
-      throw exception;
+      throw std::bad_alloc{};
 #endif
       return mem;
     }

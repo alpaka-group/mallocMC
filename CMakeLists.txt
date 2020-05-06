@@ -1,6 +1,9 @@
 project(mallocMC)
 cmake_minimum_required(VERSION 2.8.12.2)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # helper for libs and packages
 set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/"
     "$ENV{CUDA_ROOT}" "$ENV{BOOST_ROOT}")
@@ -56,7 +59,7 @@ set(LIBS ${LIBS} ${Boost_LIBRARIES})
 # nvcc + boost 1.55 work around
 if(Boost_VERSION EQUAL 105500)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
-endif(Boost_VERSION EQUAL 105500)
+endif()
 
 
 ################################################################################

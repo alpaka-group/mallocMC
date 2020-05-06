@@ -31,12 +31,10 @@
 
 #pragma once
 
-#include <boost/cstdint.hpp>
-#include <boost/static_assert.hpp>
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <boost/tuple/tuple.hpp>
 
 #include "Shrink.hpp"
 #include "../mallocMC_prefixes.hpp"
@@ -57,7 +55,7 @@ namespace Shrink2NS{
     typedef T_Config Properties;
 
     private:
-    typedef boost::uint32_t uint32;
+    using uint32 = std::uint32_t;
     typedef Shrink2NS::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
 /** Allow for a hierarchical validation of parameters:
@@ -72,16 +70,16 @@ namespace Shrink2NS{
 #ifndef MALLOCMC_AP_SHRINK_DATAALIGNMENT
 #define MALLOCMC_AP_SHRINK_DATAALIGNMENT Properties::dataAlignment::value
 #endif
-    BOOST_STATIC_CONSTEXPR uint32 dataAlignment = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
+    static constexpr uint32 dataAlignment = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
 
     // \TODO: The static_cast can be removed once the minimal dependencies of
     //        this project is are at least CUDA 7.0 and gcc 4.8.2
-    BOOST_STATIC_ASSERT(static_cast<uint32>(dataAlignment) > 0);
+    static_assert(static_cast<uint32>(dataAlignment) > 0, "");
     //dataAlignment must also be a power of 2!
-    BOOST_STATIC_ASSERT(dataAlignment && !(dataAlignment & (dataAlignment-1)) ); 
+    static_assert(dataAlignment && !(dataAlignment & (dataAlignment-1)), "");
 
     public:
-    static boost::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
+    static std::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
       PointerEquivalent alignmentstatus = ((PointerEquivalent)memory) & (dataAlignment -1);
       if(alignmentstatus != 0)
       {
@@ -101,7 +99,7 @@ namespace Shrink2NS{
         std::cout << "void *memory     " << memory              << std::endl;
       }
 
-      return boost::make_tuple(memory,memsize);
+      return std::make_tuple(memory,memsize);
     }
 
     MAMC_HOST

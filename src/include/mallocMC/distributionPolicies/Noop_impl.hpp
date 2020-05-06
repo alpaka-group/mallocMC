@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include <boost/cstdint.hpp>
+#include <cstdint>
 #include <string>
 
 #include "Noop.hpp"
@@ -35,27 +35,25 @@
 
 namespace mallocMC{
 namespace DistributionPolicies{
-    
-  class Noop 
+
+  class Noop
   {
-    typedef boost::uint32_t uint32;
+    using uint32 = std::uint32_t;
 
     public:
-
     MAMC_ACCELERATOR
-    uint32 collect(uint32 bytes){
+    uint32 collect(uint32 bytes) const {
       return bytes;
     }
 
     MAMC_ACCELERATOR
-    void* distribute(void* allocatedMem){
+    void* distribute(void* allocatedMem) const {
       return allocatedMem;
     }
 
     static std::string classname(){
       return "Noop";
     }
-
   };
 
 } //namespace DistributionPolicies

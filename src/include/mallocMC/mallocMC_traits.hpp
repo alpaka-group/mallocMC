@@ -28,15 +28,10 @@
 
 #pragma once
 
-#include <boost/config.hpp>
-
-
 namespace mallocMC{
-
     template <class T_Allocator>
-    struct  Traits{
-        BOOST_STATIC_CONSTEXPR bool providesAvailableSlots = T_Allocator::CreationPolicy::providesAvailableSlots::value;
+    struct Traits{
+        static constexpr bool providesAvailableSlots = T_Allocator::CreationPolicy::providesAvailableSlots::value;
     };
-
 } //namespace mallocMC
 

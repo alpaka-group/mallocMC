@@ -37,11 +37,11 @@
 
 namespace mallocMC{
 namespace DistributionPolicies{
-    
+
   namespace XMallocSIMDConf{
     struct DefaultXMallocConfig{
-      typedef boost::mpl::int_<4096>     pagesize;
-    };  
+      using pagesize = boost::mpl::int_<4096>;
+    };
   }
 
   /**
@@ -63,9 +63,8 @@ namespace DistributionPolicies{
    *        default configuration. The default can be obtained through
    *        XMallocSIMD<>::Properties
    */
-  template<class T_Config=XMallocSIMDConf::DefaultXMallocConfig>
+  template<class T_Config = XMallocSIMDConf::DefaultXMallocConfig>
   class XMallocSIMD;
-
 
 } //namespace DistributionPolicies
 } //namespace mallocMC

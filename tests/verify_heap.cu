@@ -38,7 +38,7 @@
 
 // each pointer in the datastructure will point to this many
 // elements of type allocElem_t
-#define ELEMS_PER_SLOT 750
+constexpr auto ELEMS_PER_SLOT = 750;
 
 #include <cuda.h>
 #include <iostream>
@@ -54,7 +54,7 @@
 bool verbose = false;
 
 // the type of the elements to allocate
-typedef unsigned long long allocElem_t;
+using allocElem_t = unsigned long long;
 
 bool run_heap_verification(const size_t, const unsigned, const unsigned, const bool);
 void parse_cmdline(const int, char**, size_t*, unsigned*, unsigned*, bool*);
@@ -66,16 +66,16 @@ struct nullstream : std::ostream {
   nullstream() : std::ostream(0) { }
 };
 
-// uses global verbosity to switch between std::cout and a NULL-output
+// uses global verbosity to switch between std::cout and a nullptr-output
 std::ostream& dout() {
   static nullstream n;
   return verbose ? std::cout : n;
 }
 
 // define some defaults
-BOOST_STATIC_CONSTEXPR unsigned threads_default = 128;
-BOOST_STATIC_CONSTEXPR unsigned blocks_default  = 64;
-BOOST_STATIC_CONSTEXPR size_t heapInMB_default  = 1024; // 1GB
+static constexpr unsigned threads_default = 128;
+static constexpr unsigned blocks_default  = 64;
+static constexpr size_t heapInMB_default  = 1024; // 1GB
 
 
 /**
@@ -103,7 +103,7 @@ int main(int argc, char** argv){
 
   if( computeCapabilityMajor < 2 ) {
     std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
-    std::cerr << computeCapabilityMajor << "."<< computeCapabilityMinor << ")" << std::endl;
+    std::cerr << computeCapabilityMajor << "."<< computeCapabilityMinor << ")\n";
     return 1;
   }
 
@@ -113,10 +113,10 @@ int main(int argc, char** argv){
 
   if(!machine_readable || verbose){
     if(correct){
-      std::cout << "\033[0;32mverification successful ✔\033[0m" << std::endl;
+      std::cout << "\033[0;32mverification successful ✔\033[0m\n";
       return 0;
     }else{
-      std::cerr << "\033[0;31mverification failed\033[0m" << std::endl;
+      std::cerr << "\033[0;31mverification failed\033[0m\n";
       return 1;
     }
   }
@@ -150,8 +150,8 @@ void parse_cmdline(
   for (int i = 1; i < argc; ++i) {
     char* pos = strtok(argv[i], "=");
     std::pair < std::string, std::string > p(std::string(pos), std::string(""));
-    pos = strtok(NULL, "=");
-    if (pos != NULL) {
+    pos = strtok(nullptr, "=");
+    if (pos != nullptr) {
       p.second = std::string(pos);
     }
     parameters.push_back(p);
@@ -197,34 +197,34 @@ void parse_cmdline(
 void print_help(char** argv){
   std::stringstream s;
 
-  s << "SYNOPSIS:"                                              << std::endl;
-  s << argv[0] << " [OPTIONS]"                                  << std::endl;
-  s << ""                                                       << std::endl;
-  s << "OPTIONS:"                                               << std::endl;
-  s << "  -h, --help"                                           << std::endl;
-  s << "    Print this help message and exit"                   << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  -v, --verbose"                                        << std::endl;
-  s << "    Print information about parameters and progress"    << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  -m, --machine_readable"                               << std::endl;
-  s << "    Print all relevant parameters as CSV. This will"    << std::endl;
-  s << "    suppress all other output unless explicitly"        << std::endl;
-  s << "    requested with --verbose or -v"                     << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  --threads=N"                                          << std::endl;
-  s << "    Set the number of threads per block (default "                  ;
-  s <<                               threads_default << "128)"  << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  --blocks=N"                                           << std::endl;
-  s << "    Set the number of blocks in the grid (default "                 ;
-  s <<                                   blocks_default << ")"  << std::endl;
-  s << ""                                                       << std::endl;
-  s << "  --heapsize=N"                                         << std::endl;
-  s << "    Set the heapsize to N Megabyte (default "                       ;
-  s <<                         heapInMB_default << "1024)"      << std::endl;
+  s << "SYNOPSIS:"                                              << '\n';
+  s << argv[0] << " [OPTIONS]"                                  << '\n';
+  s << ""                                                       << '\n';
+  s << "OPTIONS:"                                               << '\n';
+  s << "  -h, --help"                                           << '\n';
+  s << "    Print this help message and exit"                   << '\n';
+  s << ""                                                       << '\n';
+  s << "  -v, --verbose"                                        << '\n';
+  s << "    Print information about parameters and progress"    << '\n';
+  s << ""                                                       << '\n';
+  s << "  -m, --machine_readable"                               << '\n';
+  s << "    Print all relevant parameters as CSV. This will"    << '\n';
+  s << "    suppress all other output unless explicitly"        << '\n';
+  s << "    requested with --verbose or -v"                     << '\n';
+  s << ""                                                       << '\n';
+  s << "  --threads=N"                                          << '\n';
+  s << "    Set the number of threads per block (default "             ;
+  s <<                               threads_default << "128)"  << '\n';
+  s << ""                                                       << '\n';
+  s << "  --blocks=N"                                           << '\n';
+  s << "    Set the number of blocks in the grid (default "            ;
+  s <<                                   blocks_default << ")"  << '\n';
+  s << ""                                                       << '\n';
+  s << "  --heapsize=N"                                         << '\n';
+  s << "    Set the heapsize to N Megabyte (default "                  ;
+  s <<                         heapInMB_default << "1024)"      << '\n';
 
-  std::cout << s.str();
+  std::cout << s.str() << std::flush;
 }
 
 
@@ -256,7 +256,7 @@ __global__ void check_content(
 
   unsigned long long sum=0;
   while(true){
-    size_t pos = atomicAdd(counter,1);
+    const size_t pos = atomicAdd(counter,1);
     if(pos >= nSlots){break;}
     const size_t offset = pos*ELEMS_PER_SLOT;
     for(size_t i=0;i<ELEMS_PER_SLOT;++i){
@@ -331,7 +331,7 @@ __global__ void allocAll(
   unsigned long long sum=0;
   while(true){
     allocElem_t* p = (allocElem_t*) mMC.malloc(sizeof(allocElem_t) * ELEMS_PER_SLOT);
-    if(p == NULL) break;
+    if(p == nullptr) break;
 
     size_t pos = atomicAdd(counter,1);
     const size_t offset = pos*ELEMS_PER_SLOT;
@@ -423,7 +423,7 @@ void allocate(
   MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(h_nSlots,d_nSlots,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
   cudaFree(d_sum);
   cudaFree(d_nSlots);
-  dout() << "done" << std::endl;
+  dout() << "done\n";
 }
 
 
@@ -484,20 +484,20 @@ bool verify(
   MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_counter,d_counter,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
   if(gaussian_sum != h_sum){
     dout() << "\nGaussian Sum doesn't match: is " << h_sum;
-    dout() << " (should be " << gaussian_sum << ")" << std::endl;
+    dout() << " (should be " << gaussian_sum << ")\n";
     h_correct=false;
   }
   if(nSlots != h_counter-(blocks*threads)){
     dout() << "\nallocated number of elements doesn't match: is " << h_counter;
-    dout() << " (should be " << nSlots << ")" << std::endl;
+    dout() << " (should be " << nSlots << ")\n";
     h_correct=false;
   }
   */
 
   if(h_correct){
-    dout() << "done" << std::endl;
+    dout() << "done\n";
   }else{
-    dout() << "failed" << std::endl;
+    dout() << "failed\n";
   }
 
   cudaFree(d_correct);
@@ -583,8 +583,8 @@ void print_machine_readable(
   h << "correct"        ;
   v << correct          ;
 
-  std::cout << h.str() << std::endl;
-  std::cout << v.str() << std::endl;
+  std::cout << h.str() << '\n';
+  std::cout << v.str() << '\n';
 }
 
 
@@ -613,28 +613,28 @@ bool run_heap_verification(
 
   const size_t heapSize         = size_t(1024U*1024U) * heapMB;
   const size_t slotSize         = sizeof(allocElem_t)*ELEMS_PER_SLOT;
-  const size_t nPointers        = ceil(static_cast<float>(heapSize) / slotSize);
+  const size_t nPointers        = (heapSize + slotSize - 1) / slotSize;
   const size_t maxSlots         = heapSize/slotSize;
   const size_t maxSpace         = maxSlots*slotSize + nPointers*sizeof(allocElem_t*);
   bool correct                  = true;
   const unsigned long long zero = 0;
 
-  dout() << "CreationPolicy Arguments:"                                         << std::endl;
-  dout() << "Pagesize:              "     << ScatterConfig::pagesize::value        << std::endl;
-  dout() << "Accessblocks:          "     << ScatterConfig::accessblocks::value    << std::endl;
-  dout() << "Regionsize:            "     << ScatterConfig::regionsize::value      << std::endl;
-  dout() << "Wastefactor:           "     << ScatterConfig::wastefactor::value     << std::endl;
-  dout() << "ResetFreedPages        "     << ScatterConfig::resetfreedpages::value << std::endl;
-  dout() << ""                                                                  << std::endl;
-  dout() << "Gridsize:              "     << blocks                             << std::endl;
-  dout() << "Blocksize:             "     << threads                            << std::endl;
+  dout() << "CreationPolicy Arguments:\n";
+  dout() << "Pagesize:              "     << ScatterConfig::pagesize::value        << '\n';
+  dout() << "Accessblocks:          "     << ScatterConfig::accessblocks::value    << '\n';
+  dout() << "Regionsize:            "     << ScatterConfig::regionsize::value      << '\n';
+  dout() << "Wastefactor:           "     << ScatterConfig::wastefactor::value     << '\n';
+  dout() << "ResetFreedPages        "     << ScatterConfig::resetfreedpages::value << '\n';
+  dout() << "\n";
+  dout() << "Gridsize:              "     << blocks                             << '\n';
+  dout() << "Blocksize:             "     << threads                            << '\n';
   dout() << "Allocated elements:    "     << ELEMS_PER_SLOT << " x "  << sizeof(allocElem_t);
-  dout() << "    Byte ("  << slotSize     << " Byte)"                           << std::endl;
+  dout() << "    Byte ("  << slotSize     << " Byte)\n";
   dout() << "Heap:                  "     << heapSize << " Byte";
-  dout() << " (" << heapSize/pow(1024,2)  << " MByte)"                          << std::endl;
+  dout() << " (" << heapSize/pow(1024,2)  << " MByte)\n";
   dout() << "max space w/ pointers: "     << maxSpace << " Byte";
-  dout() << " (" << maxSpace/pow(1024,2)  << " MByte)"                          << std::endl;
-  dout() << "maximum of elements:   "     << maxSlots                           << std::endl;
+  dout() << " (" << maxSpace/pow(1024,2)  << " MByte)\n";
+  dout() << "maximum of elements:   "     << maxSlots                           << '\n';
 
   // initializing the heap
   ScatterAllocator* mMC = new ScatterAllocator(heapSize);
@@ -649,9 +649,9 @@ bool run_heap_verification(
   const float allocFrac = static_cast<float>(usedSlots)*100/maxSlots;
   const size_t wasted = heapSize - static_cast<size_t>(usedSlots) * slotSize;
   dout() << "allocated elements:    "   << usedSlots;
-  dout() << " (" << allocFrac << "%)"   << std::endl;
+  dout() << " (" << allocFrac << "%)\n";
   dout() << "wasted heap space:     "   << wasted << " Byte";
-  dout() << " (" << wasted/pow(1024,2)  << " MByte)" << std::endl;
+  dout() << " (" << wasted/pow(1024,2)  << " MByte)\n";
 
   // verifying on device
   correct = correct && verify(d_testData,usedSlots,blocks,threads);
@@ -659,7 +659,7 @@ bool run_heap_verification(
   // damaging one cell
   dout() << "damaging of element... ";
   CUDA_CHECK_KERNEL_SYNC(damageElement<<<1,1>>>(d_testData));
-  dout() << "done" << std::endl;
+  dout() << "done\n";
 
   // verifying on device
   // THIS SHOULD FAIL (damage was done before!). Therefore, we must inverse the logic
@@ -676,7 +676,7 @@ bool run_heap_verification(
   cudaFree(d_testData);
   delete mMC;
 
-  dout() << "done "<< std::endl;
+  dout() << "done \n";
 
   if(machine_readable){
     print_machine_readable(

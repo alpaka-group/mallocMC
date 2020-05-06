@@ -34,7 +34,7 @@
 #pragma once
 
 #include <cstdio>
-#include <boost/cstdint.hpp> /* uint32_t */
+#include <cstdint> /* uint32_t */
 #include <iostream>
 #include <string>
 #include <cassert>
@@ -74,7 +74,6 @@ namespace ScatterKernelDetail{
   template<class T_Config, class T_Hashing>
   class Scatter
   {
-
     public:
       typedef T_Config  HeapProperties;
       typedef T_Hashing HashingProperties;
@@ -82,7 +81,7 @@ namespace ScatterKernelDetail{
       typedef boost::mpl::bool_<true>  providesAvailableSlots;
 
     private:
-      typedef boost::uint32_t uint32;
+      using uint32 = std::uint32_t;
 
 
 /** Allow for a hierarchical validation of parameters:
@@ -97,66 +96,65 @@ namespace ScatterKernelDetail{
 #ifndef MALLOCMC_CP_SCATTER_PAGESIZE
 #define MALLOCMC_CP_SCATTER_PAGESIZE  static_cast<uint32>(HeapProperties::pagesize::value)
 #endif
-      BOOST_STATIC_CONSTEXPR uint32 pagesize      = MALLOCMC_CP_SCATTER_PAGESIZE;
+      static constexpr uint32 pagesize      = MALLOCMC_CP_SCATTER_PAGESIZE;
 
 #ifndef MALLOCMC_CP_SCATTER_ACCESSBLOCKS
 #define MALLOCMC_CP_SCATTER_ACCESSBLOCKS static_cast<uint32>(HeapProperties::accessblocks::value)
 #endif
-      BOOST_STATIC_CONSTEXPR uint32 accessblocks  = MALLOCMC_CP_SCATTER_ACCESSBLOCKS;
+      static constexpr uint32 accessblocks  = MALLOCMC_CP_SCATTER_ACCESSBLOCKS;
 
 #ifndef MALLOCMC_CP_SCATTER_REGIONSIZE
 #define MALLOCMC_CP_SCATTER_REGIONSIZE static_cast<uint32>(HeapProperties::regionsize::value)
 #endif
-      BOOST_STATIC_CONSTEXPR uint32 regionsize    = MALLOCMC_CP_SCATTER_REGIONSIZE;
+      static constexpr uint32 regionsize    = MALLOCMC_CP_SCATTER_REGIONSIZE;
 
 #ifndef MALLOCMC_CP_SCATTER_WASTEFACTOR
 #define MALLOCMC_CP_SCATTER_WASTEFACTOR static_cast<uint32>(HeapProperties::wastefactor::value)
 #endif
-      BOOST_STATIC_CONSTEXPR uint32 wastefactor   = MALLOCMC_CP_SCATTER_WASTEFACTOR;
+      static constexpr uint32 wastefactor   = MALLOCMC_CP_SCATTER_WASTEFACTOR;
 
 #ifndef MALLOCMC_CP_SCATTER_RESETFREEDPAGES
 #define MALLOCMC_CP_SCATTER_RESETFREEDPAGES static_cast<bool>(HeapProperties::resetfreedpages::value)
 #endif
-      BOOST_STATIC_CONSTEXPR bool resetfreedpages = MALLOCMC_CP_SCATTER_RESETFREEDPAGES;
-
+      static constexpr bool resetfreedpages = MALLOCMC_CP_SCATTER_RESETFREEDPAGES;
 
     public:
-      BOOST_STATIC_CONSTEXPR uint32 _pagesize       = pagesize;
-      BOOST_STATIC_CONSTEXPR uint32 _accessblocks   = accessblocks;
-      BOOST_STATIC_CONSTEXPR uint32 _regionsize     = regionsize;
-      BOOST_STATIC_CONSTEXPR uint32 _wastefactor    = wastefactor;
-      BOOST_STATIC_CONSTEXPR bool _resetfreedpages  = resetfreedpages;
+      static constexpr uint32 _pagesize       = pagesize;
+      static constexpr uint32 _accessblocks   = accessblocks;
+      static constexpr uint32 _regionsize     = regionsize;
+      static constexpr uint32 _wastefactor    = wastefactor;
+      static constexpr bool _resetfreedpages  = resetfreedpages;
 
     private:
 #if _DEBUG || ANALYSEHEAP
     public:
 #endif
-      //BOOST_STATIC_CONSTEXPR uint32 minChunkSize0 = pagesize/(32*32);
-      BOOST_STATIC_CONSTEXPR uint32 minChunkSize1 = 0x10;
-      BOOST_STATIC_CONSTEXPR uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
-      BOOST_STATIC_CONSTEXPR uint32 minSegmentSize = 32*minChunkSize1 + sizeof(uint32);
-      BOOST_STATIC_CONSTEXPR uint32 tmp_maxOPM = minChunkSize1 > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize-1)) / minSegmentSize;
-      BOOST_STATIC_CONSTEXPR uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
+      //static constexpr uint32 minChunkSize0 = pagesize/(32*32);
+      static constexpr uint32 minChunkSize1 = 0x10;
+      static constexpr uint32 HierarchyThreshold =  (pagesize - 2*sizeof(uint32))/33;
+      static constexpr uint32 minSegmentSize = 32*minChunkSize1 + sizeof(uint32);
+      static constexpr uint32 tmp_maxOPM = minChunkSize1 > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize-1)) / minSegmentSize;
+      static constexpr uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGK
 #define MALLOCMC_CP_SCATTER_HASHINGK    static_cast<uint32>(HashingProperties::hashingK::value)
 #endif
-     BOOST_STATIC_CONSTEXPR uint32 hashingK       = MALLOCMC_CP_SCATTER_HASHINGK;
+     static constexpr uint32 hashingK       = MALLOCMC_CP_SCATTER_HASHINGK;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGDISTMP
 #define MALLOCMC_CP_SCATTER_HASHINGDISTMP static_cast<uint32>(HashingProperties::hashingDistMP::value)
 #endif
-     BOOST_STATIC_CONSTEXPR uint32 hashingDistMP  = MALLOCMC_CP_SCATTER_HASHINGDISTMP;
+     static constexpr uint32 hashingDistMP  = MALLOCMC_CP_SCATTER_HASHINGDISTMP;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGDISTWP
 #define MALLOCMC_CP_SCATTER_HASHINGDISTWP static_cast<uint32>(HashingProperties::hashingDistWP::value)
 #endif
-     BOOST_STATIC_CONSTEXPR uint32 hashingDistWP  = MALLOCMC_CP_SCATTER_HASHINGDISTWP;
+     static constexpr uint32 hashingDistWP  = MALLOCMC_CP_SCATTER_HASHINGDISTWP;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGDISTWPREL
 #define MALLOCMC_CP_SCATTER_HASHINGDISTWPREL static_cast<uint32>(HashingProperties::hashingDistWPRel::value)
 #endif
-     BOOST_STATIC_CONSTEXPR uint32 hashingDistWPRel = MALLOCMC_CP_SCATTER_HASHINGDISTWPREL;
+     static constexpr uint32 hashingDistWPRel = MALLOCMC_CP_SCATTER_HASHINGDISTWPREL;
 
 
       /**
@@ -182,7 +180,7 @@ namespace ScatterKernelDetail{
        * The page struct is used to access the data on the page more efficiently
        * and to clear the area on the page, which might hold bitsfields later one
        */
-      struct PAGE
+      struct PAGE // TODO(bgruber): why is this in ALLCAPS?
       {
         char data[pagesize];
 
@@ -217,7 +215,7 @@ namespace ScatterKernelDetail{
        * randInit should create an random offset which can be used
        * as the initial position in a bitfield
        */
-      __device__ inline uint32 randInit()
+      static __device__ inline uint32 randInit()
       {
         //start with the laneid offset
         return laneid();
@@ -233,12 +231,12 @@ namespace ScatterKernelDetail{
        * @param spots number of bits that can be used
        * @return next free spot in the bitfield
        */
-      __device__ inline uint32 nextspot(uint32 bitfield, uint32 spot, uint32 spots)
+      static __device__ inline uint32 nextspot(uint32 bitfield, uint32 spot, uint32 spots)
       {
         //wrap around the bitfields from the current spot to the left
         bitfield = ((bitfield >> (spot + 1)) | (bitfield << (spots - (spot + 1))))&((1<<spots)-1);
         //compute the step from the current spot in the bitfield
-        uint32 step = __ffs(~bitfield);
+        const uint32 step = __ffs(~bitfield);
         //and return the new spot
         return (spot + step) % spots;
       }
@@ -251,7 +249,7 @@ namespace ScatterKernelDetail{
        * @return pointer to the first address inside the page that holds metadata bitfields.
        */
       __device__ inline uint32* onPageMasksPosition(uint32 page, uint32 nMasks){
-        return (uint32*)(_page[page].data + pagesize - (int)sizeof(uint32)*nMasks);
+        return (uint32*)(_page[page].data + pagesize - (int)sizeof(uint32) * nMasks);
       }
 
       /**
@@ -260,14 +258,14 @@ namespace ScatterKernelDetail{
        * @param spots overall number of spots the bitfield is responsible for
        * @return if there is a free spot it returns the spot'S offset, otherwise -1
        */
-      __device__ inline int usespot(uint32 *bitfield, uint32 spots)
+      static __device__ inline int usespot(uint32 *bitfield, uint32 spots)
       {
         //get first spot
         uint32 spot = randInit() % spots;
         for(;;)
         {
-          uint32 mask = 1 << spot;
-          uint32 old = atomicOr(bitfield, mask);
+          const uint32 mask = 1 << spot;
+          const uint32 old = atomicOr(bitfield, mask);
           if( (old & mask) == 0)
             return spot;
           // note: __popc(old) == spots should be sufficient,
@@ -289,10 +287,10 @@ namespace ScatterKernelDetail{
        * @param chunksize the chosen allocation size within the page
        * @return the number of additional chunks that will not fit in one of the fullsegments. For any correct input, this number is smaller than 32
        */
-      __device__ inline uint32 calcAdditionalChunks(uint32 fullsegments, uint32 segmentsize, uint32 chunksize){
-        if(fullsegments != 32){
-          return max(0,(int)pagesize - (int)fullsegments*segmentsize - (int)sizeof(uint32))/chunksize;
-        }else
+      static __device__ inline uint32 calcAdditionalChunks(uint32 fullsegments, uint32 segmentsize, uint32 chunksize){
+        if(fullsegments != 32)
+          return max(0, (int)pagesize - (int)fullsegments*segmentsize - (int)sizeof(uint32)) / chunksize;
+        else
           return 0;
       }
 
@@ -307,20 +305,19 @@ namespace ScatterKernelDetail{
        */
       __device__ inline void* addChunkHierarchy(uint32 chunksize, uint32 fullsegments, uint32 additional_chunks, uint32 page)
       {
-        uint32 segments = fullsegments + (additional_chunks > 0 ? 1 : 0);
+        const uint32 segments = fullsegments + (additional_chunks > 0 ? 1 : 0);
         uint32 spot = randInit() % segments;
-        uint32 mask = _ptes[page].bitmask;
+        const uint32 mask = _ptes[page].bitmask;
         if((mask & (1 << spot)) != 0)
           spot = nextspot(mask, spot, segments);
-        uint32 tries = segments - __popc(mask);
+        const uint32 tries = segments - __popc(mask);
         uint32* onpagemasks = onPageMasksPosition(page,segments);
         for(uint32 i = 0; i < tries; ++i)
         {
-          int hspot = usespot(onpagemasks + spot, spot < fullsegments ? 32 : additional_chunks);
+          const int hspot = usespot(&onpagemasks[spot], spot < fullsegments ? 32 : additional_chunks);
           if(hspot != -1)
             return _page[page].data + (32*spot + hspot)*chunksize;
-          else
-            atomicOr((uint32*)&_ptes[page].bitmask, 1 << spot);
+          atomicOr((uint32*)&_ptes[page].bitmask, 1 << spot);
           spot = nextspot(mask, spot, segments);
         }
         return 0;
@@ -335,7 +332,7 @@ namespace ScatterKernelDetail{
        */
       __device__ inline void* addChunkNoHierarchy(uint32 chunksize, uint32 page, uint32 spots)
       {
-        int spot = usespot((uint32*)&_ptes[page].bitmask, spots);
+        const int spot = usespot((uint32*)&_ptes[page].bitmask, spots);
         if(spot == -1)
           return 0; //that should be impossible :)
         return _page[page].data + spot*chunksize;
@@ -349,33 +346,32 @@ namespace ScatterKernelDetail{
        */
       __device__ inline void* tryUsePage(uint32 page, uint32 chunksize)
       {
-
-        void* chunk_ptr = NULL;
+        void* chunk_ptr = nullptr;
 
         //increse the fill level
-        uint32 filllevel = atomicAdd((uint32*)&(_ptes[page].count), 1);
+        const uint32 filllevel = atomicAdd((uint32*)&(_ptes[page].count), 1);
         //recheck chunck size (it could be that the page got freed in the meanwhile...)
         if(!resetfreedpages || _ptes[page].chunksize == chunksize)
         {
           if(chunksize <= HierarchyThreshold)
           {
             //more chunks than can be covered by the pte's single bitfield can be used
-            uint32 segmentsize = chunksize*32 + sizeof(uint32);
-            uint32 fullsegments = min(32,pagesize / segmentsize);
-            uint32 additional_chunks = calcAdditionalChunks(fullsegments, segmentsize, chunksize);
+            const uint32 segmentsize = chunksize*32 + sizeof(uint32);
+            const uint32 fullsegments = min(32,pagesize / segmentsize);
+            const uint32 additional_chunks = calcAdditionalChunks(fullsegments, segmentsize, chunksize);
             if(filllevel < fullsegments * 32 + additional_chunks)
               chunk_ptr = addChunkHierarchy(chunksize, fullsegments, additional_chunks, page);
           }
           else
           {
-            uint32 chunksinpage = min(pagesize / chunksize, 32);
+            const uint32 chunksinpage = min(pagesize / chunksize, 32);
             if(filllevel < chunksinpage)
               chunk_ptr = addChunkNoHierarchy(chunksize, page, chunksinpage);
           }
         }
 
         //this one is full/not useable
-        if(chunk_ptr == NULL)
+        if(chunk_ptr == nullptr)
           atomicSub((uint32*)&(_ptes[page].count), 1);
 
         return chunk_ptr;
@@ -389,10 +385,10 @@ namespace ScatterKernelDetail{
        */
       __device__ void* allocChunked(uint32 bytes)
       {
-        uint32 pagesperblock = _numpages/accessblocks;
-        uint32 reloff = warpSize*bytes / pagesize;
-        uint32 startpage = (bytes*hashingK + hashingDistMP*smid() + (hashingDistWP+hashingDistWPRel*reloff)*warpid() ) % pagesperblock;
-        uint32 maxchunksize = min(pagesize,wastefactor*bytes);
+        const uint32 pagesperblock = _numpages/accessblocks;
+        const uint32 reloff = warpSize*bytes / pagesize;
+        const uint32 startpage = (bytes*hashingK + hashingDistMP*smid() + (hashingDistWP+hashingDistWPRel*reloff)*warpid() ) % pagesperblock;
+        const uint32 maxchunksize = min(pagesize,wastefactor*bytes);
         uint32 startblock = _firstfreeblock;
         uint32 ptetry = startpage + startblock*pagesperblock;
         uint32 checklevel = regionsize*3/4;
@@ -402,13 +398,13 @@ namespace ScatterKernelDetail{
           {
             while(ptetry < (b+1)*pagesperblock)
             {
-              uint32 region = ptetry/regionsize;
-              uint32 regionfilllevel = _regions[region];
+              const uint32 region = ptetry/regionsize;
+              const uint32 regionfilllevel = _regions[region];
               if(regionfilllevel < checklevel )
               {
                 for( ; ptetry < (region+1)*regionsize; ++ptetry)
                 {
-                  uint32 chunksize = _ptes[ptetry].chunksize;
+                  const uint32 chunksize = _ptes[ptetry].chunksize;
                   if(chunksize >= bytes && chunksize <= maxchunksize)
                   {
                     void * res = tryUsePage(ptetry, chunksize);
@@ -418,8 +414,8 @@ namespace ScatterKernelDetail{
                   {
                     //lets open up a new page
                     //it is already padded
-                    uint32 new_chunksize = max(bytes,minChunkSize1);
-                    uint32 beforechunksize = atomicCAS((uint32*)&_ptes[ptetry].chunksize, 0, new_chunksize);
+                    const uint32 new_chunksize = max(bytes,minChunkSize1);
+                    const uint32 beforechunksize = atomicCAS((uint32*)&_ptes[ptetry].chunksize, 0, new_chunksize);
                     if(beforechunksize == 0)
                     {
                       void * res = tryUsePage(ptetry, new_chunksize);
@@ -464,31 +460,30 @@ namespace ScatterKernelDetail{
        */
       __device__ void deallocChunked(void* mem, uint32 page, uint32 chunksize)
       {
-        uint32 inpage_offset = ((char*)mem - _page[page].data);
+        const uint32 inpage_offset = ((char*)mem - _page[page].data);
         if(chunksize <= HierarchyThreshold)
         {
           //one more level in hierarchy
-          uint32 segmentsize = chunksize*32 + sizeof(uint32);
-          uint32 fullsegments = min(32,pagesize / segmentsize);
-          uint32 additional_chunks = calcAdditionalChunks(fullsegments,segmentsize,chunksize);
-          uint32 segment = inpage_offset / (chunksize*32);
-          uint32 withinsegment = (inpage_offset - segment*(chunksize*32))/chunksize;
+          const uint32 segmentsize = chunksize*32 + sizeof(uint32);
+          const uint32 fullsegments = min(32,pagesize / segmentsize);
+          const uint32 additional_chunks = calcAdditionalChunks(fullsegments,segmentsize,chunksize);
+          const uint32 segment = inpage_offset / (chunksize*32);
+          const uint32 withinsegment = (inpage_offset - segment*(chunksize*32))/chunksize;
           //mark it as free
-          uint32 nMasks = fullsegments + (additional_chunks > 0 ? 1 : 0);
+          const uint32 nMasks = fullsegments + (additional_chunks > 0 ? 1 : 0);
           uint32* onpagemasks = onPageMasksPosition(page,nMasks);
-          uint32 old = atomicAnd(onpagemasks + segment, ~(1 << withinsegment));
+          uint32 old = atomicAnd(&onpagemasks[segment], ~(1 << withinsegment));
 
           // always do this, since it might fail due to a race-condition with addChunkHierarchy
           atomicAnd((uint32*)&_ptes[page].bitmask, ~(1 << segment));
         }
         else
         {
-          uint32 segment = inpage_offset / chunksize;
+          const uint32 segment = inpage_offset / chunksize;
           atomicAnd((uint32*)&_ptes[page].bitmask, ~(1 << segment));
         }
         //reduce filllevel as free
-        uint32 oldfilllevel = atomicSub((uint32*)&_ptes[page].count, 1);
-
+        const uint32 oldfilllevel = atomicSub((uint32*)&_ptes[page].count, 1);
 
         if(resetfreedpages)
         {
@@ -496,7 +491,7 @@ namespace ScatterKernelDetail{
           {
             //this page now got free!
             // -> try lock it
-            uint32 old = atomicCAS((uint32*)&_ptes[page].count, 0, pagesize);
+            const uint32 old = atomicCAS((uint32*)&_ptes[page].count, 0, pagesize);
             if(old == 0)
             {
               //clean the bits for the hierarchy
@@ -513,9 +508,9 @@ namespace ScatterKernelDetail{
         //meta information counters ... should not be changed by too many threads, so..
         if(oldfilllevel == pagesize / 2 / chunksize)
         {
-          uint32 region = page / regionsize;
+          const uint32 region = page / regionsize;
           _regions[region] = 0;
-          uint32 block = region * regionsize * accessblocks / _numpages ;
+          const uint32 block = region * regionsize * accessblocks / _numpages ;
           if(warpid() + laneid() == 0)
             atomicMin((uint32*)&_firstfreeblock, block);
         }
@@ -533,7 +528,7 @@ namespace ScatterKernelDetail{
         int abord = -1;
         for(uint32 trypage = startpage; trypage < startpage + pages; ++trypage)
         {
-          uint32 old = atomicCAS((uint32*)&_ptes[trypage].chunksize, 0, bytes);
+          const uint32 old = atomicCAS((uint32*)&_ptes[trypage].chunksize, 0, bytes);
           if(old != 0)
           {
             abord = trypage;
@@ -556,7 +551,7 @@ namespace ScatterKernelDetail{
        */
       __device__ void* allocPageBasedSingleRegion(uint32 startpage, uint32 endpage, uint32 bytes)
       {
-        uint32 pagestoalloc = divup(bytes, pagesize);
+        const uint32 pagestoalloc = divup(bytes, pagesize);
         uint32 freecount = 0;
         bool left_free = false;
         for(uint32 search_page = startpage+1; search_page > endpage; )
@@ -596,7 +591,7 @@ namespace ScatterKernelDetail{
         //acquire mutex
         while(atomicExch(&_pagebasedMutex,1) != 0);
         //search for free spot from the back
-        uint32 spage = _firstFreePageBased;
+        const uint32 spage = _firstFreePageBased;
         void* res = allocPageBasedSingleRegion(spage, 0, bytes);
         if(res == 0)
           //also check the rest of the pages
@@ -623,6 +618,7 @@ namespace ScatterKernelDetail{
 #else
           unsigned int __mask = __ballot(1),
 #endif
+            // TODO(bgruber): why the leading __? those names are reserved
           __num = __popc(__mask),
           __lanemask = mallocMC::lanemask_lt(),
           __local_id = __popc(__lanemask & __mask),
@@ -643,7 +639,7 @@ namespace ScatterKernelDetail{
        */
       __device__ void deallocPageBased(void* mem, uint32 page, uint32 bytes)
       {
-        uint32 pages = divup(bytes,pagesize);
+        const uint32 pages = divup(bytes,pagesize);
         for(uint32 p = page; p < page+pages; ++p)
           _page[p].init();
         __threadfence();
@@ -682,13 +678,13 @@ namespace ScatterKernelDetail{
         if(mem == 0)
           return;
         //lets see on which page we are on
-        uint32 page = ((char*)mem - (char*)_page)/pagesize;
-        uint32 chunksize = _ptes[page].chunksize;
+        const uint32 page = ((char*)mem - (char*)_page)/pagesize;
+        const uint32 chunksize = _ptes[page].chunksize;
 
         //is the pointer the beginning of a chunk?
-        uint32 inpage_offset = ((char*)mem - _page[page].data);
-        uint32 block = inpage_offset/chunksize;
-        uint32 inblockoffset = inpage_offset - block*chunksize;
+        const uint32 inpage_offset = ((char*)mem - _page[page].data);
+        const uint32 block = inpage_offset/chunksize;
+        const uint32 inblockoffset = inpage_offset - block*chunksize;
         if(inblockoffset != 0)
         {
           uint32* counter = (uint32*)(_page[page].data + block*chunksize);
@@ -716,14 +712,15 @@ namespace ScatterKernelDetail{
       {
         uint32 linid = threadIdx.x + blockDim.x*(threadIdx.y + threadIdx.z*blockDim.y);
         uint32 threads = blockDim.x*blockDim.y*blockDim.z;
-        uint32 linblockid = blockIdx.x + gridDim.x*(blockIdx.y + blockIdx.z*gridDim.y);
+        const uint32 linblockid = blockIdx.x + gridDim.x*(blockIdx.y + blockIdx.z*gridDim.y);
         uint32 blocks =  gridDim.x*gridDim.y*gridDim.z;
-        linid = linid + linblockid*threads;
+        linid += linblockid*threads;
 
-        uint32 numregions = ((unsigned long long)memsize)/( ((unsigned long long)regionsize)*(sizeof(PTE)+pagesize)+sizeof(uint32));
+        uint32 numregions = ((unsigned long long)memsize)/( ((unsigned long long)regionsize)*(sizeof(PTE)+pagesize)+sizeof(uint32)); // TODO(bgruber): why unsigned long long and not size_t?
+
         uint32 numpages = numregions*regionsize;
         //pointer is copied (copy is called page)
-        PAGE* page = (PAGE*)(memory);
+        PAGE* page = (PAGE*)memory;
         //sec check for alignment
         //copy is checked
         //PointerEquivalent alignmentstatus = ((PointerEquivalent)page) & (16 -1);
@@ -744,7 +741,7 @@ namespace ScatterKernelDetail{
         uint32* regions = (uint32*)(ptes + numpages);
         //sec check for mem size
         //this check refers to the original memory-pointer, which was not adjusted!
-        if( (void*)(regions + numregions) > (((char*)memory) + memsize) )
+        if( (void*)(regions + numregions) > (((char*)memory) + memsize) ) // TODO(bgruber): cast to void* is confusing and looks dangerous
         {
           --numregions;
           numpages = min(numregions*regionsize,numpages);
@@ -757,7 +754,7 @@ namespace ScatterKernelDetail{
         //  printf("c size_t memsize   %llu byte\n", memsize);
         //  printf("c void *memory     %p\n", page);
         //}
-        threads = threads*blocks;
+        threads *= blocks;
 
         for(uint32 i = linid; i < numpages; i+= threads)
         {
@@ -778,24 +775,24 @@ namespace ScatterKernelDetail{
           _pagebasedMutex = 0;
           _firstFreePageBased = numpages-1;
 
-          if( (char*) (_page+numpages) > (char*)(memory) + memsize)
+          if( (char*)&_page[numpages] > (char*)memory + memsize)
             printf("error in heap alloc: numpages too high\n");
         }
 
       }
 
-      __device__ bool isOOM(void* p, size_t s){
+      static __device__ bool isOOM(void* p, size_t s){
         // one thread that requested memory returned null
-        return  s && (p == NULL);
+        return s && (p == nullptr);
       }
 
 
       template < typename T_DeviceAllocator >
       static void* initHeap( T_DeviceAllocator* heap, void* pool, size_t memsize){
-        if( pool == NULL && memsize != 0 )
+        if( pool == nullptr && memsize != 0 )
         {
           throw std::invalid_argument(
-            "Scatter policy cannot use NULL for non-empty memory pools. "
+            "Scatter policy cannot use nullptr for non-empty memory pools. "
             "Maybe you are using an incompatible ReservePoolPolicy or AlignmentPolicy."
           );
         }
@@ -818,16 +815,16 @@ namespace ScatterKernelDetail{
        *        page.
        */
       __device__ unsigned countFreeChunksInPage(uint32 page, uint32 chunksize){
-        uint32 filledChunks = _ptes[page].count;
+        const uint32 filledChunks = _ptes[page].count;
         if(chunksize <= HierarchyThreshold)
         {
-          uint32 segmentsize = chunksize*32 + sizeof(uint32); //each segment can hold 32 2nd-level chunks
-          uint32 fullsegments = min(32,pagesize / segmentsize); //there might be space for more than 32 segments with 32 2nd-level chunks
-          uint32 additional_chunks = calcAdditionalChunks(fullsegments, segmentsize, chunksize);
-          uint32 level2Chunks = fullsegments * 32 + additional_chunks;
+          const uint32 segmentsize = chunksize*32 + sizeof(uint32); //each segment can hold 32 2nd-level chunks
+          const uint32 fullsegments = min(32,pagesize / segmentsize); //there might be space for more than 32 segments with 32 2nd-level chunks
+          const uint32 additional_chunks = calcAdditionalChunks(fullsegments, segmentsize, chunksize);
+          const uint32 level2Chunks = fullsegments * 32 + additional_chunks;
           return level2Chunks - filledChunks;
         }else{
-          uint32 chunksinpage = min(pagesize / chunksize, 32); //without hierarchy, there can not be more than 32 chunks
+          const uint32 chunksinpage = min(pagesize / chunksize, 32); //without hierarchy, there can not be more than 32 chunks
           return chunksinpage - filledChunks;
         }
       }
@@ -854,15 +851,15 @@ namespace ScatterKernelDetail{
         unsigned slotcount = 0;
         if(slotSize < pagesize){ // multiple slots per page
           for(uint32 currentpage = gid; currentpage < _numpages; currentpage += stride){
-            uint32 maxchunksize = min(pagesize, wastefactor*(uint32)slotSize);
-            uint32 region = currentpage/regionsize;
-            uint32 regionfilllevel = _regions[region];
+            const uint32 maxchunksize = min(pagesize, wastefactor*(uint32)slotSize);
+            const uint32 region = currentpage/regionsize;
+            const uint32 regionfilllevel = _regions[region];
 
             uint32 chunksize = _ptes[currentpage].chunksize;
             if(chunksize >= slotSize && chunksize <= maxchunksize){ //how many chunks left? (each chunk is big enough)
               slotcount += countFreeChunksInPage(currentpage, chunksize);
             }else if(chunksize == 0){
-              chunksize  = max((uint32)slotSize, minChunkSize1); //ensure minimum chunk size
+              chunksize = max((uint32)slotSize, minChunkSize1); //ensure minimum chunk size
               slotcount += countFreeChunksInPage(currentpage, chunksize); //how many chunks fit in one page?
             }else{
               continue; //the chunks on this page are too small for the request :(
@@ -870,7 +867,7 @@ namespace ScatterKernelDetail{
           }
         }else{ // 1 slot needs multiple pages
           if(gid > 0) return 0; //do this serially
-          uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
+          const uint32 pagestoalloc = divup((uint32)slotSize, pagesize);
           uint32 freecount = 0;
           for(uint32 currentpage = _numpages; currentpage > 0;){ //this already includes all superblocks
             --currentpage;
@@ -932,13 +929,12 @@ namespace ScatterKernelDetail{
        * @param slotSize the size of allocatable elements to count
        */
       __device__ unsigned getAvailableSlotsAccelerator(size_t slotSize){
-        int linearId;
-        int wId = warpid_withinblock(); //do not use warpid-function, since this value is not guaranteed to be stable across warp lifetime
+        const int wId = warpid_withinblock(); //do not use warpid-function, since this value is not guaranteed to be stable across warp lifetime
 
 #if(__CUDACC_VER_MAJOR__ >= 9)
-        uint32 activeThreads  = __popc(__activemask());
+        const uint32 activeThreads  = __popc(__activemask());
 #else
-        uint32 activeThreads  = __popc(__ballot(true));
+        const uint32 activeThreads  = __popc(__ballot(true));
 #endif
         __shared__ uint32 activePerWarp[MaxThreadsPerBlock::value / WarpSize::value]; //maximum number of warps in a block
         __shared__ unsigned warpResults[MaxThreadsPerBlock::value / WarpSize::value];
@@ -946,16 +942,15 @@ namespace ScatterKernelDetail{
         activePerWarp[wId] = 0;
 
         // the active threads obtain an id from 0 to activeThreads-1
-        if(slotSize>0) linearId = atomicAdd(&activePerWarp[wId], 1);
-        else return 0;
+        if (slotSize == 0) return 0;
+        const int linearId = atomicAdd(&activePerWarp[wId], 1);
 
         //printf("Block %d, id %d: activeThreads=%d linearId=%d\n",blockIdx.x,threadIdx.x,activeThreads,linearId);
-        unsigned temp = getAvailaibleSlotsDeviceFunction(slotSize, linearId, activeThreads);
+        const unsigned temp = getAvailaibleSlotsDeviceFunction(slotSize, linearId, activeThreads);
         if(temp) atomicAdd(&warpResults[wId], temp);
         __threadfence_block();
         return warpResults[wId];
       }
-
 
       static std::string classname(){
         std::stringstream ss;
@@ -971,7 +966,6 @@ namespace ScatterKernelDetail{
         ss << hashingDistWPRel<< "]";
         return ss.str();
       }
-
   };
 
 } //namespace CreationPolicies

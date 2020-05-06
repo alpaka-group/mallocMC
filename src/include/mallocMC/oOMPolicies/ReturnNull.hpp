@@ -31,9 +31,9 @@ namespace mallocMC{
 namespace OOMPolicies{
 
   /**
-   * @brief Returns a NULL pointer on OutOfMemory conditions
+   * @brief Returns a nullptr pointer on OutOfMemory conditions
    *
-   * This OOMPolicy will return NULL, if handleOOM() is called.
+   * This OOMPolicy will return nullptr, if handleOOM() is called.
    */
   class ReturnNull;
     
