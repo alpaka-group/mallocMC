@@ -611,21 +611,16 @@ namespace ScatterKernelDetail{
 
         //only one thread per warp can acquire the mutex
         void* res = 0;
-        for(
 #if(__CUDACC_VER_MAJOR__ >= 9)
-          unsigned int __mask = __activemask(),
+        const unsigned int mask = __activemask();
 #else
-          unsigned int __mask = __ballot(1),
+        const unsigned int mask = __ballot(1);
 #endif
-            // TODO(bgruber): why the leading __? those names are reserved
-          __num = __popc(__mask),
-          __lanemask = mallocMC::lanemask_lt(),
-          __local_id = __popc(__lanemask & __mask),
-          __active = 0;
-          __active < __num;
-          ++__active
-        )
-          if (__active == __local_id)
+        const unsigned int num = __popc(mask);
+        const unsigned int lanemask = mallocMC::lanemask_lt();
+        const unsigned int local_id = __popc(lanemask & mask);
+        for(unsigned int active = 0; active < num; ++active)
+          if (active == local_id)
             res = allocPageBasedSingle(bytes);
         return res;
       }
