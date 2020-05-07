@@ -82,10 +82,6 @@ namespace DistributionPolicies{
       //all the properties must be unsigned integers > 0
       static_assert(!std::numeric_limits<decltype(Properties::pagesize)>::is_signed, ""); // TODO(bgruber): I think this is too strict. std::is_convertible_v should be enough
 
-      // \TODO: The static_cast can be removed once the minimal dependencies of
-      //        this project is are at least CUDA 7.0 and gcc 4.8.2
-      static_assert(pagesize > 0, "");
-
     public:
       static constexpr uint32 _pagesize = pagesize;
 

@@ -179,7 +179,7 @@ namespace ScatterKernelDetail{
        * The page struct is used to access the data on the page more efficiently
        * and to clear the area on the page, which might hold bitsfields later one
        */
-      struct PAGE // TODO(bgruber): why is this in ALLCAPS?
+      struct Page
       {
         char data[pagesize];
 
@@ -202,7 +202,7 @@ namespace ScatterKernelDetail{
 
       volatile PTE* _ptes;
       volatile uint32* _regions;
-      PAGE* _page;
+      Page* _page;
       uint32 _numpages;
       size_t _memsize;
       uint32 _pagebasedMutex;
@@ -719,7 +719,7 @@ namespace ScatterKernelDetail{
 
         uint32 numpages = numregions*regionsize;
         //pointer is copied (copy is called page)
-        PAGE* page = (PAGE*)memory;
+        Page* page = (Page*)memory;
         //sec check for alignment
         //copy is checked
         //PointerEquivalent alignmentstatus = ((PointerEquivalent)page) & (16 -1);
@@ -733,14 +733,14 @@ namespace ScatterKernelDetail{
         //    printf("c void *memory     %p\n", page);
         //  }
         //  //copy is adjusted, potentially pointer to higher address now.
-        //  page =(PAGE*)(((PointerEquivalent)page) + 16 - alignmentstatus);
+        //  page =(Page*)(((PointerEquivalent)page) + 16 - alignmentstatus);
         //  if(linid == 0) printf("c Heap Warning: memory to use not 16 byte aligned...\n");
         //}
         PTE* ptes = (PTE*)(page + numpages);
         uint32* regions = (uint32*)(ptes + numpages);
         //sec check for mem size
         //this check refers to the original memory-pointer, which was not adjusted!
-        if( (void*)(regions + numregions) > (((char*)memory) + memsize) ) // TODO(bgruber): cast to void* is confusing and looks dangerous
+        if( (char*)(regions + numregions) > (((char*)memory) + memsize) )
         {
           --numregions;
           numpages = min(numregions*regionsize,numpages);

@@ -79,7 +79,7 @@ namespace mallocMC{
     typename CreationPolicies::Scatter<x,y>,
     typename DistributionPolicies::XMallocSIMD<z> 
   >{
-    static_assert(x::pagesize == z::pagesize, "Pagesize_must_be_the_same_when_combining_Scatter_and_XMallocSIMD");
+    static_assert(x::pagesize == z::pagesize, "Pagesize must be the same when combining Scatter and XMallocSIMD");
   };
 
 }//namespace mallocMC

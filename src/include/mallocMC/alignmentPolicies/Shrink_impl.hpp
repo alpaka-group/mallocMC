@@ -72,10 +72,7 @@ namespace Shrink2NS{
 #endif
     static constexpr uint32 dataAlignment = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
 
-    // \TODO: The static_cast can be removed once the minimal dependencies of
-    //        this project is are at least CUDA 7.0 and gcc 4.8.2
-    static_assert(dataAlignment > 0, "");
-    //dataAlignment must also be a power of 2!
+    //dataAlignment must be a power of 2!
     static_assert(dataAlignment && !(dataAlignment & (dataAlignment-1)), "");
 
     public:
