@@ -73,7 +73,7 @@ namespace Shrink2NS{
     static constexpr uint32 dataAlignment = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
 
     //dataAlignment must be a power of 2!
-    static_assert(dataAlignment && !(dataAlignment & (dataAlignment-1)), "");
+    static_assert(dataAlignment && !(dataAlignment & (dataAlignment-1)), "dataAlignment must also be a power of 2");
 
     public:
     static std::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
