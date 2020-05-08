@@ -1,10 +1,12 @@
-project(mallocMC)
-cmake_minimum_required(VERSION 2.8.12.2)
+project(mallocMC LANGUAGES CUDA CXX)
+cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # helper for libs and packages
+set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/"
     "$ENV{CUDA_ROOT}" "$ENV{BOOST_ROOT}")
 
@@ -17,54 +19,38 @@ set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/"
 ################################################################################
 
 if(POLICY CMP0074)
-    cmake_policy(SET CMP0074 NEW)
+  cmake_policy(SET CMP0074 NEW)
 endif()
 
 
 ###############################################################################
 # CUDA
 ###############################################################################
-find_package(CUDA 9.0 REQUIRED)
 if(NOT DEFINED COMPUTE_CAPABILITY)
-    set(COMPUTE_CAPABILITY "30")
+  set(COMPUTE_CAPABILITY "30")
 endif()
-set(CUDA_NVCC_FLAGS "-arch=sm_${COMPUTE_CAPABILITY};-use_fast_math;")
-set(CUDA_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CUDA_INCLUDE_DIRS})
-cuda_include_directories(${CUDA_INCLUDE_DIRS})
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_${COMPUTE_CAPABILITY} -use_fast_math")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 OPTION(CUDA_OUTPUT_INTERMEDIATE_CODE "Output ptx code" OFF)
 if(CUDA_OUTPUT_INTERMEDIATE_CODE)
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Xptxas;-v;--keep")
-endif(CUDA_OUTPUT_INTERMEDIATE_CODE)
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas -v --keep")
+endif()
 
 SET(CUDA_OPTIMIZATION_TYPE "unset" CACHE STRING "CUDA Optimization")
 set_property(CACHE CUDA_OPTIMIZATION_TYPE PROPERTY STRINGS "unset;-G0;-O0;-O1;-O2;-O3")
-if(NOT ${CUDA_OPTIMIZATION_TYPE} STREQUAL  "unset")
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};${CUDA_OPTIMIZATION_TYPE}")
+if(NOT ${CUDA_OPTIMIZATION_TYPE} STREQUAL "unset")
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_OPTIMIZATION_TYPE}")
 endif()
 
 
 ################################################################################
 # Warnings
 ################################################################################
-# GNU
 if(CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
-  # new warning in gcc 4.8 (flag ignored in previous version)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
-# ICC
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wshadow -Wno-unknown-pragmas -Wextra -Wno-unused-parameter -Wno-unused-local-typedefs")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_NO_VARIADIC_TEMPLATES")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_NO_CXX11_VARIADIC_TEMPLATES")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_NO_FENV_H")
-# PGI
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wshadow")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Minform=inform")
 endif()
@@ -80,7 +66,7 @@ INSTALL(
   DESTINATION include
   PATTERN ".git" EXCLUDE
   PATTERN "mallocMC_config.hpp" EXCLUDE
-  )
+)
 
 
 ###############################################################################
@@ -88,15 +74,7 @@ INSTALL(
 ###############################################################################
 add_custom_target(examples DEPENDS mallocMC_Example01 mallocMC_Example02 mallocMC_Example03 VerifyHeap)
 
-cuda_add_executable(mallocMC_Example01
-                    EXCLUDE_FROM_ALL
-                    examples/mallocMC_example01.cu )
-cuda_add_executable(mallocMC_Example02
-                    EXCLUDE_FROM_ALL
-                    examples/mallocMC_example02.cu )
-cuda_add_executable(mallocMC_Example03
-                    EXCLUDE_FROM_ALL
-                    examples/mallocMC_example03.cu )
-cuda_add_executable(VerifyHeap
-                    EXCLUDE_FROM_ALL
-                    tests/verify_heap.cu )
+add_executable(mallocMC_Example01 EXCLUDE_FROM_ALL examples/mallocMC_example01.cu)
+add_executable(mallocMC_Example02 EXCLUDE_FROM_ALL examples/mallocMC_example02.cu)
+add_executable(mallocMC_Example03 EXCLUDE_FROM_ALL examples/mallocMC_example03.cu)
+add_executable(VerifyHeap EXCLUDE_FROM_ALL tests/verify_heap.cu)
