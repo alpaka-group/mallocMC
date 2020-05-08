@@ -40,7 +40,7 @@
 
 // configurate the CreationPolicy "Scatter"
 struct ScatterConfig{
-  static constexpr auto pagesize = 4096u;
+  static constexpr auto pagesize = 4096;
   static constexpr auto accessblocks = 8;
   static constexpr auto regionsize = 16;
   static constexpr auto wastefactor = 2;

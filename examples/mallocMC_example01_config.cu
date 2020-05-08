@@ -40,7 +40,7 @@
 
 // configurate the CreationPolicy "Scatter" to modify the default behaviour
 struct ScatterHeapConfig : mallocMC::CreationPolicies::Scatter<>::HeapProperties{
-  static constexpr auto pagesize = 4096u;
+  static constexpr auto pagesize = 4096;
   static constexpr auto accessblocks = 8;
   static constexpr auto regionsize = 16;
   static constexpr auto wastefactor = 2;

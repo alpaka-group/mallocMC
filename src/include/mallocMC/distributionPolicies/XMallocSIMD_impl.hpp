@@ -79,9 +79,6 @@ namespace DistributionPolicies{
 #endif
       static constexpr uint32 pagesize      = MALLOCMC_DP_XMALLOCSIMD_PAGESIZE;
 
-      //all the properties must be unsigned integers > 0
-      static_assert(!std::numeric_limits<decltype(Properties::pagesize)>::is_signed, ""); // TODO(bgruber): I think this is too strict. std::is_convertible_v should be enough
-
     public:
       static constexpr uint32 _pagesize = pagesize;
 

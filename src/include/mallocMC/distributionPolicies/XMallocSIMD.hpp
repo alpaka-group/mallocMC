@@ -38,7 +38,7 @@ namespace DistributionPolicies{
 
   namespace XMallocSIMDConf{
     struct DefaultXMallocConfig{
-      static constexpr auto pagesize = 4096u;
+      static constexpr auto pagesize = 4096;
     };
   }
 
