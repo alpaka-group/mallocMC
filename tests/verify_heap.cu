@@ -45,9 +45,10 @@ constexpr auto ELEMS_PER_SLOT = 750;
 #include <cstdio>
 #include <typeinfo>
 #include <vector>
+#include <sstream>
 
 //include the Heap with the arguments given in the config
-#include "src/include/mallocMC/mallocMC_utils.hpp"
+#include <mallocMC/mallocMC_utils.hpp>
 #include "verify_heap_config.hpp"
 
 // global variable for verbosity, might change due to user input '--verbose'

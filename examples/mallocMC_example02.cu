@@ -37,14 +37,14 @@
 // includes for mallocMC
 ///////////////////////////////////////////////////////////////////////////////
 // basic files for mallocMC
-#include "src/include/mallocMC/mallocMC_hostclass.hpp"
+#include <mallocMC/mallocMC_hostclass.hpp>
 
 // Load all available policies for mallocMC
-#include "src/include/mallocMC/CreationPolicies.hpp"
-#include "src/include/mallocMC/DistributionPolicies.hpp"
-#include "src/include/mallocMC/OOMPolicies.hpp"
-#include "src/include/mallocMC/ReservePoolPolicies.hpp"
-#include "src/include/mallocMC/AlignmentPolicies.hpp"
+#include <mallocMC/CreationPolicies.hpp>
+#include <mallocMC/DistributionPolicies.hpp>
+#include <mallocMC/OOMPolicies.hpp>
+#include <mallocMC/ReservePoolPolicies.hpp>
+#include <mallocMC/AlignmentPolicies.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Configuration for mallocMC
