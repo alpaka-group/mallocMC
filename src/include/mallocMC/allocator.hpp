@@ -28,15 +28,16 @@
 
 #pragma once
 
-#include "mallocMC_utils.hpp"
+#include "device_allocator.hpp"
+#include "mallocMC_allocator_handle.hpp"
 #include "mallocMC_constraints.hpp"
 #include "mallocMC_prefixes.hpp"
 #include "mallocMC_traits.hpp"
-#include "mallocMC_allocator_handle.hpp"
+#include "mallocMC_utils.hpp"
 
 #include <cstdint>
-#include <tuple>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
 namespace mallocMC{
@@ -71,7 +72,7 @@ namespace detail{
             return T_Allocator::CreationPolicy::getAvailableSlotsHost(slotSize, alloc.getAllocatorHandle().devAllocator);
         }
     };
-}
+}  // namespace detail
 
     struct HeapInfo
     {
@@ -113,18 +114,17 @@ namespace detail{
 
     public:
         typedef T_CreationPolicy CreationPolicy;
-        typedef T_DistributionPolicy DistributionPolicy;
-        typedef T_OOMPolicy OOMPolicy;
-        typedef T_ReservePoolPolicy ReservePoolPolicy;
-        typedef T_AlignmentPolicy AlignmentPolicy;
-        typedef std::vector< HeapInfo > HeapInfoVector;
-        typedef DeviceAllocator<
+        using DistributionPolicy = T_DistributionPolicy;
+        using OOMPolicy = T_OOMPolicy;
+        using ReservePoolPolicy = T_ReservePoolPolicy;
+        using AlignmentPolicy = T_AlignmentPolicy;
+        using HeapInfoVector = std::vector<HeapInfo>;
+        using DevAllocator = DeviceAllocator<
             CreationPolicy,
             DistributionPolicy,
             OOMPolicy,
-            AlignmentPolicy
-        > DevAllocator;
-        typedef AllocatorHandleImpl<Allocator> AllocatorHandle;
+            AlignmentPolicy>;
+        using AllocatorHandle = AllocatorHandleImpl<Allocator>;
 
     private:
         AllocatorHandle allocatorHandle;

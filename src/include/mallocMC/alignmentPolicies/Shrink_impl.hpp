@@ -33,11 +33,11 @@
 
 #include <cstdint>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 
-#include "Shrink.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "Shrink.hpp"
 
 namespace mallocMC{
 namespace AlignmentPolicies{
@@ -46,17 +46,17 @@ namespace Shrink2NS{
     
   template<int PSIZE> struct __PointerEquivalent{ typedef unsigned int type;};
   template<>
-  struct __PointerEquivalent<8>{ typedef unsigned long long int type; };
-}// namespace ShrinkNS
+  struct __PointerEquivalent<8>{ using type = unsigned long long; };
+} // namespace Shrink2NS
 
   template<typename T_Config>
   class Shrink{
     public:
-    typedef T_Config Properties;
+    using Properties = T_Config;
 
     private:
     using uint32 = std::uint32_t;
-    typedef Shrink2NS::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
+    using PointerEquivalent = Shrink2NS::__PointerEquivalent<sizeof(char*)>::type;
 
 /** Allow for a hierarchical validation of parameters:
  *
@@ -73,7 +73,7 @@ namespace Shrink2NS{
     static constexpr uint32 dataAlignment = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
 
     //dataAlignment must be a power of 2!
-    static_assert(dataAlignment && !(dataAlignment & (dataAlignment-1)), "dataAlignment must also be a power of 2");
+    static_assert(dataAlignment != 0 && (dataAlignment & (dataAlignment-1)) == 0, "dataAlignment must also be a power of 2");
 
     public:
     static std::tuple<void*,size_t> alignPool(void* memory, size_t memsize){

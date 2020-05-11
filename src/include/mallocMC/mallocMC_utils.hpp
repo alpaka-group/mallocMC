@@ -33,14 +33,16 @@
 
 #pragma once
 
+#include <cuda_runtime.h>
+
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
 
-#include <string>
+#include <cstdint>
 #include <sstream>
 #include <stdexcept>
-#include <cstdint>
+#include <string>
 
 #include "mallocMC_prefixes.hpp"
 
@@ -61,12 +63,12 @@ namespace CUDA
     {
     }
 
-    error(cudaError errorValue)
+    explicit error(cudaError errorValue)
       : runtime_error(cudaGetErrorString(errorValue))
     {
     }
 
-    error(const std::string& msg)
+    explicit error(const std::string& msg)
       : runtime_error(msg)
     {
     }
@@ -92,7 +94,7 @@ namespace CUDA
 
 #define MALLOCMC_CUDA_CHECKED_CALL(call) CUDA::checkError(call, __FILE__, __LINE__)
 #define MALLOCMC_CUDA_CHECK_ERROR() CUDA::checkError(__FILE__, __LINE__)
-}
+}  // namespace CUDA
 
 namespace mallocMC
 {
@@ -106,10 +108,10 @@ namespace mallocMC
   class __PointerEquivalent<8>
   {
   public:
-    typedef unsigned long long int type;
+    using type = unsigned long long;
   };
 
-  typedef mallocMC::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
+  using PointerEquivalent = mallocMC::__PointerEquivalent<sizeof(char*)>::type;
 
   MAMC_ACCELERATOR inline std::uint32_t laneid()
   {
@@ -229,4 +231,4 @@ namespace mallocMC
       threadIdx.x
     ) / WarpSize::value;
   }
-}
+}  // namespace mallocMC

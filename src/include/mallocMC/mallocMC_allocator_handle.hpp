@@ -35,11 +35,11 @@ namespace mallocMC{
     template <typename T_HostAllocator>
     struct AllocatorHandleImpl
     {
-        typedef typename T_HostAllocator::DevAllocator DevAllocator;
+        using DevAllocator = typename T_HostAllocator::DevAllocator;
 
         DevAllocator* devAllocator;
 
-        AllocatorHandleImpl(
+        explicit AllocatorHandleImpl(
             DevAllocator* p
         ) :
             devAllocator( p )

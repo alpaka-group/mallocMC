@@ -52,7 +52,7 @@ namespace CreationPolicies{
     }
 
     __device__ bool isOOM(void* p, size_t s) const {
-      return s && (p == nullptr);
+      return s != 0 && (p == nullptr);
     }
 
     template < typename T >

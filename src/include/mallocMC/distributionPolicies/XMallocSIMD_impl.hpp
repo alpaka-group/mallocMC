@@ -35,11 +35,11 @@
 
 #include <cstdint>
 #include <limits>
-#include <string>
 #include <sstream>
+#include <string>
 
-#include "../mallocMC_utils.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "../mallocMC_utils.hpp"
 #include "XMallocSIMD.hpp"
 
 namespace mallocMC{
@@ -57,7 +57,7 @@ namespace DistributionPolicies{
       uint32 threadcount;
       uint32 req_size;
     public:
-      typedef T_Config Properties;
+      using Properties = T_Config;
 
       MAMC_ACCELERATOR
       XMallocSIMD() : can_use_coalescing(false), warpid(warpid_withinblock()),
