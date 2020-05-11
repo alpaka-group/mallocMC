@@ -31,14 +31,12 @@
 
 #pragma once
 
-#include <boost/mpl/int.hpp>
-
 namespace mallocMC{
 namespace AlignmentPolicies{
 
 namespace ShrinkConfig{
   struct DefaultShrinkConfig{
-    typedef boost::mpl::int_<16> dataAlignment;
+    static constexpr auto dataAlignment = 16;
   };
 }
 

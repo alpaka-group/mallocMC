@@ -32,8 +32,6 @@
 #include <numeric>
 
 #include <cuda.h>
-#include <boost/mpl/int.hpp>
-#include <boost/mpl/bool.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
 // includes for mallocMC
@@ -54,39 +52,39 @@
 
 // configurate the CreationPolicy "Scatter"
 struct ScatterConfig{
-    typedef boost::mpl::int_<4096>  pagesize;
-    typedef boost::mpl::int_<8>     accessblocks;
-    typedef boost::mpl::int_<16>    regionsize;
-    typedef boost::mpl::int_<2>     wastefactor;
-    typedef boost::mpl::bool_<false> resetfreedpages;
+  static constexpr auto pagesize = 4096;
+  static constexpr auto accessblocks = 8;
+  static constexpr auto regionsize = 16;
+  static constexpr auto wastefactor = 2;
+  static constexpr auto resetfreedpages = false;
 };
 
 struct ScatterHashParams{
-    typedef boost::mpl::int_<38183> hashingK;
-    typedef boost::mpl::int_<17497> hashingDistMP;
-    typedef boost::mpl::int_<1>     hashingDistWP;
-    typedef boost::mpl::int_<1>     hashingDistWPRel;
+  static constexpr auto hashingK = 38183;
+  static constexpr auto hashingDistMP = 17497;
+  static constexpr auto hashingDistWP = 1;
+  static constexpr auto hashingDistWPRel = 1;
 };
 
 // configure the DistributionPolicy "XMallocSIMD"
 struct DistributionConfig{
-  typedef ScatterConfig::pagesize pagesize;
+  static constexpr auto pagesize = ScatterConfig::pagesize;
 };
 
 // configure the AlignmentPolicy "Shrink"
 struct AlignmentConfig{
-  typedef boost::mpl::int_<16> dataAlignment;
+  static constexpr auto dataAlignment = 16;
 };
 
 // Define a new mMCator and call it ScatterAllocator
 // which resembles the behaviour of ScatterAlloc
-typedef mallocMC::Allocator<
+using ScatterAllocator = mallocMC::Allocator<
   mallocMC::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
   mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
   mallocMC::OOMPolicies::ReturnNull,
   mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
   mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>
-  > ScatterAllocator;
+>;
 
 
 ///////////////////////////////////////////////////////////////////////////////

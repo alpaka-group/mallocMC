@@ -40,10 +40,9 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include <boost/cstdint.hpp>
+#include <cstdint>
 
 #include "mallocMC_prefixes.hpp"
-
 
 namespace CUDA
 {
@@ -95,10 +94,8 @@ namespace CUDA
 #define MALLOCMC_CUDA_CHECK_ERROR() CUDA::checkError(__FILE__, __LINE__)
 }
 
-
 namespace mallocMC
 {
-
   template<int PSIZE>
   class __PointerEquivalent
   {
@@ -114,10 +111,9 @@ namespace mallocMC
 
   typedef mallocMC::__PointerEquivalent<sizeof(char*)>::type PointerEquivalent;
 
-
-  MAMC_ACCELERATOR inline boost::uint32_t laneid()
+  MAMC_ACCELERATOR inline std::uint32_t laneid()
   {
-    boost::uint32_t mylaneid;
+    std::uint32_t mylaneid;
     asm("mov.u32 %0, %%laneid;" : "=r" (mylaneid));
     return mylaneid;
   }
@@ -129,9 +125,9 @@ namespace mallocMC
    *
    * @return current index of the warp
    */
-  MAMC_ACCELERATOR inline boost::uint32_t warpid()
+  MAMC_ACCELERATOR inline std::uint32_t warpid()
   {
-    boost::uint32_t mywarpid;
+    std::uint32_t mywarpid;
     asm("mov.u32 %0, %%warpid;" : "=r" (mywarpid));
     return mywarpid;
   }
@@ -140,63 +136,63 @@ namespace mallocMC
    *
    * @return maximum number of warps on a multiprocessor
    */
-  MAMC_ACCELERATOR inline boost::uint32_t nwarpid()
+  MAMC_ACCELERATOR inline std::uint32_t nwarpid()
   {
-    boost::uint32_t mynwarpid;
+    std::uint32_t mynwarpid;
     asm("mov.u32 %0, %%nwarpid;" : "=r" (mynwarpid));
     return mynwarpid;
   }
 
-  MAMC_ACCELERATOR inline boost::uint32_t smid()
+  MAMC_ACCELERATOR inline std::uint32_t smid()
   {
-    boost::uint32_t mysmid;
+    std::uint32_t mysmid;
     asm("mov.u32 %0, %%smid;" : "=r" (mysmid));
     return mysmid;
   }
 
-  MAMC_ACCELERATOR inline boost::uint32_t nsmid()
+  MAMC_ACCELERATOR inline std::uint32_t nsmid()
   {
-    boost::uint32_t mynsmid;
+    std::uint32_t mynsmid;
     asm("mov.u32 %0, %%nsmid;" : "=r" (mynsmid));
     return mynsmid;
   }
-  MAMC_ACCELERATOR inline boost::uint32_t lanemask()
+  MAMC_ACCELERATOR inline std::uint32_t lanemask()
   {
-    boost::uint32_t lanemask;
+    std::uint32_t lanemask;
     asm("mov.u32 %0, %%lanemask_eq;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline boost::uint32_t lanemask_le()
+  MAMC_ACCELERATOR inline std::uint32_t lanemask_le()
   {
-    boost::uint32_t lanemask;
+    std::uint32_t lanemask;
     asm("mov.u32 %0, %%lanemask_le;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline boost::uint32_t lanemask_lt()
+  MAMC_ACCELERATOR inline std::uint32_t lanemask_lt()
   {
-    boost::uint32_t lanemask;
+    std::uint32_t lanemask;
     asm("mov.u32 %0, %%lanemask_lt;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline boost::uint32_t lanemask_ge()
+  MAMC_ACCELERATOR inline std::uint32_t lanemask_ge()
   {
-    boost::uint32_t lanemask;
+    std::uint32_t lanemask;
     asm("mov.u32 %0, %%lanemask_ge;" : "=r" (lanemask));
     return lanemask;
   }
 
-  MAMC_ACCELERATOR inline boost::uint32_t lanemask_gt()
+  MAMC_ACCELERATOR inline std::uint32_t lanemask_gt()
   {
-    boost::uint32_t lanemask;
+    std::uint32_t lanemask;
     asm("mov.u32 %0, %%lanemask_gt;" : "=r" (lanemask));
     return lanemask;
   }
 
   template<class T>
-  MAMC_HOST MAMC_ACCELERATOR inline T divup(T a, T b) { return (a + b - 1)/b; }
+  MAMC_HOST MAMC_ACCELERATOR inline T divup(T a, T b) { return (a + b - 1) / b; }
 
   /** the maximal number threads per block
    *
@@ -205,7 +201,7 @@ namespace mallocMC
   struct MaxThreadsPerBlock
   {
     // valid for sm_2.X - sm_7.5
-    BOOST_STATIC_CONSTEXPR uint32_t value = 1024;
+    static constexpr uint32_t value = 1024;
   };
 
   /** number of threads within a warp
@@ -215,7 +211,7 @@ namespace mallocMC
   struct WarpSize
   {
     // valid for sm_2.X - sm_7.5
-    BOOST_STATIC_CONSTEXPR uint32_t value = 32;
+    static constexpr uint32_t value = 32;
   };
 
   /** warp id within a cuda block
@@ -225,7 +221,7 @@ namespace mallocMC
    *
    * @return warp id within the block
    */
-  MAMC_ACCELERATOR inline boost::uint32_t warpid_withinblock()
+  MAMC_ACCELERATOR inline std::uint32_t warpid_withinblock()
   {
     return (
       threadIdx.z * blockDim.y * blockDim.x +

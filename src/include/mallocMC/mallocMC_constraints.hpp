@@ -30,7 +30,6 @@
 
 #include "creationPolicies/Scatter.hpp"
 #include "distributionPolicies/XMallocSIMD.hpp"
-#include <boost/mpl/assert.hpp>
 
 namespace mallocMC{
 
@@ -80,8 +79,7 @@ namespace mallocMC{
     typename CreationPolicies::Scatter<x,y>,
     typename DistributionPolicies::XMallocSIMD<z> 
   >{
-    BOOST_MPL_ASSERT_MSG(x::pagesize::value == z::pagesize::value,
-        Pagesize_must_be_the_same_when_combining_Scatter_and_XMallocSIMD, () );
+    static_assert(x::pagesize == z::pagesize, "Pagesize must be the same when combining Scatter and XMallocSIMD");
   };
 
 }//namespace mallocMC

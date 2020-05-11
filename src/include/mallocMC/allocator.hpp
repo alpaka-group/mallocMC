@@ -34,14 +34,12 @@
 #include "mallocMC_traits.hpp"
 #include "mallocMC_allocator_handle.hpp"
 
-#include <boost/cstdint.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/static_assert.hpp>
+#include <cstdint>
+#include <tuple>
 #include <sstream>
 #include <vector>
 
 namespace mallocMC{
-
 namespace detail{
 
     template<
@@ -73,9 +71,7 @@ namespace detail{
             return T_Allocator::CreationPolicy::getAvailableSlotsHost(slotSize, alloc.getAllocatorHandle().devAllocator);
         }
     };
-
 }
-
 
     struct HeapInfo
     {
@@ -113,7 +109,7 @@ namespace detail{
             T_AlignmentPolicy
         >
     {
-        typedef boost::uint32_t uint32;
+        using uint32 = std::uint32_t;
 
     public:
         typedef T_CreationPolicy CreationPolicy;
@@ -145,7 +141,7 @@ namespace detail{
         )
         {
             void* pool = ReservePoolPolicy::setMemPool( size );
-            boost::tie(
+            std::tie(
                 pool,
                 size
             ) = AlignmentPolicy::alignPool(
@@ -178,9 +174,9 @@ namespace detail{
         {
             cudaFree( allocatorHandle.devAllocator );
             ReservePoolPolicy::resetMemPool( heapInfos.p );
-            allocatorHandle.devAllocator = NULL;
+            allocatorHandle.devAllocator = nullptr;
             heapInfos.size = 0;
-            heapInfos.p = NULL;
+            heapInfos.p = nullptr;
         }
 
         /* forbid to copy the allocator */
@@ -194,7 +190,7 @@ namespace detail{
         Allocator(
             size_t size = 8U * 1024U * 1024U
         ) :
-            allocatorHandle( NULL )
+            allocatorHandle( nullptr )
         {
             alloc( size );
         }

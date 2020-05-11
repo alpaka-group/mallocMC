@@ -27,8 +27,7 @@
 
 #pragma once
 
-#include <boost/cstdint.hpp>
-#include <boost/mpl/bool.hpp>
+#include <cstdint>
 
 #include "OldMalloc.hpp"
 
@@ -37,34 +36,33 @@ namespace CreationPolicies{
 
   class OldMalloc
   {
-    typedef boost::uint32_t uint32;
+    using uint32 = std::uint32_t;
 
     public:
-    typedef boost::mpl::bool_<false> providesAvailableSlots;
+    static constexpr auto providesAvailableSlots = false;
 
-    __device__ void* create(uint32 bytes)
+    __device__ void* create(uint32 bytes) const
     {
       return ::malloc(static_cast<size_t>(bytes));
     }
 
-    __device__ void destroy(void* mem)
+    __device__ void destroy(void* mem) const
     {
-      free(mem);
+      ::free(mem);
     }
 
-    __device__ bool isOOM(void* p, size_t s){
-      return s && (p == NULL);
+    __device__ bool isOOM(void* p, size_t s) const {
+      return s && (p == nullptr);
     }
 
     template < typename T >
-    static void* initHeap(T* dAlloc, void*, size_t){
+    static void* initHeap(T* dAlloc, void*, size_t) {
       return dAlloc;
     }
 
-    static std::string classname(){
+    static std::string classname() {
       return "OldMalloc";
     }
-
   };
 
 } //namespace CreationPolicies

@@ -33,8 +33,7 @@
 
 #pragma once
 
-#include <boost/cstdint.hpp>
-#include <boost/static_assert.hpp>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <sstream>
@@ -51,7 +50,7 @@ namespace DistributionPolicies{
   {
     private:
 
-      typedef boost::uint32_t uint32;
+      using uint32 = std::uint32_t;
       bool can_use_coalescing;
       uint32 warpid;
       uint32 myoffset;
@@ -76,19 +75,12 @@ namespace DistributionPolicies{
  * default-struct < template-struct < command-line parameter
  */
 #ifndef MALLOCMC_DP_XMALLOCSIMD_PAGESIZE
-#define MALLOCMC_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
+#define MALLOCMC_DP_XMALLOCSIMD_PAGESIZE (Properties::pagesize)
 #endif
-      BOOST_STATIC_CONSTEXPR uint32 pagesize      = MALLOCMC_DP_XMALLOCSIMD_PAGESIZE;
-
-      //all the properties must be unsigned integers > 0
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::pagesize::type>::is_signed);
-
-      // \TODO: The static_cast can be removed once the minimal dependencies of
-      //        this project is are at least CUDA 7.0 and gcc 4.8.2
-      BOOST_STATIC_ASSERT(static_cast<uint32>(pagesize) > 0);
+      static constexpr uint32 pagesize      = MALLOCMC_DP_XMALLOCSIMD_PAGESIZE;
 
     public:
-      BOOST_STATIC_CONSTEXPR uint32 _pagesize = pagesize;
+      static constexpr uint32 _pagesize = pagesize;
 
       MAMC_ACCELERATOR
       uint32 collect(uint32 bytes){

@@ -33,11 +33,10 @@
 #include "mallocMC_prefixes.hpp"
 #include "mallocMC_traits.hpp"
 
-#include <boost/cstdint.hpp>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 
 namespace mallocMC{
-
 namespace detail{
 
     /**
@@ -113,7 +112,7 @@ namespace detail{
     class DeviceAllocator :
         public T_CreationPolicy
     {
-        typedef boost::uint32_t uint32;
+        using uint32 = std::uint32_t;
     public:
         typedef T_CreationPolicy CreationPolicy;
         typedef T_DistributionPolicy DistributionPolicy;

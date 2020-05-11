@@ -27,7 +27,6 @@
 
 #pragma once
 
-
 namespace mallocMC{
 namespace DistributionPolicies{
 
