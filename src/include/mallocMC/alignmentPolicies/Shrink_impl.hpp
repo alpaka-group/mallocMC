@@ -31,9 +31,9 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
 #include "Shrink.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cstdint>
 #include <iostream>
 #include <sstream>
@@ -122,14 +122,13 @@ namespace mallocMC
                 return std::make_tuple(memory, memsize);
             }
 
-            MAMC_HOST
-            MAMC_ACCELERATOR
+            ALPAKA_FN_HOST_ACC
             static auto applyPadding(uint32 bytes) -> uint32
             {
                 return (bytes + dataAlignment - 1) & ~(dataAlignment - 1);
             }
 
-            MAMC_HOST
+            ALPAKA_FN_HOST
             static auto classname() -> std::string
             {
                 std::stringstream ss;

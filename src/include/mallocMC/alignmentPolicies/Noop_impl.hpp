@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
 #include "Noop.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cstdint>
 #include <string>
 #include <tuple>
@@ -49,8 +49,8 @@ namespace mallocMC
                 return std::make_tuple(memory, memsize);
             }
 
-            MAMC_HOST MAMC_ACCELERATOR static auto applyPadding(uint32 bytes)
-                -> uint32
+            ALPAKA_FN_HOST_ACC
+            static auto applyPadding(uint32 bytes) -> uint32
             {
                 return bytes;
             }

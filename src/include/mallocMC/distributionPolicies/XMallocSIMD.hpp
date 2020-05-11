@@ -64,7 +64,7 @@ namespace mallocMC
          *        default configuration. The default can be obtained through
          *        XMallocSIMD<>::Properties
          */
-        template<class T_Config = XMallocSIMDConf::DefaultXMallocConfig>
+        template<typename T_Config = XMallocSIMDConf::DefaultXMallocConfig>
         class XMallocSIMD;
 
     } // namespace DistributionPolicies

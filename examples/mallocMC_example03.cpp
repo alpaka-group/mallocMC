@@ -26,20 +26,24 @@
   THE SOFTWARE.
 */
 
-#pragma once
-
-// basic files for mallocMC
-#include <mallocMC/mallocMC_hostclass.hpp>
-
-// Load all available policies for mallocMC
+#include <alpaka/alpaka.hpp>
+#include <cassert>
+#include <iostream>
 #include <mallocMC/AlignmentPolicies.hpp>
 #include <mallocMC/CreationPolicies.hpp>
 #include <mallocMC/DistributionPolicies.hpp>
 #include <mallocMC/OOMPolicies.hpp>
 #include <mallocMC/ReservePoolPolicies.hpp>
+#include <mallocMC/mallocMC_hostclass.hpp>
+#include <numeric>
+#include <vector>
 
-// configurate the CreationPolicy "Scatter" to modify the default behaviour
-struct ScatterHeapConfig : mallocMC::CreationPolicies::Scatter<>::HeapProperties
+using Dim = alpaka::dim::DimInt<1>;
+using Idx = std::size_t;
+using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+// using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+
+struct ScatterConfig
 {
     static constexpr auto pagesize = 4096;
     static constexpr auto accessblocks = 8;
@@ -48,8 +52,7 @@ struct ScatterHeapConfig : mallocMC::CreationPolicies::Scatter<>::HeapProperties
     static constexpr auto resetfreedpages = false;
 };
 
-struct ScatterHashConfig :
-        mallocMC::CreationPolicies::Scatter<>::HashingProperties
+struct ScatterHashParams
 {
     static constexpr auto hashingK = 38183;
     static constexpr auto hashingDistMP = 17497;
@@ -57,23 +60,62 @@ struct ScatterHashConfig :
     static constexpr auto hashingDistWPRel = 1;
 };
 
-// configure the DistributionPolicy "XMallocSIMD"
-struct XMallocConfig : mallocMC::DistributionPolicies::XMallocSIMD<>::Properties
-{
-    static constexpr auto pagesize = ScatterHeapConfig::pagesize;
-};
-
-// configure the AlignmentPolicy "Shrink"
-struct ShrinkConfig : mallocMC::AlignmentPolicies::Shrink<>::Properties
+struct AlignmentConfig
 {
     static constexpr auto dataAlignment = 16;
 };
 
-// Define a new allocator and call it ScatterAllocator
-// which resembles the behaviour of ScatterAlloc
 using ScatterAllocator = mallocMC::Allocator<
-    mallocMC::CreationPolicies::Scatter<ScatterHeapConfig, ScatterHashConfig>,
-    mallocMC::DistributionPolicies::XMallocSIMD<XMallocConfig>,
+    Acc,
+    mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
+    mallocMC::DistributionPolicies::Noop,
     mallocMC::OOMPolicies::ReturnNull,
-    mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
-    mallocMC::AlignmentPolicies::Shrink<ShrinkConfig>>;
+    // mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+    mallocMC::ReservePoolPolicies::SimpleMalloc,
+    mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
+
+ALPAKA_STATIC_ACC_MEM_GLOBAL int * arA;
+
+struct ExampleKernel
+{
+    ALPAKA_FN_ACC void operator()(
+        const Acc & acc,
+        ScatterAllocator::AllocatorHandle allocHandle) const
+    {
+        const auto id
+            = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0];
+        if(id == 0)
+            arA = (int *)allocHandle.malloc(acc, sizeof(int) * 32);
+
+        const auto slots = allocHandle.getAvailableSlots(acc, 1);
+        alpaka::block::sync::syncBlockThreads(acc);
+        arA[id] = id;
+        printf("id: %d array: %d slots %d\n", id, arA[id], slots);
+
+        if(id == 0)
+            allocHandle.free(acc, arA);
+    }
+};
+
+auto main() -> int
+{
+    const auto dev
+        = alpaka::pltf::getDevByIdx<alpaka::pltf::Pltf<alpaka::dev::Dev<Acc>>>(
+            0);
+    auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
+
+    ScatterAllocator scatterAlloc(
+        dev, queue, 1U * 1024U * 1024U * 1024U); // 1GB for device-side malloc
+
+    const auto workDiv
+        = alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{32}, Idx{1}};
+    alpaka::queue::enqueue(
+        queue,
+        alpaka::kernel::createTaskKernel<Acc>(
+            workDiv, ExampleKernel{}, scatterAlloc.getAllocatorHandle()));
+
+    std::cout << "Slots from Host: "
+              << scatterAlloc.getAvailableSlots(dev, queue, 1) << '\n';
+
+    return 0;
+}

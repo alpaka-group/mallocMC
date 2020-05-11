@@ -1,22 +1,8 @@
-project(mallocMC LANGUAGES CUDA CXX)
+project(mallocMC LANGUAGES CXX)
 cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# helper for libs and packages
-set(CMAKE_CUDA_STANDARD 14)
-set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/"
-    "$ENV{CUDA_ROOT}" "$ENV{BOOST_ROOT}")
-
-
-################################################################################
-# CMake policies
-#
-# Search in <PackageName>_ROOT:
-#   https://cmake.org/cmake/help/v3.12/policy/CMP0074.html
-################################################################################
 
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
@@ -49,61 +35,37 @@ else()
     find_package(Catch2 CONFIG REQUIRED)
 endif()
 
-###############################################################################
-# CUDA
-###############################################################################
-if(NOT DEFINED COMPUTE_CAPABILITY)
-  set(COMPUTE_CAPABILITY "30")
-endif()
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_${COMPUTE_CAPABILITY} -use_fast_math")
-
-OPTION(CUDA_OUTPUT_INTERMEDIATE_CODE "Output ptx code" OFF)
-if(CUDA_OUTPUT_INTERMEDIATE_CODE)
-  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas -v --keep")
-endif()
-
-SET(CUDA_OPTIMIZATION_TYPE "unset" CACHE STRING "CUDA Optimization")
-set_property(CACHE CUDA_OPTIMIZATION_TYPE PROPERTY STRINGS "unset;-G0;-O0;-O1;-O2;-O3")
-if(NOT ${CUDA_OPTIMIZATION_TYPE} STREQUAL "unset")
-  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_OPTIMIZATION_TYPE}")
-endif()
-
-
-################################################################################
-# Warnings
-################################################################################
-if(CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wshadow -Wno-unknown-pragmas -Wextra -Wno-unused-parameter -Wno-unused-local-typedefs")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wshadow")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Minform=inform")
-endif()
-
-
-###############################################################################
-# Installation
-###############################################################################
-
-# copy include folder to install folder
-INSTALL(
-  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/include/."
-  DESTINATION include
-  PATTERN ".git" EXCLUDE
-  PATTERN "mallocMC_config.hpp" EXCLUDE
+# for installation, just copy include folder to install folder
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/include/."
+    DESTINATION include
 )
 
+add_library(warnings INTERFACE)
+# warnings
+if(CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(warnings INTERFACE "-Wall -Wshadow -Wno-unknown-pragmas -Wextra -Wno-unused-parameter -Wno-unused-local-typedefs")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+    target_compile_options(warnings INTERFACE "-Wall -Wshadow")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
+    target_compile_options(warnings INTERFACE "-Minform=inform")
+endif()
 
-###############################################################################
 # Executables
-###############################################################################
 file(GLOB_RECURSE headers src/include/**)
-add_custom_target(mallocMC SOURCES ${headers}) # create a target with the header files for IDE projects
+add_custom_target(mallocMCIde SOURCES ${headers}) # create a target with the header files for IDE projects
 source_group(TREE ${CMAKE_CURRENT_LIST_DIR}/src/include FILES ${headers})
 
-include_directories(${CMAKE_CURRENT_LIST_DIR}/src/include)
-add_executable(mallocMC_Example01 EXCLUDE_FROM_ALL examples/mallocMC_example01.cu examples/mallocMC_example01_config.hpp)
-add_executable(mallocMC_Example02 EXCLUDE_FROM_ALL examples/mallocMC_example02.cu)
-add_executable(mallocMC_Example03 EXCLUDE_FROM_ALL examples/mallocMC_example03.cu)
-add_executable(VerifyHeap EXCLUDE_FROM_ALL tests/verify_heap.cu tests/verify_heap_config.hpp)
+alpaka_add_executable(mallocMC_Example01 EXCLUDE_FROM_ALL examples/mallocMC_example01.cpp)
+target_include_directories(mallocMC_Example01 PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/include)
+target_link_libraries(mallocMC_Example01 PUBLIC alpaka::alpaka warnings)
+
+alpaka_add_executable(mallocMC_Example03 EXCLUDE_FROM_ALL examples/mallocMC_example03.cpp)
+target_include_directories(mallocMC_Example03 PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/include)
+target_link_libraries(mallocMC_Example03 PUBLIC alpaka::alpaka warnings)
+
+alpaka_add_executable(VerifyHeap EXCLUDE_FROM_ALL tests/verify_heap.cpp tests/verify_heap_config.hpp)
+target_include_directories(VerifyHeap PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/include)
+target_link_libraries(VerifyHeap PUBLIC alpaka::alpaka warnings)
+
 add_custom_target(examples DEPENDS mallocMC_Example01 mallocMC_Example02 mallocMC_Example03 VerifyHeap)

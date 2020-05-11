@@ -27,6 +27,8 @@
 
 #pragma once
 
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+
 #include "CudaSetLimits.hpp"
 
 #include <cuda_runtime_api.h>
@@ -36,6 +38,7 @@ namespace mallocMC
 {
     namespace ReservePoolPolicies
     {
+        // TODO alpaka
         struct CudaSetLimits
         {
             static auto setMemPool(size_t memsize) -> void *
@@ -57,3 +60,5 @@ namespace mallocMC
 
     } // namespace ReservePoolPolicies
 } // namespace mallocMC
+
+#endif

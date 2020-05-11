@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
 #include "ReturnNull.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <string>
 
 namespace mallocMC
@@ -39,7 +39,7 @@ namespace mallocMC
         class ReturnNull
         {
         public:
-            MAMC_ACCELERATOR
+            ALPAKA_FN_ACC
             static auto handleOOM(void * mem) -> void *
             {
                 return nullptr;

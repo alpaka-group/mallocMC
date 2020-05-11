@@ -33,10 +33,12 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+
 #include "../mallocMC_utils.hpp"
 #include "XMallocSIMD.hpp"
 
+#include <alpaka/alpaka.hpp>
 #include <cstdint>
 #include <limits>
 #include <sstream>
@@ -46,7 +48,7 @@ namespace mallocMC
 {
     namespace DistributionPolicies
     {
-        template<class T_Config>
+        template<typename T_Config>
         class XMallocSIMD
         {
         private:
@@ -60,10 +62,10 @@ namespace mallocMC
         public:
             using Properties = T_Config;
 
-            MAMC_ACCELERATOR
-            XMallocSIMD() :
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC XMallocSIMD(const AlpakaAcc & acc) :
                     can_use_coalescing(false),
-                    warpid(warpid_withinblock()),
+                    warpid(warpid_withinblock(acc)),
                     myoffset(0),
                     threadcount(0),
                     req_size(0)
@@ -87,27 +89,24 @@ namespace mallocMC
         public:
             static constexpr uint32 _pagesize = pagesize;
 
-            MAMC_ACCELERATOR
-            auto collect(uint32 bytes) -> uint32
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC
+            auto collect(const AlpakaAcc & acc, uint32 bytes) -> uint32
             {
                 can_use_coalescing = false;
                 myoffset = 0;
                 threadcount = 0;
 
                 // init with initial counter
-                __shared__ uint32 warp_sizecounter
-                    [MaxThreadsPerBlock::value / WarpSize::value];
+                auto & warp_sizecounter = alpaka::block::shared::st::allocVar<
+                    std::uint32_t[MaxThreadsPerBlock::value / warpSize],
+                    __COUNTER__>(acc);
                 warp_sizecounter[warpid] = 16;
 
                 // second half: make sure that all coalesced allocations can fit
                 // within one page necessary for offset calculation
-                bool coalescible = bytes > 0 && bytes < (pagesize / 32);
-#if(__CUDACC_VER_MAJOR__ >= 9)
-                threadcount
-                    = __popc(__ballot_sync(__activemask(), coalescible));
-#else
-                threadcount = __popc(__ballot(coalescible));
-#endif
+                const bool coalescible = bytes > 0 && bytes < (pagesize / 32);
+                threadcount = popc(__ballot_sync(__activemask(), coalescible));
                 if(coalescible && threadcount > 1)
                 {
                     myoffset = atomicAdd(&warp_sizecounter[warpid], bytes);
@@ -121,11 +120,14 @@ namespace mallocMC
                 return req_size;
             }
 
-            MAMC_ACCELERATOR
-            auto distribute(void * allocatedMem) -> void *
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC
+            auto distribute(const AlpakaAcc & acc, void * allocatedMem)
+                -> void *
             {
-                __shared__ char *
-                    warp_res[MaxThreadsPerBlock::value / WarpSize::value];
+                auto & warp_res = alpaka::block::shared::st::allocVar<
+                    char * [MaxThreadsPerBlock::value / warpSize],
+                    __COUNTER__>(acc);
 
                 char * myalloc = (char *)allocatedMem;
                 if(req_size && can_use_coalescing)
@@ -135,7 +137,6 @@ namespace mallocMC
                         *(uint32 *)myalloc = threadcount;
                 }
                 __threadfence_block();
-
                 void * myres = myalloc;
                 if(can_use_coalescing)
                 {
@@ -147,7 +148,7 @@ namespace mallocMC
                 return myres;
             }
 
-            MAMC_HOST
+            ALPAKA_FN_HOST
             static auto classname() -> std::string
             {
                 std::stringstream ss;
@@ -159,3 +160,5 @@ namespace mallocMC
     } // namespace DistributionPolicies
 
 } // namespace mallocMC
+
+#endif

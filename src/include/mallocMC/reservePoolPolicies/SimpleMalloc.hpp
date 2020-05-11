@@ -1,11 +1,10 @@
 /*
   mallocMC: Memory Allocator for Many Core Architectures.
-  https://www.hzdr.de/crp
 
-  Copyright (C) 2014 Institute of Radiation Physics,
-                     Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright 2020 Helmholtz-Zentrum Dresden - Rossendorf,
+                 CERN
 
-  Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
+  Author(s):  Bernhard Manfred Gruber
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +27,30 @@
 
 #pragma once
 
-#include <device_launch_parameters.h>
+#include <cstdlib>
+#include <string>
 
-#define MAMC_HOST __host__
-#define MAMC_ACCELERATOR __device__
+namespace mallocMC
+{
+    namespace ReservePoolPolicies
+    {
+        /// @brief allocates a fixed memory pool using ::malloc()
+        struct SimpleMalloc
+        {
+            static auto setMemPool(size_t memsize) -> void *
+            {
+                return ::malloc(memsize);
+            }
+
+            static void resetMemPool(void * p)
+            {
+                ::free(p);
+            }
+
+            static auto classname() -> std::string
+            {
+                return "SimpleMalloc";
+            }
+        };
+    } // namespace ReservePoolPolicies
+} // namespace mallocMC

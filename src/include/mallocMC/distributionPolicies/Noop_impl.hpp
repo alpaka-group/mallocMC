@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
 #include "Noop.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cstdint>
 #include <string>
 
@@ -42,14 +42,21 @@ namespace mallocMC
             using uint32 = std::uint32_t;
 
         public:
-            MAMC_ACCELERATOR
-            auto collect(uint32 bytes) const -> uint32
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC Noop(const AlpakaAcc & /*acc*/)
+            {}
+
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC
+            auto collect(const AlpakaAcc& /*acc*/, uint32 bytes) const -> uint32
             {
                 return bytes;
             }
 
-            MAMC_ACCELERATOR
-            auto distribute(void * allocatedMem) const -> void *
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC
+            auto distribute(const AlpakaAcc& /*acc*/, void * allocatedMem) const
+                -> void *
             {
                 return allocatedMem;
             }

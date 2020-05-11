@@ -33,68 +33,16 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
+#include <alpaka/alpaka.hpp>
 
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
 
-#include "mallocMC_prefixes.hpp"
-
 #include <cstdint>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-
-namespace CUDA
-{
-    class error : public std::runtime_error
-    {
-    private:
-        static auto
-        genErrorString(cudaError errorValue, const char * file, int line)
-            -> std::string
-        {
-            std::ostringstream msg;
-            msg << file << '(' << line
-                << "): error: " << cudaGetErrorString(errorValue);
-            return msg.str();
-        }
-
-    public:
-        error(cudaError errorValue, const char * file, int line) :
-                runtime_error(genErrorString(errorValue, file, line))
-        {}
-
-        explicit error(cudaError errorValue) :
-                runtime_error(cudaGetErrorString(errorValue))
-        {}
-
-        explicit error(const std::string & msg) : runtime_error(msg) {}
-    };
-
-    inline void checkError(cudaError errorValue, const char * file, int line)
-    {
-        if(errorValue != cudaSuccess)
-            throw CUDA::error(errorValue, file, line);
-    }
-
-    inline void checkError(const char * file, int line)
-    {
-        checkError(cudaGetLastError(), file, line);
-    }
-
-    inline void checkError()
-    {
-        cudaError errorValue = cudaGetLastError();
-        if(errorValue != cudaSuccess)
-            throw CUDA::error(errorValue);
-    }
-
-#define MALLOCMC_CUDA_CHECKED_CALL(call) \
-    CUDA::checkError(call, __FILE__, __LINE__)
-#define MALLOCMC_CUDA_CHECK_ERROR() CUDA::checkError(__FILE__, __LINE__)
-} // namespace CUDA
 
 namespace mallocMC
 {
@@ -111,14 +59,26 @@ namespace mallocMC
         using type = unsigned long long;
     };
 
+#if defined(__HIP__) || defined(_CUDA_ARCH_)
+    constexpr auto warpSize = ::warpsize;
+#else
+    constexpr auto warpSize = 1;
+#endif
+
     using PointerEquivalent
         = mallocMC::__PointerEquivalent<sizeof(char *)>::type;
 
-    MAMC_ACCELERATOR inline auto laneid() -> std::uint32_t
+    ALPAKA_FN_ACC inline auto laneid()
     {
+#if defined(__HIP__) || defined(__HCC__)
+        return __lane_id();
+#elif defined(_CUDA_ARCH_)
         std::uint32_t mylaneid;
         asm("mov.u32 %0, %%laneid;" : "=r"(mylaneid));
         return mylaneid;
+#else
+        return 0u;
+#endif
     }
 
     /** warp index within a multiprocessor
@@ -128,74 +88,64 @@ namespace mallocMC
      *
      * @return current index of the warp
      */
-    MAMC_ACCELERATOR inline auto warpid() -> std::uint32_t
+    ALPAKA_FN_ACC inline auto warpid()
     {
+#if defined(__HIP__)
+        // get wave id
+        // https://github.com/ROCm-Developer-Tools/HIP/blob/f72a669487dd352e45321c4b3038f8fe2365c236/include/hip/hcc_detail/device_functions.h#L974-L1024
+        return __builtin_amdgcn_s_getreg(GETREG_IMMED(3, 0, 4));
+#elif defined(__HCC__)
+        // workaround because wave id is not available for HCC
+        return clock() % 8;
+#elif defined(_CUDA_ARCH_)
         std::uint32_t mywarpid;
         asm("mov.u32 %0, %%warpid;" : "=r"(mywarpid));
         return mywarpid;
+#else
+        return 0u;
+#endif
     }
 
-    /** maximum number of warps on a multiprocessor
-     *
-     * @return maximum number of warps on a multiprocessor
-     */
-    MAMC_ACCELERATOR inline auto nwarpid() -> std::uint32_t
+    ALPAKA_FN_ACC inline auto smid()
     {
-        std::uint32_t mynwarpid;
-        asm("mov.u32 %0, %%nwarpid;" : "=r"(mynwarpid));
-        return mynwarpid;
-    }
-
-    MAMC_ACCELERATOR inline auto smid() -> std::uint32_t
-    {
+#if defined(__HIP__)
+        return __smid();
+#elif defined(__HCC__)
+        // workaround because __smid is not available for HCC
+        return clock() % 8;
+#elif defined(_CUDA_ARCH_)
         std::uint32_t mysmid;
         asm("mov.u32 %0, %%smid;" : "=r"(mysmid));
         return mysmid;
+#else
+        return 0u;
+#endif
     }
 
-    MAMC_ACCELERATOR inline auto nsmid() -> std::uint32_t
+    ALPAKA_FN_ACC inline auto lanemask_lt()
     {
-        std::uint32_t mynsmid;
-        asm("mov.u32 %0, %%nsmid;" : "=r"(mynsmid));
-        return mynsmid;
-    }
-    MAMC_ACCELERATOR inline auto lanemask() -> std::uint32_t
-    {
-        std::uint32_t lanemask;
-        asm("mov.u32 %0, %%lanemask_eq;" : "=r"(lanemask));
-        return lanemask;
-    }
-
-    MAMC_ACCELERATOR inline auto lanemask_le() -> std::uint32_t
-    {
-        std::uint32_t lanemask;
-        asm("mov.u32 %0, %%lanemask_le;" : "=r"(lanemask));
-        return lanemask;
-    }
-
-    MAMC_ACCELERATOR inline auto lanemask_lt() -> std::uint32_t
-    {
+#if defined(__HIP__) || defined(__HCC__)
+        return __lanemask_lt();
+#elif defined(_CUDA_ARCH_)
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_lt;" : "=r"(lanemask));
         return lanemask;
+#else
+        return 0u;
+#endif
     }
 
-    MAMC_ACCELERATOR inline auto lanemask_ge() -> std::uint32_t
+    ALPAKA_FN_ACC inline auto activemask()
     {
-        std::uint32_t lanemask;
-        asm("mov.u32 %0, %%lanemask_ge;" : "=r"(lanemask));
-        return lanemask;
-    }
-
-    MAMC_ACCELERATOR inline auto lanemask_gt() -> std::uint32_t
-    {
-        std::uint32_t lanemask;
-        asm("mov.u32 %0, %%lanemask_gt;" : "=r"(lanemask));
-        return lanemask;
+#if defined(__HIP__) || defined(__HCC__) || defined(_CUDA_ARCH_)
+        return __activemask();
+#else
+        return 1u;
+#endif
     }
 
     template<class T>
-    MAMC_HOST MAMC_ACCELERATOR inline auto divup(T a, T b) -> T
+    ALPAKA_FN_HOST_ACC inline auto divup(T a, T b) -> T
     {
         return (a + b - 1) / b;
     }
@@ -207,17 +157,8 @@ namespace mallocMC
     struct MaxThreadsPerBlock
     {
         // valid for sm_2.X - sm_7.5
+        // TODO alpaka
         static constexpr uint32_t value = 1024;
-    };
-
-    /** number of threads within a warp
-     *
-     * https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
-     */
-    struct WarpSize
-    {
-        // valid for sm_2.X - sm_7.5
-        static constexpr uint32_t value = 32;
     };
 
     /** warp id within a cuda block
@@ -227,10 +168,48 @@ namespace mallocMC
      *
      * @return warp id within the block
      */
-    MAMC_ACCELERATOR inline auto warpid_withinblock() -> std::uint32_t
+    template<typename AlpakaAcc>
+    ALPAKA_FN_ACC inline auto warpid_withinblock(const AlpakaAcc & acc)
+        -> std::uint32_t
     {
-        return (threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x
-                + threadIdx.x)
-            / WarpSize::value;
+        const auto localId = alpaka::idx::mapIdx<1>(
+            alpaka::idx::getIdx<alpaka::Block, alpaka::Threads>(acc),
+            alpaka::workdiv::getWorkDiv<alpaka::Block, alpaka::Threads>(
+                acc))[0];
+        return localId / warpSize;
+    }
+
+    ALPAKA_FN_ACC inline auto ffs(std::uint32_t mask) -> std::uint32_t
+    {
+#if defined(__HIP__) || defined(__HCC__) || defined(_CUDA_ARCH_)
+        return ::__ffs(mask);
+#else
+        if(mask == 0)
+            return 0;
+        auto i = 1u;
+        while((mask & 1) == 0)
+        {
+            mask >>= 1;
+            i++;
+        }
+        return i;
+#endif
+    }
+
+    ALPAKA_FN_ACC inline auto popc(std::uint32_t mask) -> std::uint32_t
+    {
+#if defined(__HIP__) || defined(__HCC__) || defined(_CUDA_ARCH_)
+        return ::__popc(mask);
+#else
+        // cf.
+        // https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
+        std::uint32_t count = 0;
+        while(mask)
+        {
+            count++;
+            mask &= mask - 1;
+        }
+        return count;
+#endif
     }
 } // namespace mallocMC

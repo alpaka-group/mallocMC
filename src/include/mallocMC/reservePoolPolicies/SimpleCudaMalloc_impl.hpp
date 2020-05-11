@@ -27,6 +27,8 @@
 
 #pragma once
 
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+
 #include "../mallocMC_utils.hpp"
 #include "SimpleCudaMalloc.hpp"
 
@@ -41,13 +43,17 @@ namespace mallocMC
             static auto setMemPool(size_t memsize) -> void *
             {
                 void * pool = nullptr;
-                MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
+                const auto ret = cudaMalloc(&pool, memsize);
+                if(ret != cudaSuccess)
+                    throw std::runtime_error(cudaGetErrorString(ret));
                 return pool;
             }
 
             static void resetMemPool(void * p)
             {
-                MALLOCMC_CUDA_CHECKED_CALL(cudaFree(p));
+                const auto ret = cudaFree(p);
+                if(ret != cudaSuccess)
+                    throw std::runtime_error(cudaGetErrorString(ret));
             }
 
             static auto classname() -> std::string
@@ -58,3 +64,5 @@ namespace mallocMC
 
     } // namespace ReservePoolPolicies
 } // namespace mallocMC
+
+#endif

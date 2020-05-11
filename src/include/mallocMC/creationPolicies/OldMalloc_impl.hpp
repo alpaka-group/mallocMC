@@ -29,6 +29,7 @@
 
 #include "OldMalloc.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cstdint>
 
 namespace mallocMC
@@ -42,23 +43,25 @@ namespace mallocMC
         public:
             static constexpr auto providesAvailableSlots = false;
 
-            __device__ auto create(uint32 bytes) const -> void *
+            ALPAKA_FN_ACC auto create(uint32 bytes) const -> void *
             {
                 return ::malloc(static_cast<size_t>(bytes));
             }
 
-            __device__ void destroy(void * mem) const
+            template <typename AlpakaAcc>
+            ALPAKA_FN_ACC void destroy(const AlpakaAcc& /*acc*/, void * mem) const
             {
                 ::free(mem);
             }
 
-            __device__ auto isOOM(void * p, size_t s) const -> bool
+            ALPAKA_FN_ACC auto isOOM(void * p, size_t s) const -> bool
             {
                 return s != 0 && (p == nullptr);
             }
 
-            template<typename T>
-            static auto initHeap(T * dAlloc, void *, size_t) -> void *
+            template<typename AlpakaQueue, typename T>
+            static auto
+            initHeap(AlpakaQueue & queue, T * dAlloc, void *, size_t) -> void *
             {
                 return dAlloc;
             }

@@ -29,10 +29,10 @@
 #pragma once
 
 #include "mallocMC_constraints.hpp"
-#include "mallocMC_prefixes.hpp"
 #include "mallocMC_traits.hpp"
 #include "mallocMC_utils.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cstdint>
 #include <cstdio>
 
@@ -52,25 +52,31 @@ namespace mallocMC
          * @tparam T_providesAvailableSlots If the CreationPolicy provides
          * getAvailableSlots[Host|Accelerator] (auto filled, do not set)
          */
-        template<typename T_Allocator, bool T_providesAvailableSlots>
+        template<
+            typename AlpakaAcc,
+            typename T_Allocator,
+            bool T_providesAvailableSlots>
         struct GetAvailableSlotsIfAvailAcc
         {
-            MAMC_ACCELERATOR static auto
-            getAvailableSlots(size_t, T_Allocator &) -> unsigned
+            ALPAKA_FN_ACC static auto
+            getAvailableSlots(const AlpakaAcc &, size_t, T_Allocator &)
+                -> unsigned
             {
                 return 0;
             }
         };
 
-        template<typename T_Allocator>
-        struct GetAvailableSlotsIfAvailAcc<T_Allocator, true>
+        template<typename AlpakaAcc, typename T_Allocator>
+        struct GetAvailableSlotsIfAvailAcc<AlpakaAcc, T_Allocator, true>
         {
-            MAMC_ACCELERATOR static auto
-            getAvailableSlots(size_t slotSize, T_Allocator & alloc) -> unsigned
+            ALPAKA_FN_ACC static auto getAvailableSlots(
+                const AlpakaAcc & acc,
+                size_t slotSize,
+                T_Allocator & alloc) -> unsigned
             {
                 return alloc
                     .T_Allocator::CreationPolicy ::getAvailableSlotsAccelerator(
-                        slotSize);
+                        acc, slotSize);
             }
         };
 
@@ -91,6 +97,7 @@ namespace mallocMC
      * @tparam T_AlignmentPolicy The desired type of a AlignmentPolicy
      */
     template<
+        typename AlpakaAcc,
         typename T_CreationPolicy,
         typename T_DistributionPolicy,
         typename T_OOMPolicy,
@@ -107,37 +114,37 @@ namespace mallocMC
 
         void * pool;
 
-        MAMC_ACCELERATOR
-        auto malloc(size_t bytes) -> void *
+        ALPAKA_FN_ACC
+        auto malloc(const AlpakaAcc & acc, size_t bytes) -> void *
         {
-            DistributionPolicy distributionPolicy;
             bytes = AlignmentPolicy::applyPadding(bytes);
-            uint32 req_size = distributionPolicy.collect(bytes);
-            void * memBlock = CreationPolicy::create(req_size);
-            const bool oom = CreationPolicy::isOOM(memBlock, req_size);
-            if(oom)
+            DistributionPolicy distributionPolicy(acc);
+            const uint32 req_size = distributionPolicy.collect(acc, bytes);
+            void * memBlock = CreationPolicy::create(acc, req_size);
+            if(CreationPolicy::isOOM(memBlock, req_size))
                 memBlock = OOMPolicy::handleOOM(memBlock);
-            void * myPart = distributionPolicy.distribute(memBlock);
-            return myPart;
+            return distributionPolicy.distribute(acc, memBlock);
         }
 
-        MAMC_ACCELERATOR
-        void free(void * p)
+        ALPAKA_FN_ACC
+        void free(const AlpakaAcc & acc, void * p)
         {
-            CreationPolicy::destroy(p);
+            CreationPolicy::destroy(acc, p);
         }
 
         /* polymorphism over the availability of getAvailableSlots for calling
          * from the accelerator
          */
-        MAMC_ACCELERATOR
-        auto getAvailableSlots(size_t slotSize) -> unsigned
+        ALPAKA_FN_ACC
+        auto getAvailableSlots(const AlpakaAcc & acc, size_t slotSize)
+            -> unsigned
         {
             slotSize = AlignmentPolicy::applyPadding(slotSize);
             return detail::GetAvailableSlotsIfAvailAcc<
+                AlpakaAcc,
                 DeviceAllocator,
                 Traits<DeviceAllocator>::providesAvailableSlots>::
-                getAvailableSlots(slotSize, *this);
+                getAvailableSlots(acc, slotSize, *this);
         }
     };
 
