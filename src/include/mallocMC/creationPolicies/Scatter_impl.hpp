@@ -710,7 +710,7 @@ namespace ScatterKernelDetail{
         uint32 blocks =  gridDim.x*gridDim.y*gridDim.z;
         linid += linblockid*threads;
 
-        uint32 numregions = ((unsigned long long)memsize)/( ((unsigned long long)regionsize)*(sizeof(PTE)+pagesize)+sizeof(uint32)); // TODO(bgruber): why unsigned long long and not size_t?
+        uint32 numregions = ((unsigned long long)memsize)/( ((unsigned long long)regionsize)*(sizeof(PTE)+pagesize)+sizeof(uint32));
 
         uint32 numpages = numregions*regionsize;
         //pointer is copied (copy is called page)
