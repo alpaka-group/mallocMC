@@ -102,7 +102,7 @@ namespace mallocMC
   class __PointerEquivalent
   {
   public:
-    typedef unsigned int type;
+    using type = unsigned int;
   };
   template<>
   class __PointerEquivalent<8>

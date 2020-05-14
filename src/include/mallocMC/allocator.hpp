@@ -113,7 +113,7 @@ namespace detail{
         using uint32 = std::uint32_t;
 
     public:
-        typedef T_CreationPolicy CreationPolicy;
+        using CreationPolicy = T_CreationPolicy;
         using DistributionPolicy = T_DistributionPolicy;
         using OOMPolicy = T_OOMPolicy;
         using ReservePoolPolicy = T_ReservePoolPolicy;

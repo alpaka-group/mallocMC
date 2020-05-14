@@ -74,7 +74,7 @@ namespace ScatterKernelDetail{
   class Scatter
   {
     public:
-      typedef T_Config  HeapProperties;
+      using HeapProperties = T_Config;
       using HashingProperties = T_Hashing;
       struct  Properties : HeapProperties, HashingProperties{};
       static constexpr auto providesAvailableSlots = true;

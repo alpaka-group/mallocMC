@@ -73,13 +73,13 @@ struct AlignmentConfig{
 
 // Define a new mMCator and call it ScatterAllocator
 // which resembles the behaviour of ScatterAlloc
-typedef mallocMC::Allocator<
+using ScatterAllocator = mallocMC::Allocator<
     mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
     mallocMC::DistributionPolicies::Noop,
     mallocMC::OOMPolicies::ReturnNull,
     mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>
-> ScatterAllocator;
+>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // End of mallocMC configuration

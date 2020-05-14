@@ -44,7 +44,7 @@ namespace AlignmentPolicies{
 
 namespace Shrink2NS{
     
-  template<int PSIZE> struct __PointerEquivalent{ typedef unsigned int type;};
+  template<int PSIZE> struct __PointerEquivalent{ using type = unsigned int;};
   template<>
   struct __PointerEquivalent<8>{ using type = unsigned long long; };
 } // namespace Shrink2NS
