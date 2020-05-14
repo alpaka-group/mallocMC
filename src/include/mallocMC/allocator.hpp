@@ -47,7 +47,8 @@ namespace mallocMC
         template<typename T_Allocator, bool T_providesAvailableSlots>
         struct GetAvailableSlotsIfAvailHost
         {
-            MAMC_HOST static auto getAvailableSlots(size_t, T_Allocator &) -> unsigned
+            MAMC_HOST static auto getAvailableSlots(size_t, T_Allocator &)
+                -> unsigned
             {
                 return 0;
             }
@@ -57,8 +58,8 @@ namespace mallocMC
         struct GetAvailableSlotsIfAvailHost<T_Allocator, true>
         {
             MAMC_HOST
-            static auto
-            getAvailableSlots(size_t slotSize, T_Allocator & alloc) -> unsigned
+            static auto getAvailableSlots(size_t slotSize, T_Allocator & alloc)
+                -> unsigned
             {
                 return T_Allocator::CreationPolicy::getAvailableSlotsHost(
                     slotSize, alloc.getAllocatorHandle().devAllocator);

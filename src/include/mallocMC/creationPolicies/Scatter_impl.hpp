@@ -390,7 +390,8 @@ namespace mallocMC
              * to obtain a free chunk
              */
             __device__ inline auto
-            addChunkNoHierarchy(uint32 chunksize, uint32 page, uint32 spots) -> void *
+            addChunkNoHierarchy(uint32 chunksize, uint32 page, uint32 spots)
+                -> void *
             {
                 const int spot = usespot((uint32 *)&_ptes[page].bitmask, spots);
                 if(spot == -1)
@@ -405,7 +406,8 @@ namespace mallocMC
              * @return pointer to a free chunk on the page, 0 if we were unable
              * to obtain a free chunk
              */
-            __device__ inline auto tryUsePage(uint32 page, uint32 chunksize) -> void *
+            __device__ inline auto tryUsePage(uint32 page, uint32 chunksize)
+                -> void *
             {
                 void * chunk_ptr = nullptr;
 
@@ -926,7 +928,8 @@ namespace mallocMC
 
             template<typename T_DeviceAllocator>
             static auto
-            initHeap(T_DeviceAllocator * heap, void * pool, size_t memsize) -> void *
+            initHeap(T_DeviceAllocator * heap, void * pool, size_t memsize)
+                -> void *
             {
                 if(pool == nullptr && memsize != 0)
                 {
@@ -955,8 +958,8 @@ namespace mallocMC
              * the page. This size must be appropriate to the formatting of the
              *        page.
              */
-            __device__ auto
-            countFreeChunksInPage(uint32 page, uint32 chunksize) -> unsigned
+            __device__ auto countFreeChunksInPage(uint32 page, uint32 chunksize)
+                -> unsigned
             {
                 const uint32 filledChunks = _ptes[page].count;
                 if(chunksize <= HierarchyThreshold)
@@ -1121,12 +1124,13 @@ namespace mallocMC
              *
              * @param slotSize the size of allocatable elements to count
              */
-            __device__ auto getAvailableSlotsAccelerator(size_t slotSize) -> unsigned
+            __device__ auto getAvailableSlotsAccelerator(size_t slotSize)
+                -> unsigned
             {
                 const int wId
                     = warpid_withinblock(); // do not use warpid-function, since
-                                            // this value is not guaranteed to be
-                                            // stable across warp lifetime
+                                            // this value is not guaranteed to
+                                            // be stable across warp lifetime
 
 #if(__CUDACC_VER_MAJOR__ >= 9)
                 const uint32 activeThreads = __popc(__activemask());

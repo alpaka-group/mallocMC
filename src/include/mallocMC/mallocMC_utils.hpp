@@ -52,7 +52,8 @@ namespace CUDA
     {
     private:
         static auto
-        genErrorString(cudaError errorValue, const char * file, int line) -> std::string
+        genErrorString(cudaError errorValue, const char * file, int line)
+            -> std::string
         {
             std::ostringstream msg;
             msg << file << '(' << line

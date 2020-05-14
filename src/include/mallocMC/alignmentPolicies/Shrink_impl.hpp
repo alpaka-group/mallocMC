@@ -90,8 +90,8 @@ namespace mallocMC
                 "dataAlignment must also be a power of 2");
 
         public:
-            static auto
-            alignPool(void * memory, size_t memsize) -> std::tuple<void *, size_t>
+            static auto alignPool(void * memory, size_t memsize)
+                -> std::tuple<void *, size_t>
             {
                 PointerEquivalent alignmentstatus
                     = ((PointerEquivalent)memory) & (dataAlignment - 1);
