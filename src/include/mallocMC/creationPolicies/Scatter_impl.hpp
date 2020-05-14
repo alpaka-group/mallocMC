@@ -33,12 +33,12 @@
 
 #pragma once
 
-#include <cstdio>
-#include <cstdint> /* uint32_t */
-#include <iostream>
-#include <string>
 #include <cassert>
+#include <cstdint> /* uint32_t */
+#include <cstdio>
+#include <iostream>
 #include <stdexcept>
+#include <string>
 
 #include "../mallocMC_utils.hpp"
 #include "Scatter.hpp"
@@ -74,8 +74,8 @@ namespace ScatterKernelDetail{
   class Scatter
   {
     public:
-      typedef T_Config  HeapProperties;
-      typedef T_Hashing HashingProperties;
+      using HeapProperties = T_Config;
+      using HashingProperties = T_Hashing;
       struct  Properties : HeapProperties, HashingProperties{};
       static constexpr auto providesAvailableSlots = true;
 

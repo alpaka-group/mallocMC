@@ -30,8 +30,8 @@
 #include <cstdint>
 #include <string>
 
-#include "Noop.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "Noop.hpp"
 
 namespace mallocMC{
 namespace DistributionPolicies{

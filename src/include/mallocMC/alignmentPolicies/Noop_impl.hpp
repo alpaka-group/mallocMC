@@ -31,8 +31,8 @@
 #include <string>
 #include <tuple>
 
-#include "Noop.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "Noop.hpp"
 
 namespace mallocMC{
 namespace AlignmentPolicies{

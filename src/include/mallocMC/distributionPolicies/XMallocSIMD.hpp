@@ -40,7 +40,7 @@ namespace DistributionPolicies{
     struct DefaultXMallocConfig{
       static constexpr auto pagesize = 4096;
     };
-  }
+  } // namespace XMallocSIMDConf
 
   /**
    * @brief SIMD optimized chunk resizing in the style of XMalloc

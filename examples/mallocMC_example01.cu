@@ -32,7 +32,7 @@
 #include <numeric>
 
 #include <cuda.h>
-#include "mallocMC_example01_config.cu"
+#include "mallocMC_example01_config.hpp"
 
 void run();
 

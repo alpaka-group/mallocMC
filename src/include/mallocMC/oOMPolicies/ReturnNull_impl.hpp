@@ -29,8 +29,8 @@
 
 #include <string>
 
-#include "ReturnNull.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "ReturnNull.hpp"
 
 namespace mallocMC{
 namespace OOMPolicies{

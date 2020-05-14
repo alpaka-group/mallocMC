@@ -38,7 +38,7 @@ namespace ShrinkConfig{
   struct DefaultShrinkConfig{
     static constexpr auto dataAlignment = 16;
   };
-}
+} // namespace ShrinkConfig
 
   /**
    * @brief Provides proper alignment of pool and pads memory requests

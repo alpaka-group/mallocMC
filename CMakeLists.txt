@@ -30,7 +30,6 @@ if(NOT DEFINED COMPUTE_CAPABILITY)
   set(COMPUTE_CAPABILITY "30")
 endif()
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_${COMPUTE_CAPABILITY} -use_fast_math")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 OPTION(CUDA_OUTPUT_INTERMEDIATE_CODE "Output ptx code" OFF)
 if(CUDA_OUTPUT_INTERMEDIATE_CODE)
@@ -72,9 +71,13 @@ INSTALL(
 ###############################################################################
 # Executables
 ###############################################################################
-add_custom_target(examples DEPENDS mallocMC_Example01 mallocMC_Example02 mallocMC_Example03 VerifyHeap)
+file(GLOB_RECURSE headers src/include/**)
+add_custom_target(mallocMC SOURCES ${headers}) # create a target with the header files for IDE projects
+source_group(TREE ${CMAKE_CURRENT_LIST_DIR}/src/include FILES ${headers})
 
-add_executable(mallocMC_Example01 EXCLUDE_FROM_ALL examples/mallocMC_example01.cu)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src/include)
+add_executable(mallocMC_Example01 EXCLUDE_FROM_ALL examples/mallocMC_example01.cu examples/mallocMC_example01_config.hpp)
 add_executable(mallocMC_Example02 EXCLUDE_FROM_ALL examples/mallocMC_example02.cu)
 add_executable(mallocMC_Example03 EXCLUDE_FROM_ALL examples/mallocMC_example03.cu)
-add_executable(VerifyHeap EXCLUDE_FROM_ALL tests/verify_heap.cu)
+add_executable(VerifyHeap EXCLUDE_FROM_ALL tests/verify_heap.cu tests/verify_heap_config.hpp)
+add_custom_target(examples DEPENDS mallocMC_Example01 mallocMC_Example02 mallocMC_Example03 VerifyHeap)

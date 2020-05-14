@@ -1,0 +1,3 @@
+---
+Checks:            '*,-llvm-header-guard,-fuchsia-default-arguments-declarations,-cppcoreguidelines-no-malloc,-cppcoreguidelines-owning-memory,-modernize-use-trailing-return-type,-misc-non-private-member-variables-in-classes'
+HeaderFilterRegex: '.*'

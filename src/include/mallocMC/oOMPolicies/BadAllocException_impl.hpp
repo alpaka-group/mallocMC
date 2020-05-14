@@ -30,8 +30,8 @@
 #include <cassert>
 #include <string>
 
-#include "BadAllocException.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "BadAllocException.hpp"
 
 namespace mallocMC{
 namespace OOMPolicies{

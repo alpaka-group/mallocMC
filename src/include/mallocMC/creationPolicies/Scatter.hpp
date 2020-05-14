@@ -50,7 +50,7 @@ namespace ScatterConf{
     static constexpr auto hashingDistWP = 1;
     static constexpr auto hashingDistWPRel = 1;
   };  
-}
+}  // namespace ScatterConf
 
   /**
    * @brief fast memory allocation based on ScatterAlloc
