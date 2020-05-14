@@ -27,34 +27,38 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "../mallocMC_prefixes.hpp"
 #include "Noop.hpp"
 
-namespace mallocMC{
-namespace DistributionPolicies{
+#include <cstdint>
+#include <string>
 
-  class Noop
-  {
-    using uint32 = std::uint32_t;
+namespace mallocMC
+{
+    namespace DistributionPolicies
+    {
+        class Noop
+        {
+            using uint32 = std::uint32_t;
 
-    public:
-    MAMC_ACCELERATOR
-    uint32 collect(uint32 bytes) const {
-      return bytes;
-    }
+        public:
+            MAMC_ACCELERATOR
+            uint32 collect(uint32 bytes) const
+            {
+                return bytes;
+            }
 
-    MAMC_ACCELERATOR
-    void* distribute(void* allocatedMem) const {
-      return allocatedMem;
-    }
+            MAMC_ACCELERATOR
+            void * distribute(void * allocatedMem) const
+            {
+                return allocatedMem;
+            }
 
-    static std::string classname(){
-      return "Noop";
-    }
-  };
+            static std::string classname()
+            {
+                return "Noop";
+            }
+        };
 
-} //namespace DistributionPolicies
-} //namespace mallocMC
+    } // namespace DistributionPolicies
+} // namespace mallocMC

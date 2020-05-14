@@ -26,30 +26,37 @@
   THE SOFTWARE.
 */
 
-
 // get a CUDA error and print it nicely
-#define CUDA_CHECK(cmd) {cudaError_t error = cmd; \
-  if(error!=cudaSuccess){\
-    printf("<%s>:%i ",__FILE__,__LINE__);\
-    printf("[CUDA] Error: %s\n", cudaGetErrorString(error));}}
+#define CUDA_CHECK(cmd) \
+    { \
+        cudaError_t error = cmd; \
+        if(error != cudaSuccess) \
+        { \
+            printf("<%s>:%i ", __FILE__, __LINE__); \
+            printf("[CUDA] Error: %s\n", cudaGetErrorString(error)); \
+        } \
+    }
 
 // start kernel, wait for finish and check errors
-#define CUDA_CHECK_KERNEL_SYNC(...) __VA_ARGS__;CUDA_CHECK(cudaDeviceSynchronize())
+#define CUDA_CHECK_KERNEL_SYNC(...) \
+    __VA_ARGS__; \
+    CUDA_CHECK(cudaDeviceSynchronize())
 
 // each pointer in the datastructure will point to this many
 // elements of type allocElem_t
 constexpr auto ELEMS_PER_SLOT = 750;
 
+#include <cstdio>
 #include <cuda.h>
 #include <iostream>
-#include <cstdio>
+#include <sstream>
 #include <typeinfo>
 #include <vector>
-#include <sstream>
 
-//include the Heap with the arguments given in the config
-#include <mallocMC/mallocMC_utils.hpp>
+// include the Heap with the arguments given in the config
 #include "verify_heap_config.hpp"
+
+#include <mallocMC/mallocMC_utils.hpp>
 
 // global variable for verbosity, might change due to user input '--verbose'
 bool verbose = false;
@@ -57,27 +64,37 @@ bool verbose = false;
 // the type of the elements to allocate
 using allocElem_t = unsigned long long;
 
-bool run_heap_verification(const size_t, const unsigned, const unsigned, const bool);
-void parse_cmdline(const int, char**, size_t*, unsigned*, unsigned*, bool*);
-void print_help(char**);
-
+bool run_heap_verification(
+    const size_t,
+    const unsigned,
+    const unsigned,
+    const bool);
+void parse_cmdline(
+    const int,
+    char **,
+    size_t *,
+    unsigned *,
+    unsigned *,
+    bool *);
+void print_help(char **);
 
 // used to create an empty stream for non-verbose output
-struct nullstream : std::ostream {
-  nullstream() : std::ostream(0) { }
+struct nullstream : std::ostream
+{
+    nullstream() : std::ostream(0) {}
 };
 
 // uses global verbosity to switch between std::cout and a nullptr-output
-std::ostream& dout() {
-  static nullstream n;
-  return verbose ? std::cout : n;
+std::ostream & dout()
+{
+    static nullstream n;
+    return verbose ? std::cout : n;
 }
 
 // define some defaults
 static constexpr unsigned threads_default = 128;
-static constexpr unsigned blocks_default  = 64;
-static constexpr size_t heapInMB_default  = 1024; // 1GB
-
+static constexpr unsigned blocks_default = 64;
+static constexpr size_t heapInMB_default = 1024; // 1GB
 
 /**
  * will do a basic verification of scatterAlloc.
@@ -88,41 +105,50 @@ static constexpr size_t heapInMB_default  = 1024; // 1GB
  * @return will return 0 if the verification was successful,
  *         otherwise returns 1
  */
-int main(int argc, char** argv){
-  bool correct          = false;
-  bool machine_readable = false;
-  size_t heapInMB       = heapInMB_default;
-  unsigned threads      = threads_default;
-  unsigned blocks       = blocks_default;
+int main(int argc, char ** argv)
+{
+    bool correct = false;
+    bool machine_readable = false;
+    size_t heapInMB = heapInMB_default;
+    unsigned threads = threads_default;
+    unsigned blocks = blocks_default;
 
-  parse_cmdline(argc, argv, &heapInMB, &threads, &blocks, &machine_readable);
+    parse_cmdline(argc, argv, &heapInMB, &threads, &blocks, &machine_readable);
 
-  int computeCapabilityMajor = 0;
-  cudaDeviceGetAttribute(&computeCapabilityMajor, cudaDevAttrComputeCapabilityMajor, 0);
-  int computeCapabilityMinor = 0;
-  cudaDeviceGetAttribute(&computeCapabilityMinor, cudaDevAttrComputeCapabilityMinor, 0);
+    int computeCapabilityMajor = 0;
+    cudaDeviceGetAttribute(
+        &computeCapabilityMajor, cudaDevAttrComputeCapabilityMajor, 0);
+    int computeCapabilityMinor = 0;
+    cudaDeviceGetAttribute(
+        &computeCapabilityMinor, cudaDevAttrComputeCapabilityMinor, 0);
 
-  if( computeCapabilityMajor < 2 ) {
-    std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
-    std::cerr << computeCapabilityMajor << "."<< computeCapabilityMinor << ")\n";
-    return 1;
-  }
-
-  cudaSetDevice(0);
-  correct = run_heap_verification(heapInMB, threads, blocks, machine_readable);
-  cudaDeviceReset();
-
-  if(!machine_readable || verbose){
-    if(correct){
-      std::cout << "\033[0;32mverification successful ✔\033[0m\n";
-      return 0;
-    }else{
-      std::cerr << "\033[0;31mverification failed\033[0m\n";
-      return 1;
+    if(computeCapabilityMajor < 2)
+    {
+        std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
+        std::cerr << computeCapabilityMajor << "." << computeCapabilityMinor
+                  << ")\n";
+        return 1;
     }
-  }
-}
 
+    cudaSetDevice(0);
+    correct
+        = run_heap_verification(heapInMB, threads, blocks, machine_readable);
+    cudaDeviceReset();
+
+    if(!machine_readable || verbose)
+    {
+        if(correct)
+        {
+            std::cout << "\033[0;32mverification successful ✔\033[0m\n";
+            return 0;
+        }
+        else
+        {
+            std::cerr << "\033[0;31mverification failed\033[0m\n";
+            return 1;
+        }
+    }
+}
 
 /**
  * will parse command line arguments
@@ -137,97 +163,105 @@ int main(int argc, char** argv){
  */
 void parse_cmdline(
     const int argc,
-    char**argv,
-    size_t *heapInMB,
-    unsigned *threads,
-    unsigned *blocks,
-    bool *machine_readable
-    ){
+    char ** argv,
+    size_t * heapInMB,
+    unsigned * threads,
+    unsigned * blocks,
+    bool * machine_readable)
+{
+    std::vector<std::pair<std::string, std::string>> parameters;
 
-  std::vector<std::pair<std::string, std::string> > parameters;
-
-  // Parse Commandline, tokens are shaped like ARG=PARAM or ARG
-  // This requires to use '=', if you want to supply a value with a parameter
-  for (int i = 1; i < argc; ++i) {
-    char* pos = strtok(argv[i], "=");
-    std::pair < std::string, std::string > p(std::string(pos), std::string(""));
-    pos = strtok(nullptr, "=");
-    if (pos != nullptr) {
-      p.second = std::string(pos);
-    }
-    parameters.push_back(p);
-  }
-
-  // go through all parameters that were found
-  for (unsigned i = 0; i < parameters.size(); ++i) {
-    std::pair < std::string, std::string > p = parameters.at(i);
-
-    if (p.first == "-v" || p.first == "--verbose") {
-      verbose = true;
+    // Parse Commandline, tokens are shaped like ARG=PARAM or ARG
+    // This requires to use '=', if you want to supply a value with a parameter
+    for(int i = 1; i < argc; ++i)
+    {
+        char * pos = strtok(argv[i], "=");
+        std::pair<std::string, std::string> p(
+            std::string(pos), std::string(""));
+        pos = strtok(nullptr, "=");
+        if(pos != nullptr)
+        {
+            p.second = std::string(pos);
+        }
+        parameters.push_back(p);
     }
 
-    if (p.first == "--threads") {
-      *threads = atoi(p.second.c_str());
-    }
+    // go through all parameters that were found
+    for(unsigned i = 0; i < parameters.size(); ++i)
+    {
+        std::pair<std::string, std::string> p = parameters.at(i);
 
-    if (p.first == "--blocks") {
-      *blocks = atoi(p.second.c_str());
-    }
+        if(p.first == "-v" || p.first == "--verbose")
+        {
+            verbose = true;
+        }
 
-    if(p.first == "--heapsize") {
-      *heapInMB = size_t(atoi(p.second.c_str()));
-    }
+        if(p.first == "--threads")
+        {
+            *threads = atoi(p.second.c_str());
+        }
 
-    if(p.first == "-h" || p.first == "--help"){
-      print_help(argv);
-      exit(0);
-    }
+        if(p.first == "--blocks")
+        {
+            *blocks = atoi(p.second.c_str());
+        }
 
-    if(p.first == "-m" || p.first == "--machine_readable"){
-      *machine_readable = true;
+        if(p.first == "--heapsize")
+        {
+            *heapInMB = size_t(atoi(p.second.c_str()));
+        }
+
+        if(p.first == "-h" || p.first == "--help")
+        {
+            print_help(argv);
+            exit(0);
+        }
+
+        if(p.first == "-m" || p.first == "--machine_readable")
+        {
+            *machine_readable = true;
+        }
     }
-  }
 }
-
 
 /**
  * prints a helpful message about program use
  *
  * @param argv the argv-parameter from main, used to find the program name
  */
-void print_help(char** argv){
-  std::stringstream s;
+void print_help(char ** argv)
+{
+    std::stringstream s;
 
-  s << "SYNOPSIS:"                                              << '\n';
-  s << argv[0] << " [OPTIONS]"                                  << '\n';
-  s << ""                                                       << '\n';
-  s << "OPTIONS:"                                               << '\n';
-  s << "  -h, --help"                                           << '\n';
-  s << "    Print this help message and exit"                   << '\n';
-  s << ""                                                       << '\n';
-  s << "  -v, --verbose"                                        << '\n';
-  s << "    Print information about parameters and progress"    << '\n';
-  s << ""                                                       << '\n';
-  s << "  -m, --machine_readable"                               << '\n';
-  s << "    Print all relevant parameters as CSV. This will"    << '\n';
-  s << "    suppress all other output unless explicitly"        << '\n';
-  s << "    requested with --verbose or -v"                     << '\n';
-  s << ""                                                       << '\n';
-  s << "  --threads=N"                                          << '\n';
-  s << "    Set the number of threads per block (default "             ;
-  s <<                               threads_default << "128)"  << '\n';
-  s << ""                                                       << '\n';
-  s << "  --blocks=N"                                           << '\n';
-  s << "    Set the number of blocks in the grid (default "            ;
-  s <<                                   blocks_default << ")"  << '\n';
-  s << ""                                                       << '\n';
-  s << "  --heapsize=N"                                         << '\n';
-  s << "    Set the heapsize to N Megabyte (default "                  ;
-  s <<                         heapInMB_default << "1024)"      << '\n';
+    s << "SYNOPSIS:" << '\n';
+    s << argv[0] << " [OPTIONS]" << '\n';
+    s << "" << '\n';
+    s << "OPTIONS:" << '\n';
+    s << "  -h, --help" << '\n';
+    s << "    Print this help message and exit" << '\n';
+    s << "" << '\n';
+    s << "  -v, --verbose" << '\n';
+    s << "    Print information about parameters and progress" << '\n';
+    s << "" << '\n';
+    s << "  -m, --machine_readable" << '\n';
+    s << "    Print all relevant parameters as CSV. This will" << '\n';
+    s << "    suppress all other output unless explicitly" << '\n';
+    s << "    requested with --verbose or -v" << '\n';
+    s << "" << '\n';
+    s << "  --threads=N" << '\n';
+    s << "    Set the number of threads per block (default ";
+    s << threads_default << "128)" << '\n';
+    s << "" << '\n';
+    s << "  --blocks=N" << '\n';
+    s << "    Set the number of blocks in the grid (default ";
+    s << blocks_default << ")" << '\n';
+    s << "" << '\n';
+    s << "  --heapsize=N" << '\n';
+    s << "    Set the heapsize to N Megabyte (default ";
+    s << heapInMB_default << "1024)" << '\n';
 
-  std::cout << s.str() << std::flush;
+    std::cout << s.str() << std::flush;
 }
-
 
 /**
  * checks validity of memory for each single cell
@@ -248,30 +282,36 @@ void print_help(char** argv){
  *        Will change to 0, if there was a value that didn't match
  */
 __global__ void check_content(
-    allocElem_t** data,
-    unsigned long long *counter,
-    unsigned long long* globalSum,
+    allocElem_t ** data,
+    unsigned long long * counter,
+    unsigned long long * globalSum,
     const size_t nSlots,
-    int* correct
-    ){
-
-  unsigned long long sum=0;
-  while(true){
-    const size_t pos = atomicAdd(counter,1);
-    if(pos >= nSlots){break;}
-    const size_t offset = pos*ELEMS_PER_SLOT;
-    for(size_t i=0;i<ELEMS_PER_SLOT;++i){
-      if (static_cast<allocElem_t>(data[pos][i]) != static_cast<allocElem_t>(offset+i)){
-        //printf("\nError in Kernel: data[%llu][%llu] is %#010x (should be %#010x)\n",
-        //    pos,i,static_cast<allocElem_t>(data[pos][i]),allocElem_t(offset+i));
-        atomicAnd(correct,0);
-      }
-      sum += static_cast<unsigned long long>(data[pos][i]);
+    int * correct)
+{
+    unsigned long long sum = 0;
+    while(true)
+    {
+        const size_t pos = atomicAdd(counter, 1);
+        if(pos >= nSlots)
+        {
+            break;
+        }
+        const size_t offset = pos * ELEMS_PER_SLOT;
+        for(size_t i = 0; i < ELEMS_PER_SLOT; ++i)
+        {
+            if(static_cast<allocElem_t>(data[pos][i])
+               != static_cast<allocElem_t>(offset + i))
+            {
+                // printf("\nError in Kernel: data[%llu][%llu] is %#010x (should
+                // be %#010x)\n",
+                //    pos,i,static_cast<allocElem_t>(data[pos][i]),allocElem_t(offset+i));
+                atomicAnd(correct, 0);
+            }
+            sum += static_cast<unsigned long long>(data[pos][i]);
+        }
     }
-  }
-  atomicAdd(globalSum,sum);
+    atomicAdd(globalSum, sum);
 }
-
 
 /**
  * checks validity of memory for each single cell
@@ -288,26 +328,31 @@ __global__ void check_content(
  *        Will change to 0, if there was a value that didn't match
  */
 __global__ void check_content_fast(
-    allocElem_t** data,
-    unsigned long long *counter,
+    allocElem_t ** data,
+    unsigned long long * counter,
     const size_t nSlots,
-    int* correct
-    ){
-
-  int c = 1;
-  while(true){
-    size_t pos = atomicAdd(counter,1);
-    if(pos >= nSlots){break;}
-    const size_t offset = pos*ELEMS_PER_SLOT;
-    for(size_t i=0;i<ELEMS_PER_SLOT;++i){
-      if (static_cast<allocElem_t>(data[pos][i]) != static_cast<allocElem_t>(offset+i)){
-        c=0;
-      }
+    int * correct)
+{
+    int c = 1;
+    while(true)
+    {
+        size_t pos = atomicAdd(counter, 1);
+        if(pos >= nSlots)
+        {
+            break;
+        }
+        const size_t offset = pos * ELEMS_PER_SLOT;
+        for(size_t i = 0; i < ELEMS_PER_SLOT; ++i)
+        {
+            if(static_cast<allocElem_t>(data[pos][i])
+               != static_cast<allocElem_t>(offset + i))
+            {
+                c = 0;
+            }
+        }
     }
-  }
-  atomicAnd(correct,c);
+    atomicAnd(correct, c);
 }
-
 
 /**
  * allocate a lot of small arrays and fill them
@@ -323,29 +368,31 @@ __global__ void check_content_fast(
  *        allocated structures (for verification purposes)
  */
 __global__ void allocAll(
-    allocElem_t** data,
-    unsigned long long* counter,
-    unsigned long long* globalSum,
-    ScatterAllocator::AllocatorHandle mMC
-    ){
+    allocElem_t ** data,
+    unsigned long long * counter,
+    unsigned long long * globalSum,
+    ScatterAllocator::AllocatorHandle mMC)
+{
+    unsigned long long sum = 0;
+    while(true)
+    {
+        allocElem_t * p
+            = (allocElem_t *)mMC.malloc(sizeof(allocElem_t) * ELEMS_PER_SLOT);
+        if(p == nullptr)
+            break;
 
-  unsigned long long sum=0;
-  while(true){
-    allocElem_t* p = (allocElem_t*) mMC.malloc(sizeof(allocElem_t) * ELEMS_PER_SLOT);
-    if(p == nullptr) break;
-
-    size_t pos = atomicAdd(counter,1);
-    const size_t offset = pos*ELEMS_PER_SLOT;
-    for(size_t i=0;i<ELEMS_PER_SLOT;++i){
-      p[i] = static_cast<allocElem_t>(offset + i);
-      sum += static_cast<unsigned long long>(p[i]);
+        size_t pos = atomicAdd(counter, 1);
+        const size_t offset = pos * ELEMS_PER_SLOT;
+        for(size_t i = 0; i < ELEMS_PER_SLOT; ++i)
+        {
+            p[i] = static_cast<allocElem_t>(offset + i);
+            sum += static_cast<unsigned long long>(p[i]);
+        }
+        data[pos] = p;
     }
-    data[pos] = p;
-  }
 
-  atomicAdd(globalSum,sum);
+    atomicAdd(globalSum, sum);
 }
-
 
 /**
  * free all the values again
@@ -356,19 +403,19 @@ __global__ void allocAll(
  * @param max the maximum number of elements to free
  */
 __global__ void deallocAll(
-    allocElem_t** data,
-    unsigned long long* counter,
+    allocElem_t ** data,
+    unsigned long long * counter,
     const size_t nSlots,
-    ScatterAllocator::AllocatorHandle mMC
-    ){
-
-  while(true){
-    size_t pos = atomicAdd(counter,1);
-    if(pos >= nSlots) break;
-    mMC.free(data[pos]);
-  }
+    ScatterAllocator::AllocatorHandle mMC)
+{
+    while(true)
+    {
+        size_t pos = atomicAdd(counter, 1);
+        if(pos >= nSlots)
+            break;
+        mMC.free(data[pos]);
+    }
 }
-
 
 /**
  * damages one element in the data
@@ -379,10 +426,10 @@ __global__ void deallocAll(
  *
  * @param data the datastructure to damage
  */
-__global__ void damageElement(allocElem_t** data){
-  data[1][0] = static_cast<allocElem_t>(5*ELEMS_PER_SLOT - 1);
+__global__ void damageElement(allocElem_t ** data)
+{
+    data[1][0] = static_cast<allocElem_t>(5 * ELEMS_PER_SLOT - 1);
 }
-
 
 /**
  * wrapper function to allocate memory on device
@@ -399,34 +446,42 @@ __global__ void damageElement(allocElem_t** data){
  * @param threads the number of CUDA threads per block
  */
 void allocate(
-    allocElem_t** d_testData,
-    unsigned long long* h_nSlots,
-    unsigned long long* h_sum,
+    allocElem_t ** d_testData,
+    unsigned long long * h_nSlots,
+    unsigned long long * h_sum,
     const unsigned blocks,
     const unsigned threads,
-    ScatterAllocator* mMC
-    ){
+    ScatterAllocator * mMC)
+{
+    dout() << "allocating on device...";
 
-  dout() << "allocating on device...";
+    unsigned long long zero = 0;
+    unsigned long long * d_sum;
+    unsigned long long * d_nSlots;
 
-  unsigned long long zero = 0;
-  unsigned long long *d_sum;
-  unsigned long long *d_nSlots;
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMalloc((void **)&d_sum, sizeof(unsigned long long)));
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMalloc((void **)&d_nSlots, sizeof(unsigned long long)));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(
+        d_sum, &zero, sizeof(unsigned long long), cudaMemcpyHostToDevice));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(
+        d_nSlots, &zero, sizeof(unsigned long long), cudaMemcpyHostToDevice));
 
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_sum,sizeof(unsigned long long)));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_nSlots, sizeof(unsigned long long)));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_sum,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_nSlots,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
+    CUDA_CHECK_KERNEL_SYNC(
+        allocAll<<<blocks, threads>>>(d_testData, d_nSlots, d_sum, *mMC));
 
-  CUDA_CHECK_KERNEL_SYNC(allocAll<<<blocks,threads>>>(d_testData, d_nSlots, d_sum, *mMC ));
-
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(h_sum,d_sum,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(h_nSlots,d_nSlots,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
-  cudaFree(d_sum);
-  cudaFree(d_nSlots);
-  dout() << "done\n";
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(
+        h_sum, d_sum, sizeof(unsigned long long), cudaMemcpyDeviceToHost));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(
+        h_nSlots,
+        d_nSlots,
+        sizeof(unsigned long long),
+        cudaMemcpyDeviceToHost));
+    cudaFree(d_sum);
+    cudaFree(d_nSlots);
+    dout() << "done\n";
 }
-
 
 /**
  * Wrapper function to verify allocation on device
@@ -442,71 +497,73 @@ void allocate(
  * @return true if the verification was successful, false otherwise
  */
 bool verify(
-    allocElem_t **d_testData,
+    allocElem_t ** d_testData,
     const unsigned long long nSlots,
     const unsigned blocks,
-    const unsigned threads
-    ){
+    const unsigned threads)
+{
+    dout() << "verifying on device... ";
 
-  dout() << "verifying on device... ";
+    const unsigned long long zero = 0;
+    int h_correct = 1;
+    int * d_correct;
+    unsigned long long * d_sum;
+    unsigned long long * d_counter;
 
-  const unsigned long long zero = 0;
-  int  h_correct = 1;
-  int* d_correct;
-  unsigned long long *d_sum;
-  unsigned long long *d_counter;
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMalloc((void **)&d_sum, sizeof(unsigned long long)));
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMalloc((void **)&d_counter, sizeof(unsigned long long)));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void **)&d_correct, sizeof(int)));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(
+        d_sum, &zero, sizeof(unsigned long long), cudaMemcpyHostToDevice));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(
+        d_counter, &zero, sizeof(unsigned long long), cudaMemcpyHostToDevice));
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMemcpy(d_correct, &h_correct, sizeof(int), cudaMemcpyHostToDevice));
 
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_sum, sizeof(unsigned long long)));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_counter, sizeof(unsigned long long)));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_correct, sizeof(int)));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_sum,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_counter,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_correct,&h_correct,sizeof(int),cudaMemcpyHostToDevice));
+    // can be replaced by a call to check_content_fast,
+    // if the gaussian sum (see below) is not used and you
+    // want to be a bit faster
+    CUDA_CHECK_KERNEL_SYNC(check_content<<<blocks, threads>>>(
+        d_testData, d_counter, d_sum, static_cast<size_t>(nSlots), d_correct));
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMemcpy(&h_correct, d_correct, sizeof(int), cudaMemcpyDeviceToHost));
 
-  // can be replaced by a call to check_content_fast,
-  // if the gaussian sum (see below) is not used and you
-  // want to be a bit faster
-  CUDA_CHECK_KERNEL_SYNC(check_content<<<blocks,threads>>>(
-        d_testData,
-        d_counter,
-        d_sum,
-        static_cast<size_t>(nSlots),
-        d_correct
-        ));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_correct,d_correct,sizeof(int),cudaMemcpyDeviceToHost));
+    // This only works, if the type "allocElem_t"
+    // can hold all the IDs (usually unsigned long long)
+    /*
+    dout() << "verifying on host...";
+    unsigned long long h_sum, h_counter;
+    unsigned long long gaussian_sum = (ELEMS_PER_SLOT*nSlots *
+    (ELEMS_PER_SLOT*nSlots-1))/2;
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_sum,d_sum,sizeof(unsigned long
+    long),cudaMemcpyDeviceToHost));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_counter,d_counter,sizeof(unsigned
+    long long),cudaMemcpyDeviceToHost)); if(gaussian_sum != h_sum){ dout() <<
+    "\nGaussian Sum doesn't match: is " << h_sum; dout() << " (should be " <<
+    gaussian_sum << ")\n"; h_correct=false;
+    }
+    if(nSlots != h_counter-(blocks*threads)){
+      dout() << "\nallocated number of elements doesn't match: is " <<
+    h_counter; dout() << " (should be " << nSlots << ")\n"; h_correct=false;
+    }
+    */
 
-  // This only works, if the type "allocElem_t"
-  // can hold all the IDs (usually unsigned long long)
-  /*
-  dout() << "verifying on host...";
-  unsigned long long h_sum, h_counter;
-  unsigned long long gaussian_sum = (ELEMS_PER_SLOT*nSlots * (ELEMS_PER_SLOT*nSlots-1))/2;
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_sum,d_sum,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(&h_counter,d_counter,sizeof(unsigned long long),cudaMemcpyDeviceToHost));
-  if(gaussian_sum != h_sum){
-    dout() << "\nGaussian Sum doesn't match: is " << h_sum;
-    dout() << " (should be " << gaussian_sum << ")\n";
-    h_correct=false;
-  }
-  if(nSlots != h_counter-(blocks*threads)){
-    dout() << "\nallocated number of elements doesn't match: is " << h_counter;
-    dout() << " (should be " << nSlots << ")\n";
-    h_correct=false;
-  }
-  */
+    if(h_correct)
+    {
+        dout() << "done\n";
+    }
+    else
+    {
+        dout() << "failed\n";
+    }
 
-  if(h_correct){
-    dout() << "done\n";
-  }else{
-    dout() << "failed\n";
-  }
-
-  cudaFree(d_correct);
-  cudaFree(d_sum);
-  cudaFree(d_counter);
-  return static_cast<bool>(h_correct);
+    cudaFree(d_correct);
+    cudaFree(d_sum);
+    cudaFree(d_counter);
+    return static_cast<bool>(h_correct);
 }
-
 
 /**
  * prints all parameters machine readable
@@ -514,80 +571,78 @@ bool verify(
  * for params, see run_heap_verification-internal parameters
  */
 void print_machine_readable(
-        const unsigned pagesize,
-        const unsigned accessblocks,
-        const unsigned regionsize,
-        const unsigned wastefactor,
-        const bool resetfreedpages,
-        const unsigned blocks,
-        const unsigned threads,
-        const unsigned elemsPerSlot,
-        const size_t allocElemSize,
-        const size_t heapSize,
-        const size_t maxSpace,
-        const size_t maxSlots,
-        const unsigned long long usedSlots,
-        const float allocFrac,
-        const size_t wasted,
-        const bool correct
-        ){
+    const unsigned pagesize,
+    const unsigned accessblocks,
+    const unsigned regionsize,
+    const unsigned wastefactor,
+    const bool resetfreedpages,
+    const unsigned blocks,
+    const unsigned threads,
+    const unsigned elemsPerSlot,
+    const size_t allocElemSize,
+    const size_t heapSize,
+    const size_t maxSpace,
+    const size_t maxSlots,
+    const unsigned long long usedSlots,
+    const float allocFrac,
+    const size_t wasted,
+    const bool correct)
+{
+    std::string sep = ",";
+    std::stringstream h;
+    std::stringstream v;
 
-  std::string sep = ",";
-  std::stringstream h;
-  std::stringstream v;
+    h << "PagesizeByte" << sep;
+    v << pagesize << sep;
 
-  h << "PagesizeByte"   << sep;
-  v << pagesize         << sep;
+    h << "Accessblocks" << sep;
+    v << accessblocks << sep;
 
-  h << "Accessblocks"   << sep;
-  v << accessblocks     << sep;
+    h << "Regionsize" << sep;
+    v << regionsize << sep;
 
-  h << "Regionsize"     << sep;
-  v << regionsize       << sep;
+    h << "Wastefactor" << sep;
+    v << wasted << sep;
 
-  h << "Wastefactor"    << sep;
-  v << wasted           << sep;
+    h << "ResetFreedPage" << sep;
+    v << resetfreedpages << sep;
 
-  h << "ResetFreedPage" << sep;
-  v << resetfreedpages  << sep;
+    h << "Gridsize" << sep;
+    v << blocks << sep;
 
-  h << "Gridsize"       << sep;
-  v <<  blocks          << sep;
+    h << "Blocksize" << sep;
+    v << threads << sep;
 
-  h << "Blocksize"      << sep;
-  v << threads          << sep;
+    h << "ELEMS_PER_SLOT" << sep;
+    v << elemsPerSlot << sep;
 
-  h << "ELEMS_PER_SLOT" << sep;
-  v << elemsPerSlot     << sep;
+    h << "allocElemByte" << sep;
+    v << allocElemSize << sep;
 
-  h << "allocElemByte"  << sep;
-  v << allocElemSize    << sep;
+    h << "heapsizeByte" << sep;
+    v << heapSize << sep;
 
-  h << "heapsizeByte"   << sep;
-  v << heapSize         << sep;
+    h << "maxSpaceByte" << sep;
+    v << maxSpace << sep;
 
-  h << "maxSpaceByte"   << sep;
-  v << maxSpace         << sep;
+    h << "maxSlots" << sep;
+    v << maxSlots << sep;
 
-  h << "maxSlots"       << sep;
-  v << maxSlots         << sep;
+    h << "usedSlots" << sep;
+    v << usedSlots << sep;
 
-  h << "usedSlots"      << sep;
-  v << usedSlots        << sep;
+    h << "allocFraction" << sep;
+    v << allocFrac << sep;
 
-  h << "allocFraction"  << sep;
-  v << allocFrac        << sep;
+    h << "wastedBytes" << sep;
+    v << wasted << sep;
 
-  h << "wastedBytes"    << sep;
-  v << wasted           << sep;
+    h << "correct";
+    v << correct;
 
-  h << "correct"        ;
-  v << correct          ;
-
-  std::cout << h.str() << '\n';
-  std::cout << v.str() << '\n';
+    std::cout << h.str() << '\n';
+    std::cout << v.str() << '\n';
 }
-
 
 /**
  * Verify the heap allocation of mallocMC
@@ -607,98 +662,107 @@ bool run_heap_verification(
     const size_t heapMB,
     const unsigned blocks,
     const unsigned threads,
-    const bool machine_readable
-    ){
+    const bool machine_readable)
+{
+    cudaSetDeviceFlags(cudaDeviceMapHost);
 
-  cudaSetDeviceFlags(cudaDeviceMapHost);
+    const size_t heapSize = size_t(1024U * 1024U) * heapMB;
+    const size_t slotSize = sizeof(allocElem_t) * ELEMS_PER_SLOT;
+    const size_t nPointers = (heapSize + slotSize - 1) / slotSize;
+    const size_t maxSlots = heapSize / slotSize;
+    const size_t maxSpace
+        = maxSlots * slotSize + nPointers * sizeof(allocElem_t *);
+    bool correct = true;
+    const unsigned long long zero = 0;
 
-  const size_t heapSize         = size_t(1024U*1024U) * heapMB;
-  const size_t slotSize         = sizeof(allocElem_t)*ELEMS_PER_SLOT;
-  const size_t nPointers        = (heapSize + slotSize - 1) / slotSize;
-  const size_t maxSlots         = heapSize/slotSize;
-  const size_t maxSpace         = maxSlots*slotSize + nPointers*sizeof(allocElem_t*);
-  bool correct                  = true;
-  const unsigned long long zero = 0;
+    dout() << "CreationPolicy Arguments:\n";
+    dout() << "Pagesize:              " << ScatterConfig::pagesize << '\n';
+    dout() << "Accessblocks:          " << ScatterConfig::accessblocks << '\n';
+    dout() << "Regionsize:            " << ScatterConfig::regionsize << '\n';
+    dout() << "Wastefactor:           " << ScatterConfig::wastefactor << '\n';
+    dout() << "ResetFreedPages        " << ScatterConfig::resetfreedpages
+           << '\n';
+    dout() << "\n";
+    dout() << "Gridsize:              " << blocks << '\n';
+    dout() << "Blocksize:             " << threads << '\n';
+    dout() << "Allocated elements:    " << ELEMS_PER_SLOT << " x "
+           << sizeof(allocElem_t);
+    dout() << "    Byte (" << slotSize << " Byte)\n";
+    dout() << "Heap:                  " << heapSize << " Byte";
+    dout() << " (" << heapSize / pow(1024, 2) << " MByte)\n";
+    dout() << "max space w/ pointers: " << maxSpace << " Byte";
+    dout() << " (" << maxSpace / pow(1024, 2) << " MByte)\n";
+    dout() << "maximum of elements:   " << maxSlots << '\n';
 
-  dout() << "CreationPolicy Arguments:\n";
-  dout() << "Pagesize:              "     << ScatterConfig::pagesize        << '\n';
-  dout() << "Accessblocks:          "     << ScatterConfig::accessblocks    << '\n';
-  dout() << "Regionsize:            "     << ScatterConfig::regionsize      << '\n';
-  dout() << "Wastefactor:           "     << ScatterConfig::wastefactor     << '\n';
-  dout() << "ResetFreedPages        "     << ScatterConfig::resetfreedpages << '\n';
-  dout() << "\n";
-  dout() << "Gridsize:              "     << blocks                             << '\n';
-  dout() << "Blocksize:             "     << threads                            << '\n';
-  dout() << "Allocated elements:    "     << ELEMS_PER_SLOT << " x "  << sizeof(allocElem_t);
-  dout() << "    Byte ("  << slotSize     << " Byte)\n";
-  dout() << "Heap:                  "     << heapSize << " Byte";
-  dout() << " (" << heapSize/pow(1024,2)  << " MByte)\n";
-  dout() << "max space w/ pointers: "     << maxSpace << " Byte";
-  dout() << " (" << maxSpace/pow(1024,2)  << " MByte)\n";
-  dout() << "maximum of elements:   "     << maxSlots                           << '\n';
+    // initializing the heap
+    ScatterAllocator * mMC = new ScatterAllocator(heapSize);
+    allocElem_t ** d_testData;
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMalloc((void **)&d_testData, nPointers * sizeof(allocElem_t *)));
 
-  // initializing the heap
-  ScatterAllocator* mMC = new ScatterAllocator(heapSize);
-  allocElem_t** d_testData;
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_testData, nPointers*sizeof(allocElem_t*)));
+    // allocating with mallocMC
+    unsigned long long usedSlots = 0;
+    unsigned long long sumAllocElems = 0;
+    allocate(d_testData, &usedSlots, &sumAllocElems, blocks, threads, mMC);
 
-  // allocating with mallocMC
-  unsigned long long usedSlots = 0;
-  unsigned long long sumAllocElems = 0;
-  allocate(d_testData, &usedSlots, &sumAllocElems, blocks, threads, mMC);
+    const float allocFrac = static_cast<float>(usedSlots) * 100 / maxSlots;
+    const size_t wasted = heapSize - static_cast<size_t>(usedSlots) * slotSize;
+    dout() << "allocated elements:    " << usedSlots;
+    dout() << " (" << allocFrac << "%)\n";
+    dout() << "wasted heap space:     " << wasted << " Byte";
+    dout() << " (" << wasted / pow(1024, 2) << " MByte)\n";
 
-  const float allocFrac = static_cast<float>(usedSlots)*100/maxSlots;
-  const size_t wasted = heapSize - static_cast<size_t>(usedSlots) * slotSize;
-  dout() << "allocated elements:    "   << usedSlots;
-  dout() << " (" << allocFrac << "%)\n";
-  dout() << "wasted heap space:     "   << wasted << " Byte";
-  dout() << " (" << wasted/pow(1024,2)  << " MByte)\n";
+    // verifying on device
+    correct = correct && verify(d_testData, usedSlots, blocks, threads);
 
-  // verifying on device
-  correct = correct && verify(d_testData,usedSlots,blocks,threads);
+    // damaging one cell
+    dout() << "damaging of element... ";
+    CUDA_CHECK_KERNEL_SYNC(damageElement<<<1, 1>>>(d_testData));
+    dout() << "done\n";
 
-  // damaging one cell
-  dout() << "damaging of element... ";
-  CUDA_CHECK_KERNEL_SYNC(damageElement<<<1,1>>>(d_testData));
-  dout() << "done\n";
+    // verifying on device
+    // THIS SHOULD FAIL (damage was done before!). Therefore, we must inverse
+    // the logic
+    correct = correct && !verify(d_testData, usedSlots, blocks, threads);
 
-  // verifying on device
-  // THIS SHOULD FAIL (damage was done before!). Therefore, we must inverse the logic
-  correct = correct && !verify(d_testData,usedSlots,blocks,threads);
+    // release all memory
+    dout() << "deallocation...        ";
+    unsigned long long * d_dealloc_counter;
+    MALLOCMC_CUDA_CHECKED_CALL(
+        cudaMalloc((void **)&d_dealloc_counter, sizeof(unsigned long long)));
+    MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(
+        d_dealloc_counter,
+        &zero,
+        sizeof(unsigned long long),
+        cudaMemcpyHostToDevice));
+    CUDA_CHECK_KERNEL_SYNC(deallocAll<<<blocks, threads>>>(
+        d_testData, d_dealloc_counter, static_cast<size_t>(usedSlots), *mMC));
+    cudaFree(d_dealloc_counter);
+    cudaFree(d_testData);
+    delete mMC;
 
+    dout() << "done \n";
 
-  // release all memory
-  dout() << "deallocation...        ";
-  unsigned long long* d_dealloc_counter;
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc((void**) &d_dealloc_counter, sizeof(unsigned long long)));
-  MALLOCMC_CUDA_CHECKED_CALL(cudaMemcpy(d_dealloc_counter,&zero,sizeof(unsigned long long),cudaMemcpyHostToDevice));
-  CUDA_CHECK_KERNEL_SYNC(deallocAll<<<blocks,threads>>>(d_testData,d_dealloc_counter,static_cast<size_t>(usedSlots), *mMC ));
-  cudaFree(d_dealloc_counter);
-  cudaFree(d_testData);
-  delete mMC;
+    if(machine_readable)
+    {
+        print_machine_readable(
+            ScatterConfig::pagesize,
+            ScatterConfig::accessblocks,
+            ScatterConfig::regionsize,
+            ScatterConfig::wastefactor,
+            ScatterConfig::resetfreedpages,
+            blocks,
+            threads,
+            ELEMS_PER_SLOT,
+            sizeof(allocElem_t),
+            heapSize,
+            maxSpace,
+            maxSlots,
+            usedSlots,
+            allocFrac,
+            wasted,
+            correct);
+    }
 
-  dout() << "done \n";
-
-  if(machine_readable){
-    print_machine_readable(
-        ScatterConfig::pagesize,
-        ScatterConfig::accessblocks,
-        ScatterConfig::regionsize,
-        ScatterConfig::wastefactor,
-        ScatterConfig::resetfreedpages,
-        blocks,
-        threads,
-        ELEMS_PER_SLOT,
-        sizeof(allocElem_t),
-        heapSize,
-        maxSpace,
-        maxSlots,
-        usedSlots,
-        allocFrac,
-        wasted,
-        correct
-        );
-  }
-
-  return correct;
+    return correct;
 }

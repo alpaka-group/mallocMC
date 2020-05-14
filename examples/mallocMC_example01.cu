@@ -26,133 +26,140 @@
   THE SOFTWARE.
 */
 
-#include <iostream>
-#include <cassert>
-#include <vector>
-#include <numeric>
-
-#include <cuda.h>
 #include "mallocMC_example01_config.hpp"
+
+#include <cassert>
+#include <cuda.h>
+#include <iostream>
+#include <numeric>
+#include <vector>
 
 void run();
 
 int main()
 {
-  int computeCapabilityMajor = 0;
-  cudaDeviceGetAttribute(&computeCapabilityMajor, cudaDevAttrComputeCapabilityMajor, 0);
-  int computeCapabilityMinor = 0;
-  cudaDeviceGetAttribute(&computeCapabilityMinor, cudaDevAttrComputeCapabilityMinor, 0);
+    int computeCapabilityMajor = 0;
+    cudaDeviceGetAttribute(
+        &computeCapabilityMajor, cudaDevAttrComputeCapabilityMajor, 0);
+    int computeCapabilityMinor = 0;
+    cudaDeviceGetAttribute(
+        &computeCapabilityMinor, cudaDevAttrComputeCapabilityMinor, 0);
 
-  if( computeCapabilityMajor < 2 ) {
-    std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
-    std::cerr << computeCapabilityMajor << "."<< computeCapabilityMinor << ")" << std::endl;
-    return 1;
-  }
+    if(computeCapabilityMajor < 2)
+    {
+        std::cerr << "Error: Compute Capability >= 2.0 required. (is ";
+        std::cerr << computeCapabilityMajor << "." << computeCapabilityMinor
+                  << ")" << std::endl;
+        return 1;
+    }
 
-  cudaSetDevice(0);
-  run();
-  cudaDeviceReset();
+    cudaSetDevice(0);
+    run();
+    cudaDeviceReset();
 
-  return 0;
+    return 0;
 }
 
+__device__ int ** arA;
+__device__ int ** arB;
+__device__ int ** arC;
 
-__device__ int** arA;
-__device__ int** arB;
-__device__ int** arC;
-
-
-__global__ void createArrayPointers(int x, int y, ScatterAllocator::AllocatorHandle mMC){
-  arA = (int**) mMC.malloc(sizeof(int*) * x*y);
-  arB = (int**) mMC.malloc(sizeof(int*) * x*y);
-  arC = (int**) mMC.malloc(sizeof(int*) * x*y);
+__global__ void
+createArrayPointers(int x, int y, ScatterAllocator::AllocatorHandle mMC)
+{
+    arA = (int **)mMC.malloc(sizeof(int *) * x * y);
+    arB = (int **)mMC.malloc(sizeof(int *) * x * y);
+    arC = (int **)mMC.malloc(sizeof(int *) * x * y);
 }
 
+__global__ void
+fillArrays(int length, int * d, ScatterAllocator::AllocatorHandle mMC)
+{
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
 
-__global__ void fillArrays(int length, int* d, ScatterAllocator::AllocatorHandle mMC){
-  int id = threadIdx.x + blockIdx.x*blockDim.x;
+    arA[id] = (int *)mMC.malloc(length * sizeof(int));
+    arB[id] = (int *)mMC.malloc(length * sizeof(int));
+    arC[id] = (int *)mMC.malloc(sizeof(int) * length);
 
-  arA[id] = (int*) mMC.malloc(length*sizeof(int));
-  arB[id] = (int*) mMC.malloc(length*sizeof(int));
-  arC[id] = (int*) mMC.malloc(sizeof(int)*length);
-
-  for(int i=0 ; i<length; ++i){
-    arA[id][i] = id*length+i;
-    arB[id][i] = id*length+i;
-  }
+    for(int i = 0; i < length; ++i)
+    {
+        arA[id][i] = id * length + i;
+        arB[id][i] = id * length + i;
+    }
 }
 
+__global__ void addArrays(int length, int * d)
+{
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
 
-__global__ void addArrays(int length, int* d){
-  int id = threadIdx.x + blockIdx.x*blockDim.x;
-
-  d[id] = 0;
-  for(int i=0 ; i<length; ++i){
-    arC[id][i] = arA[id][i] + arB[id][i];
-    d[id] += arC[id][i];
-  }
+    d[id] = 0;
+    for(int i = 0; i < length; ++i)
+    {
+        arC[id][i] = arA[id][i] + arB[id][i];
+        d[id] += arC[id][i];
+    }
 }
 
-
-__global__ void freeArrays(ScatterAllocator::AllocatorHandle mMC){
-  int id = threadIdx.x + blockIdx.x*blockDim.x;
-  mMC.free(arA[id]);
-  mMC.free(arB[id]);
-  mMC.free(arC[id]);
+__global__ void freeArrays(ScatterAllocator::AllocatorHandle mMC)
+{
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
+    mMC.free(arA[id]);
+    mMC.free(arB[id]);
+    mMC.free(arC[id]);
 }
 
-
-__global__ void freeArrayPointers(ScatterAllocator::AllocatorHandle mMC){
-  mMC.free(arA);
-  mMC.free(arB);
-  mMC.free(arC);
+__global__ void freeArrayPointers(ScatterAllocator::AllocatorHandle mMC)
+{
+    mMC.free(arA);
+    mMC.free(arB);
+    mMC.free(arC);
 }
-
 
 void run()
 {
-  size_t block = 32;
-  size_t grid = 32;
-  int length = 100;
-  assert((unsigned)length<= block*grid); //necessary for used algorithm
+    size_t block = 32;
+    size_t grid = 32;
+    int length = 100;
+    assert((unsigned)length <= block * grid); // necessary for used algorithm
 
-  //init the heap
-  std::cerr << "initHeap...";
-  ScatterAllocator mMC(1U*1024U*1024U*1024U); //1GB for device-side malloc
-  std::cerr << "done" << std::endl;
+    // init the heap
+    std::cerr << "initHeap...";
+    ScatterAllocator mMC(
+        1U * 1024U * 1024U * 1024U); // 1GB for device-side malloc
+    std::cerr << "done" << std::endl;
 
-  std::cout << ScatterAllocator::info("\n") << std::endl;
+    std::cout << ScatterAllocator::info("\n") << std::endl;
 
-  // device-side pointers
-  int*  d;
-  cudaMalloc((void**) &d, sizeof(int)*block*grid);
+    // device-side pointers
+    int * d;
+    cudaMalloc((void **)&d, sizeof(int) * block * grid);
 
-  // host-side pointers
-  std::vector<int> array_sums(block*grid,0);
+    // host-side pointers
+    std::vector<int> array_sums(block * grid, 0);
 
-  // create arrays of arrays on the device
-  createArrayPointers<<<1,1>>>(grid,block, mMC );
+    // create arrays of arrays on the device
+    createArrayPointers<<<1, 1>>>(grid, block, mMC);
 
-  // fill 2 of them all with ascending values
-  fillArrays<<<grid,block>>>(length, d, mMC );
+    // fill 2 of them all with ascending values
+    fillArrays<<<grid, block>>>(length, d, mMC);
 
-  // add the 2 arrays (vector addition within each thread)
-  // and do a thread-wise reduce to d
-  addArrays<<<grid,block>>>(length, d);
+    // add the 2 arrays (vector addition within each thread)
+    // and do a thread-wise reduce to d
+    addArrays<<<grid, block>>>(length, d);
 
-  cudaMemcpy(&array_sums[0],d,sizeof(int)*block*grid,cudaMemcpyDeviceToHost);
+    cudaMemcpy(
+        &array_sums[0], d, sizeof(int) * block * grid, cudaMemcpyDeviceToHost);
 
-  mMC.getAvailableSlots(1024U*1024U); //get available megabyte-sized slots
+    mMC.getAvailableSlots(1024U * 1024U); // get available megabyte-sized slots
 
-  int sum = std::accumulate(array_sums.begin(),array_sums.end(),0);
-  std::cout << "The sum of the arrays on GPU is " << sum << std::endl;
+    int sum = std::accumulate(array_sums.begin(), array_sums.end(), 0);
+    std::cout << "The sum of the arrays on GPU is " << sum << std::endl;
 
-  int n = block*grid*length;
-  int gaussian = n*(n-1);
-  std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
+    int n = block * grid * length;
+    int gaussian = n * (n - 1);
+    std::cout << "The gaussian sum as comparison: " << gaussian << std::endl;
 
-  freeArrays<<<grid,block>>>( mMC );
-  freeArrayPointers<<<1,1>>>( mMC );
-  cudaFree(d);
-
+    freeArrays<<<grid, block>>>(mMC);
+    freeArrayPointers<<<1, 1>>>(mMC);
+    cudaFree(d);
 }

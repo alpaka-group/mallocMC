@@ -30,49 +30,34 @@
 
 #include "mallocMC_prefixes.hpp"
 
-namespace mallocMC{
-
-    template <typename T_HostAllocator>
+namespace mallocMC
+{
+    template<typename T_HostAllocator>
     struct AllocatorHandleImpl
     {
         using DevAllocator = typename T_HostAllocator::DevAllocator;
 
-        DevAllocator* devAllocator;
+        DevAllocator * devAllocator;
 
-        explicit AllocatorHandleImpl(
-            DevAllocator* p
-        ) :
-            devAllocator( p )
+        explicit AllocatorHandleImpl(DevAllocator * p) : devAllocator(p) {}
+
+        MAMC_ACCELERATOR
+        void * malloc(size_t size)
         {
+            return devAllocator->malloc(size);
         }
 
         MAMC_ACCELERATOR
-        void*
-        malloc(
-            size_t size
-        )
+        void free(void * p)
         {
-            return devAllocator->malloc( size );
+            devAllocator->free(p);
         }
 
         MAMC_ACCELERATOR
-        void
-        free(
-            void* p
-        )
+        unsigned getAvailableSlots(size_t slotSize)
         {
-            devAllocator->free( p );
+            return devAllocator->getAvailableSlots(slotSize);
         }
-
-        MAMC_ACCELERATOR
-        unsigned
-        getAvailableSlots(
-            size_t slotSize
-        )
-        {
-            return devAllocator->getAvailableSlots( slotSize );
-        }
-
     };
 
 } // namespace mallocMC

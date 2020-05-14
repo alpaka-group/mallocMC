@@ -26,31 +26,30 @@
   THE SOFTWARE.
 */
 
-#include <iostream>
 #include <assert.h>
-#include <vector>
+#include <cuda.h>
+#include <iostream>
 #include <numeric>
 #include <stdio.h>
-
-#include <cuda.h>
-
+#include <vector>
 
 ///////////////////////////////////////////////////////////////////////////////
 // includes for mallocMC
 ///////////////////////////////////////////////////////////////////////////////
-#include <mallocMC/mallocMC_hostclass.hpp>
+#include <mallocMC/AlignmentPolicies.hpp>
 #include <mallocMC/CreationPolicies.hpp>
 #include <mallocMC/DistributionPolicies.hpp>
 #include <mallocMC/OOMPolicies.hpp>
 #include <mallocMC/ReservePoolPolicies.hpp>
-#include <mallocMC/AlignmentPolicies.hpp>
+#include <mallocMC/mallocMC_hostclass.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Configuration for mallocMC
 ///////////////////////////////////////////////////////////////////////////////
 
 // configurate the CreationPolicy "Scatter"
-struct ScatterConfig{
+struct ScatterConfig
+{
     static constexpr auto pagesize = 4096;
     static constexpr auto accessblocks = 8;
     static constexpr auto regionsize = 16;
@@ -58,16 +57,17 @@ struct ScatterConfig{
     static constexpr auto resetfreedpages = false;
 };
 
-struct ScatterHashParams{
+struct ScatterHashParams
+{
     static constexpr auto hashingK = 38183;
     static constexpr auto hashingDistMP = 17497;
     static constexpr auto hashingDistWP = 1;
     static constexpr auto hashingDistWPRel = 1;
 };
 
-
 // configure the AlignmentPolicy "Shrink"
-struct AlignmentConfig{
+struct AlignmentConfig
+{
     static constexpr auto dataAlignment = 16;
 };
 
@@ -78,37 +78,35 @@ using ScatterAllocator = mallocMC::Allocator<
     mallocMC::DistributionPolicies::Noop,
     mallocMC::OOMPolicies::ReturnNull,
     mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
-    mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>
->;
+    mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // End of mallocMC configuration
 ///////////////////////////////////////////////////////////////////////////////
 
+__device__ int * arA;
 
-__device__ int* arA;
-
-
-__global__ void exampleKernel(ScatterAllocator::AllocatorHandle mMC){
+__global__ void exampleKernel(ScatterAllocator::AllocatorHandle mMC)
+{
     unsigned x = 42;
-    if(threadIdx.x==0)
-        arA = (int*) mMC.malloc(sizeof(int) * 32);
+    if(threadIdx.x == 0)
+        arA = (int *)mMC.malloc(sizeof(int) * 32);
 
     x = mMC.getAvailableSlots(1);
     __syncthreads();
     arA[threadIdx.x] = threadIdx.x;
-    printf("tid: %d array: %d slots %d\n", threadIdx.x, arA[threadIdx.x],x);
+    printf("tid: %d array: %d slots %d\n", threadIdx.x, arA[threadIdx.x], x);
 
     if(threadIdx.x == 0)
         mMC.free(arA);
 }
 
-
 int main()
 {
-    ScatterAllocator mMC(1U*1024U*1024U*1024U); //1GB for device-side malloc
+    ScatterAllocator mMC(
+        1U * 1024U * 1024U * 1024U); // 1GB for device-side malloc
 
-    exampleKernel<<<1,32>>>( mMC );
+    exampleKernel<<<1, 32>>>(mMC);
     std::cout << "Slots from Host: " << mMC.getAvailableSlots(1) << std::endl;
 
     return 0;

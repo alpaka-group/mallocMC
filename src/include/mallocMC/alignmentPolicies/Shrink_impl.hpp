@@ -31,32 +31,42 @@
 
 #pragma once
 
+#include "../mallocMC_prefixes.hpp"
+#include "Shrink.hpp"
+
 #include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <string>
 
-#include "../mallocMC_prefixes.hpp"
-#include "Shrink.hpp"
+namespace mallocMC
+{
+    namespace AlignmentPolicies
+    {
+        namespace Shrink2NS
+        {
+            template<int PSIZE>
+            struct __PointerEquivalent
+            {
+                using type = unsigned int;
+            };
+            template<>
+            struct __PointerEquivalent<8>
+            {
+                using type = unsigned long long;
+            };
+        } // namespace Shrink2NS
 
-namespace mallocMC{
-namespace AlignmentPolicies{
+        template<typename T_Config>
+        class Shrink
+        {
+        public:
+            using Properties = T_Config;
 
-namespace Shrink2NS{
-    
-  template<int PSIZE> struct __PointerEquivalent{ using type = unsigned int;};
-  template<>
-  struct __PointerEquivalent<8>{ using type = unsigned long long; };
-} // namespace Shrink2NS
-
-  template<typename T_Config>
-  class Shrink{
-    public:
-    using Properties = T_Config;
-
-    private:
-    using uint32 = std::uint32_t;
-    using PointerEquivalent = Shrink2NS::__PointerEquivalent<sizeof(char*)>::type;
+        private:
+            using uint32 = std::uint32_t;
+            using PointerEquivalent
+                = Shrink2NS::__PointerEquivalent<sizeof(char *)>::type;
 
 /** Allow for a hierarchical validation of parameters:
  *
@@ -70,49 +80,63 @@ namespace Shrink2NS{
 #ifndef MALLOCMC_AP_SHRINK_DATAALIGNMENT
 #define MALLOCMC_AP_SHRINK_DATAALIGNMENT (Properties::dataAlignment)
 #endif
-    static constexpr uint32 dataAlignment = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
+            static constexpr uint32 dataAlignment
+                = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
 
-    //dataAlignment must be a power of 2!
-    static_assert(dataAlignment != 0 && (dataAlignment & (dataAlignment-1)) == 0, "dataAlignment must also be a power of 2");
+            // dataAlignment must be a power of 2!
+            static_assert(
+                dataAlignment != 0
+                    && (dataAlignment & (dataAlignment - 1)) == 0,
+                "dataAlignment must also be a power of 2");
 
-    public:
-    static std::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
-      PointerEquivalent alignmentstatus = ((PointerEquivalent)memory) & (dataAlignment -1);
-      if(alignmentstatus != 0)
-      {
-        std::cout << "Heap Warning: memory to use not ";
-        std::cout << dataAlignment << " byte aligned..."        << std::endl;
-        std::cout << "Before:"                                  << std::endl;
-        std::cout << "dataAlignment:   " << dataAlignment       << std::endl;
-        std::cout << "Alignmentstatus: " << alignmentstatus     << std::endl;
-        std::cout << "size_t memsize   " << memsize << " byte"  << std::endl;
-        std::cout << "void *memory     " << memory              << std::endl;
+        public:
+            static std::tuple<void *, size_t>
+            alignPool(void * memory, size_t memsize)
+            {
+                PointerEquivalent alignmentstatus
+                    = ((PointerEquivalent)memory) & (dataAlignment - 1);
+                if(alignmentstatus != 0)
+                {
+                    std::cout << "Heap Warning: memory to use not ";
+                    std::cout << dataAlignment << " byte aligned..."
+                              << std::endl;
+                    std::cout << "Before:" << std::endl;
+                    std::cout << "dataAlignment:   " << dataAlignment
+                              << std::endl;
+                    std::cout << "Alignmentstatus: " << alignmentstatus
+                              << std::endl;
+                    std::cout << "size_t memsize   " << memsize << " byte"
+                              << std::endl;
+                    std::cout << "void *memory     " << memory << std::endl;
 
-        memory   = (void*)(((PointerEquivalent)memory) + dataAlignment - alignmentstatus);
-        memsize -= (size_t)dataAlignment + (size_t)alignmentstatus;
+                    memory
+                        = (void *)(((PointerEquivalent)memory) + dataAlignment - alignmentstatus);
+                    memsize -= (size_t)dataAlignment + (size_t)alignmentstatus;
 
-        std::cout << "Was shrunk automatically to: "            << std::endl;
-        std::cout << "size_t memsize   " << memsize << " byte"  << std::endl;
-        std::cout << "void *memory     " << memory              << std::endl;
-      }
+                    std::cout << "Was shrunk automatically to: " << std::endl;
+                    std::cout << "size_t memsize   " << memsize << " byte"
+                              << std::endl;
+                    std::cout << "void *memory     " << memory << std::endl;
+                }
 
-      return std::make_tuple(memory,memsize);
-    }
+                return std::make_tuple(memory, memsize);
+            }
 
-    MAMC_HOST
-    MAMC_ACCELERATOR
-    static uint32 applyPadding(uint32 bytes){
-      return (bytes + dataAlignment - 1) & ~(dataAlignment-1);
-    }
+            MAMC_HOST
+            MAMC_ACCELERATOR
+            static uint32 applyPadding(uint32 bytes)
+            {
+                return (bytes + dataAlignment - 1) & ~(dataAlignment - 1);
+            }
 
-    MAMC_HOST
-    static std::string classname(){
-      std::stringstream ss;
-      ss << "Shrink[" << dataAlignment << "]";
-      return ss.str();
-    }
+            MAMC_HOST
+            static std::string classname()
+            {
+                std::stringstream ss;
+                ss << "Shrink[" << dataAlignment << "]";
+                return ss.str();
+            }
+        };
 
-  };
-
-} //namespace AlignmentPolicies
-} //namespace mallocMC
+    } // namespace AlignmentPolicies
+} // namespace mallocMC

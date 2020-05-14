@@ -32,44 +32,47 @@
 #include <mallocMC/mallocMC_hostclass.hpp>
 
 // Load all available policies for mallocMC
+#include <mallocMC/AlignmentPolicies.hpp>
 #include <mallocMC/CreationPolicies.hpp>
 #include <mallocMC/DistributionPolicies.hpp>
 #include <mallocMC/OOMPolicies.hpp>
 #include <mallocMC/ReservePoolPolicies.hpp>
-#include <mallocMC/AlignmentPolicies.hpp>
 
 // configurate the CreationPolicy "Scatter"
-struct ScatterConfig{
-  static constexpr auto pagesize = 4096;
-  static constexpr auto accessblocks = 8;
-  static constexpr auto regionsize = 16;
-  static constexpr auto wastefactor = 2;
-  static constexpr auto resetfreedpages = false;
+struct ScatterConfig
+{
+    static constexpr auto pagesize = 4096;
+    static constexpr auto accessblocks = 8;
+    static constexpr auto regionsize = 16;
+    static constexpr auto wastefactor = 2;
+    static constexpr auto resetfreedpages = false;
 };
 
-struct ScatterHashParams{
-  static constexpr auto hashingK = 38183;
-  static constexpr auto hashingDistMP = 17497;
-  static constexpr auto hashingDistWP = 1;
-  static constexpr auto hashingDistWPRel = 1;
+struct ScatterHashParams
+{
+    static constexpr auto hashingK = 38183;
+    static constexpr auto hashingDistMP = 17497;
+    static constexpr auto hashingDistWP = 1;
+    static constexpr auto hashingDistWPRel = 1;
 };
 
 // configure the DistributionPolicy "XMallocSIMD"
-struct DistributionConfig{
-  static constexpr auto pagesize = ScatterConfig::pagesize;
+struct DistributionConfig
+{
+    static constexpr auto pagesize = ScatterConfig::pagesize;
 };
 
 // configure the AlignmentPolicy "Shrink"
-struct AlignmentConfig{
-  static constexpr auto dataAlignment = 16;
+struct AlignmentConfig
+{
+    static constexpr auto dataAlignment = 16;
 };
 
 // Define a new allocator and call it ScatterAllocator
 // which resembles the behaviour of ScatterAlloc
 using ScatterAllocator = mallocMC::Allocator<
-  mallocMC::CreationPolicies::Scatter<ScatterConfig,ScatterHashParams>,
-  mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
-  mallocMC::OOMPolicies::ReturnNull,
-  mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
-  mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>
->;
+    mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
+    mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
+    mallocMC::OOMPolicies::ReturnNull,
+    mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+    mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
