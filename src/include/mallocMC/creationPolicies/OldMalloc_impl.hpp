@@ -42,7 +42,7 @@ namespace mallocMC
         public:
             static constexpr auto providesAvailableSlots = false;
 
-            __device__ void * create(uint32 bytes) const
+            __device__ auto create(uint32 bytes) const -> void *
             {
                 return ::malloc(static_cast<size_t>(bytes));
             }
@@ -52,18 +52,18 @@ namespace mallocMC
                 ::free(mem);
             }
 
-            __device__ bool isOOM(void * p, size_t s) const
+            __device__ auto isOOM(void * p, size_t s) const -> bool
             {
                 return s != 0 && (p == nullptr);
             }
 
             template<typename T>
-            static void * initHeap(T * dAlloc, void *, size_t)
+            static auto initHeap(T * dAlloc, void *, size_t) -> void *
             {
                 return dAlloc;
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 return "OldMalloc";
             }

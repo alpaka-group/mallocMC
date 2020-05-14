@@ -88,7 +88,7 @@ namespace mallocMC
             static constexpr uint32 _pagesize = pagesize;
 
             MAMC_ACCELERATOR
-            uint32 collect(uint32 bytes)
+            auto collect(uint32 bytes) -> uint32
             {
                 can_use_coalescing = false;
                 myoffset = 0;
@@ -122,7 +122,7 @@ namespace mallocMC
             }
 
             MAMC_ACCELERATOR
-            void * distribute(void * allocatedMem)
+            auto distribute(void * allocatedMem) -> void *
             {
                 __shared__ char *
                     warp_res[MaxThreadsPerBlock::value / WarpSize::value];
@@ -148,7 +148,7 @@ namespace mallocMC
             }
 
             MAMC_HOST
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 std::stringstream ss;
                 ss << "XMallocSIMD[" << pagesize << "]";

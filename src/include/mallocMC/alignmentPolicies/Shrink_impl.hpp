@@ -90,8 +90,8 @@ namespace mallocMC
                 "dataAlignment must also be a power of 2");
 
         public:
-            static std::tuple<void *, size_t>
-            alignPool(void * memory, size_t memsize)
+            static auto
+            alignPool(void * memory, size_t memsize) -> std::tuple<void *, size_t>
             {
                 PointerEquivalent alignmentstatus
                     = ((PointerEquivalent)memory) & (dataAlignment - 1);
@@ -124,13 +124,13 @@ namespace mallocMC
 
             MAMC_HOST
             MAMC_ACCELERATOR
-            static uint32 applyPadding(uint32 bytes)
+            static auto applyPadding(uint32 bytes) -> uint32
             {
                 return (bytes + dataAlignment - 1) & ~(dataAlignment - 1);
             }
 
             MAMC_HOST
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 std::stringstream ss;
                 ss << "Shrink[" << dataAlignment << "]";

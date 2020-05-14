@@ -43,18 +43,18 @@ namespace mallocMC
 
         public:
             MAMC_ACCELERATOR
-            uint32 collect(uint32 bytes) const
+            auto collect(uint32 bytes) const -> uint32
             {
                 return bytes;
             }
 
             MAMC_ACCELERATOR
-            void * distribute(void * allocatedMem) const
+            auto distribute(void * allocatedMem) const -> void *
             {
                 return allocatedMem;
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 return "Noop";
             }

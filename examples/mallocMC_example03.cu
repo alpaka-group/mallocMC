@@ -101,7 +101,7 @@ __global__ void exampleKernel(ScatterAllocator::AllocatorHandle mMC)
         mMC.free(arA);
 }
 
-int main()
+auto main() -> int
 {
     ScatterAllocator mMC(
         1U * 1024U * 1024U * 1024U); // 1GB for device-side malloc

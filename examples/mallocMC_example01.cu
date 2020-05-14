@@ -36,7 +36,7 @@
 
 void run();
 
-int main()
+auto main() -> int
 {
     int computeCapabilityMajor = 0;
     cudaDeviceGetAttribute(

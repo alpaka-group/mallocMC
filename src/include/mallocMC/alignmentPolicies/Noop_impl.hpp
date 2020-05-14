@@ -43,18 +43,18 @@ namespace mallocMC
             using uint32 = std::uint32_t;
 
         public:
-            static std::tuple<void *, size_t>
-            alignPool(void * memory, size_t memsize)
+            static auto
+            alignPool(void * memory, size_t memsize) -> std::tuple<void *, size_t>
             {
                 return std::make_tuple(memory, memsize);
             }
 
-            MAMC_HOST MAMC_ACCELERATOR static uint32 applyPadding(uint32 bytes)
+            MAMC_HOST MAMC_ACCELERATOR static auto applyPadding(uint32 bytes) -> uint32
             {
                 return bytes;
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 return "Noop";
             }

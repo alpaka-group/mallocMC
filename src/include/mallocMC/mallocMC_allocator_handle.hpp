@@ -42,7 +42,7 @@ namespace mallocMC
         explicit AllocatorHandleImpl(DevAllocator * p) : devAllocator(p) {}
 
         MAMC_ACCELERATOR
-        void * malloc(size_t size)
+        auto malloc(size_t size) -> void *
         {
             return devAllocator->malloc(size);
         }
@@ -54,7 +54,7 @@ namespace mallocMC
         }
 
         MAMC_ACCELERATOR
-        unsigned getAvailableSlots(size_t slotSize)
+        auto getAvailableSlots(size_t slotSize) -> unsigned
         {
             return devAllocator->getAvailableSlots(slotSize);
         }

@@ -40,7 +40,7 @@ namespace mallocMC
         struct BadAllocException
         {
             MAMC_ACCELERATOR
-            static void * handleOOM(void * mem)
+            static auto handleOOM(void * mem) -> void *
             {
 #ifdef __CUDACC__
 //#if __CUDA_ARCH__ < 350
@@ -57,7 +57,7 @@ namespace mallocMC
                 return mem;
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 return "BadAllocException";
             }

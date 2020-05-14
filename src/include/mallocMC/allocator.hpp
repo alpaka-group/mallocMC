@@ -47,7 +47,7 @@ namespace mallocMC
         template<typename T_Allocator, bool T_providesAvailableSlots>
         struct GetAvailableSlotsIfAvailHost
         {
-            MAMC_HOST static unsigned getAvailableSlots(size_t, T_Allocator &)
+            MAMC_HOST static auto getAvailableSlots(size_t, T_Allocator &) -> unsigned
             {
                 return 0;
             }
@@ -57,8 +57,8 @@ namespace mallocMC
         struct GetAvailableSlotsIfAvailHost<T_Allocator, true>
         {
             MAMC_HOST
-            static unsigned
-            getAvailableSlots(size_t slotSize, T_Allocator & alloc)
+            static auto
+            getAvailableSlots(size_t slotSize, T_Allocator & alloc) -> unsigned
             {
                 return T_Allocator::CreationPolicy::getAvailableSlotsHost(
                     slotSize, alloc.getAllocatorHandle().devAllocator);
@@ -182,7 +182,7 @@ namespace mallocMC
         }
 
         MAMC_HOST
-        AllocatorHandle getAllocatorHandle()
+        auto getAllocatorHandle() -> AllocatorHandle
         {
             return allocatorHandle;
         }
@@ -193,7 +193,7 @@ namespace mallocMC
             return getAllocatorHandle();
         }
 
-        MAMC_HOST static std::string info(std::string linebreak = " ")
+        MAMC_HOST static auto info(std::string linebreak = " ") -> std::string
         {
             std::stringstream ss;
             ss << "CreationPolicy:      " << CreationPolicy::classname()
@@ -212,7 +212,7 @@ namespace mallocMC
         // polymorphism over the availability of getAvailableSlots for calling
         // from the host
         MAMC_HOST
-        unsigned getAvailableSlots(size_t slotSize)
+        auto getAvailableSlots(size_t slotSize) -> unsigned
         {
             slotSize = AlignmentPolicy::applyPadding(slotSize);
             return detail::GetAvailableSlotsIfAvailHost<
@@ -222,7 +222,7 @@ namespace mallocMC
         }
 
         MAMC_HOST
-        HeapInfoVector getHeapLocations()
+        auto getHeapLocations() -> HeapInfoVector
         {
             HeapInfoVector v;
             v.push_back(heapInfos);

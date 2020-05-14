@@ -51,8 +51,8 @@ namespace CUDA
     class error : public std::runtime_error
     {
     private:
-        static std::string
-        genErrorString(cudaError errorValue, const char * file, int line)
+        static auto
+        genErrorString(cudaError errorValue, const char * file, int line) -> std::string
         {
             std::ostringstream msg;
             msg << file << '(' << line
@@ -113,7 +113,7 @@ namespace mallocMC
     using PointerEquivalent
         = mallocMC::__PointerEquivalent<sizeof(char *)>::type;
 
-    MAMC_ACCELERATOR inline std::uint32_t laneid()
+    MAMC_ACCELERATOR inline auto laneid() -> std::uint32_t
     {
         std::uint32_t mylaneid;
         asm("mov.u32 %0, %%laneid;" : "=r"(mylaneid));
@@ -127,7 +127,7 @@ namespace mallocMC
      *
      * @return current index of the warp
      */
-    MAMC_ACCELERATOR inline std::uint32_t warpid()
+    MAMC_ACCELERATOR inline auto warpid() -> std::uint32_t
     {
         std::uint32_t mywarpid;
         asm("mov.u32 %0, %%warpid;" : "=r"(mywarpid));
@@ -138,55 +138,55 @@ namespace mallocMC
      *
      * @return maximum number of warps on a multiprocessor
      */
-    MAMC_ACCELERATOR inline std::uint32_t nwarpid()
+    MAMC_ACCELERATOR inline auto nwarpid() -> std::uint32_t
     {
         std::uint32_t mynwarpid;
         asm("mov.u32 %0, %%nwarpid;" : "=r"(mynwarpid));
         return mynwarpid;
     }
 
-    MAMC_ACCELERATOR inline std::uint32_t smid()
+    MAMC_ACCELERATOR inline auto smid() -> std::uint32_t
     {
         std::uint32_t mysmid;
         asm("mov.u32 %0, %%smid;" : "=r"(mysmid));
         return mysmid;
     }
 
-    MAMC_ACCELERATOR inline std::uint32_t nsmid()
+    MAMC_ACCELERATOR inline auto nsmid() -> std::uint32_t
     {
         std::uint32_t mynsmid;
         asm("mov.u32 %0, %%nsmid;" : "=r"(mynsmid));
         return mynsmid;
     }
-    MAMC_ACCELERATOR inline std::uint32_t lanemask()
+    MAMC_ACCELERATOR inline auto lanemask() -> std::uint32_t
     {
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_eq;" : "=r"(lanemask));
         return lanemask;
     }
 
-    MAMC_ACCELERATOR inline std::uint32_t lanemask_le()
+    MAMC_ACCELERATOR inline auto lanemask_le() -> std::uint32_t
     {
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_le;" : "=r"(lanemask));
         return lanemask;
     }
 
-    MAMC_ACCELERATOR inline std::uint32_t lanemask_lt()
+    MAMC_ACCELERATOR inline auto lanemask_lt() -> std::uint32_t
     {
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_lt;" : "=r"(lanemask));
         return lanemask;
     }
 
-    MAMC_ACCELERATOR inline std::uint32_t lanemask_ge()
+    MAMC_ACCELERATOR inline auto lanemask_ge() -> std::uint32_t
     {
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_ge;" : "=r"(lanemask));
         return lanemask;
     }
 
-    MAMC_ACCELERATOR inline std::uint32_t lanemask_gt()
+    MAMC_ACCELERATOR inline auto lanemask_gt() -> std::uint32_t
     {
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_gt;" : "=r"(lanemask));
@@ -194,7 +194,7 @@ namespace mallocMC
     }
 
     template<class T>
-    MAMC_HOST MAMC_ACCELERATOR inline T divup(T a, T b)
+    MAMC_HOST MAMC_ACCELERATOR inline auto divup(T a, T b) -> T
     {
         return (a + b - 1) / b;
     }
@@ -226,7 +226,7 @@ namespace mallocMC
      *
      * @return warp id within the block
      */
-    MAMC_ACCELERATOR inline std::uint32_t warpid_withinblock()
+    MAMC_ACCELERATOR inline auto warpid_withinblock() -> std::uint32_t
     {
         return (threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x
                 + threadIdx.x)

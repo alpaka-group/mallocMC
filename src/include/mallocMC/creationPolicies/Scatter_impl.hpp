@@ -236,7 +236,7 @@ namespace mallocMC
              * randInit should create an random offset which can be used
              * as the initial position in a bitfield
              */
-            static __device__ inline uint32 randInit()
+            static __device__ inline auto randInit() -> uint32
             {
                 // start with the laneid offset
                 return laneid();
@@ -252,8 +252,8 @@ namespace mallocMC
              * @param spots number of bits that can be used
              * @return next free spot in the bitfield
              */
-            static __device__ inline uint32
-            nextspot(uint32 bitfield, uint32 spot, uint32 spots)
+            static __device__ inline auto
+            nextspot(uint32 bitfield, uint32 spot, uint32 spots) -> uint32
             {
                 // wrap around the bitfields from the current spot to the left
                 bitfield = ((bitfield >> (spot + 1))
@@ -274,8 +274,8 @@ namespace mallocMC
              * @return pointer to the first address inside the page that holds
              * metadata bitfields.
              */
-            __device__ inline uint32 *
-            onPageMasksPosition(uint32 page, uint32 nMasks)
+            __device__ inline auto
+            onPageMasksPosition(uint32 page, uint32 nMasks) -> uint32 *
             {
                 return (
                     uint32 *)(_page[page].data + pagesize - (int)sizeof(uint32) * nMasks);
@@ -290,8 +290,8 @@ namespace mallocMC
              * @return if there is a free spot it returns the spot'S offset,
              * otherwise -1
              */
-            static __device__ inline int
-            usespot(uint32 * bitfield, uint32 spots)
+            static __device__ inline auto
+            usespot(uint32 * bitfield, uint32 spots) -> int
             {
                 // get first spot
                 uint32 spot = randInit() % spots;
@@ -326,10 +326,10 @@ namespace mallocMC
              * of the fullsegments. For any correct input, this number is
              * smaller than 32
              */
-            static __device__ inline uint32 calcAdditionalChunks(
+            static __device__ inline auto calcAdditionalChunks(
                 uint32 fullsegments,
                 uint32 segmentsize,
-                uint32 chunksize)
+                uint32 chunksize) -> uint32
             {
                 if(fullsegments != 32)
                     return max(0,
@@ -352,11 +352,11 @@ namespace mallocMC
              * @return pointer to a free chunk on the page, 0 if we were unable
              * to obtain a free chunk
              */
-            __device__ inline void * addChunkHierarchy(
+            __device__ inline auto addChunkHierarchy(
                 uint32 chunksize,
                 uint32 fullsegments,
                 uint32 additional_chunks,
-                uint32 page)
+                uint32 page) -> void *
             {
                 const uint32 segments
                     = fullsegments + (additional_chunks > 0 ? 1 : 0);
@@ -389,8 +389,8 @@ namespace mallocMC
              * @return pointer to a free chunk on the page, 0 if we were unable
              * to obtain a free chunk
              */
-            __device__ inline void *
-            addChunkNoHierarchy(uint32 chunksize, uint32 page, uint32 spots)
+            __device__ inline auto
+            addChunkNoHierarchy(uint32 chunksize, uint32 page, uint32 spots) -> void *
             {
                 const int spot = usespot((uint32 *)&_ptes[page].bitmask, spots);
                 if(spot == -1)
@@ -405,7 +405,7 @@ namespace mallocMC
              * @return pointer to a free chunk on the page, 0 if we were unable
              * to obtain a free chunk
              */
-            __device__ inline void * tryUsePage(uint32 page, uint32 chunksize)
+            __device__ inline auto tryUsePage(uint32 page, uint32 chunksize) -> void *
             {
                 void * chunk_ptr = nullptr;
 
@@ -457,7 +457,7 @@ namespace mallocMC
              * @return pointer to a free chunk on a page, 0 if we were unable to
              * obtain a free chunk
              */
-            __device__ void * allocChunked(uint32 bytes)
+            __device__ auto allocChunked(uint32 bytes) -> void *
             {
                 const uint32 pagesperblock = _numpages / accessblocks;
                 const uint32 reloff = warpSize * bytes / pagesize;
@@ -632,8 +632,8 @@ namespace mallocMC
              * @param bytes number of overall bytes to mark pages for
              * @return true on success, false if one of the pages is not free
              */
-            __device__ bool
-            markpages(uint32 startpage, uint32 pages, uint32 bytes)
+            __device__ auto
+            markpages(uint32 startpage, uint32 pages, uint32 bytes) -> bool
             {
                 int abord = -1;
                 for(uint32 trypage = startpage; trypage < startpage + pages;
@@ -663,10 +663,10 @@ namespace mallocMC
              * @return pointer to the first page to use, 0 if we were unable to
              * use all the requested pages
              */
-            __device__ void * allocPageBasedSingleRegion(
+            __device__ auto allocPageBasedSingleRegion(
                 uint32 startpage,
                 uint32 endpage,
-                uint32 bytes)
+                uint32 bytes) -> void *
             {
                 const uint32 pagestoalloc = divup(bytes, pagesize);
                 uint32 freecount = 0;
@@ -709,7 +709,7 @@ namespace mallocMC
              * @pre only a single thread of a warp is allowed to call the
              * function concurrently
              */
-            __device__ void * allocPageBasedSingle(uint32 bytes)
+            __device__ auto allocPageBasedSingle(uint32 bytes) -> void *
             {
                 // acquire mutex
                 while(atomicExch(&_pagebasedMutex, 1) != 0)
@@ -732,7 +732,7 @@ namespace mallocMC
              * @return pointer to the first page to use, 0 if we were unable to
              * use all the requested pages
              */
-            __device__ void * allocPageBased(uint32 bytes)
+            __device__ auto allocPageBased(uint32 bytes) -> void *
             {
                 // this is rather slow, but we dont expect that to happen often
                 // anyway
@@ -777,7 +777,7 @@ namespace mallocMC
              * @param bytes number of bytes to allocate
              * @return pointer to the allocated memory
              */
-            __device__ void * create(uint32 bytes)
+            __device__ auto create(uint32 bytes) -> void *
             {
                 if(bytes == 0)
                     return 0;
@@ -918,15 +918,15 @@ namespace mallocMC
                 }
             }
 
-            static __device__ bool isOOM(void * p, size_t s)
+            static __device__ auto isOOM(void * p, size_t s) -> bool
             {
                 // one thread that requested memory returned null
                 return s && (p == nullptr);
             }
 
             template<typename T_DeviceAllocator>
-            static void *
-            initHeap(T_DeviceAllocator * heap, void * pool, size_t memsize)
+            static auto
+            initHeap(T_DeviceAllocator * heap, void * pool, size_t memsize) -> void *
             {
                 if(pool == nullptr && memsize != 0)
                 {
@@ -955,8 +955,8 @@ namespace mallocMC
              * the page. This size must be appropriate to the formatting of the
              *        page.
              */
-            __device__ unsigned
-            countFreeChunksInPage(uint32 page, uint32 chunksize)
+            __device__ auto
+            countFreeChunksInPage(uint32 page, uint32 chunksize) -> unsigned
             {
                 const uint32 filledChunks = _ptes[page].count;
                 if(chunksize <= HierarchyThreshold)
@@ -1002,10 +1002,10 @@ namespace mallocMC
              * @param stride the stride should be equal to the number of
              * different gids (and therefore of value max(gid)-1)
              */
-            __device__ unsigned getAvailaibleSlotsDeviceFunction(
+            __device__ auto getAvailaibleSlotsDeviceFunction(
                 size_t slotSize,
                 int gid,
-                int stride)
+                int stride) -> unsigned
             {
                 unsigned slotcount = 0;
                 if(slotSize < pagesize)
@@ -1082,9 +1082,9 @@ namespace mallocMC
              */
         public:
             template<typename T_DeviceAllocator>
-            static unsigned getAvailableSlotsHost(
+            static auto getAvailableSlotsHost(
                 size_t const slotSize,
-                T_DeviceAllocator * heap)
+                T_DeviceAllocator * heap) -> unsigned
             {
                 unsigned h_slots = 0;
                 unsigned * d_slots;
@@ -1121,7 +1121,7 @@ namespace mallocMC
              *
              * @param slotSize the size of allocatable elements to count
              */
-            __device__ unsigned getAvailableSlotsAccelerator(size_t slotSize)
+            __device__ auto getAvailableSlotsAccelerator(size_t slotSize) -> unsigned
             {
                 const int wId
                     = warpid_withinblock(); // do not use warpid-function, since
@@ -1156,7 +1156,7 @@ namespace mallocMC
                 return warpResults[wId];
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 std::stringstream ss;
                 ss << "Scatter[";

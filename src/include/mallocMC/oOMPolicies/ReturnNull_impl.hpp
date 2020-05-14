@@ -40,12 +40,12 @@ namespace mallocMC
         {
         public:
             MAMC_ACCELERATOR
-            static void * handleOOM(void * mem)
+            static auto handleOOM(void * mem) -> void *
             {
                 return nullptr;
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 return "ReturnNull";
             }

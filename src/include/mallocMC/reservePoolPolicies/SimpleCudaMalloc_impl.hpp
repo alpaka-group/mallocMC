@@ -38,7 +38,7 @@ namespace mallocMC
     {
         struct SimpleCudaMalloc
         {
-            static void * setMemPool(size_t memsize)
+            static auto setMemPool(size_t memsize) -> void *
             {
                 void * pool = nullptr;
                 MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
@@ -50,7 +50,7 @@ namespace mallocMC
                 MALLOCMC_CUDA_CHECKED_CALL(cudaFree(p));
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 return "SimpleCudaMalloc";
             }

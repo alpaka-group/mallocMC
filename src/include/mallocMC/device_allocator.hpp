@@ -55,8 +55,8 @@ namespace mallocMC
         template<typename T_Allocator, bool T_providesAvailableSlots>
         struct GetAvailableSlotsIfAvailAcc
         {
-            MAMC_ACCELERATOR static unsigned
-            getAvailableSlots(size_t, T_Allocator &)
+            MAMC_ACCELERATOR static auto
+            getAvailableSlots(size_t, T_Allocator &) -> unsigned
             {
                 return 0;
             }
@@ -65,8 +65,8 @@ namespace mallocMC
         template<typename T_Allocator>
         struct GetAvailableSlotsIfAvailAcc<T_Allocator, true>
         {
-            MAMC_ACCELERATOR static unsigned
-            getAvailableSlots(size_t slotSize, T_Allocator & alloc)
+            MAMC_ACCELERATOR static auto
+            getAvailableSlots(size_t slotSize, T_Allocator & alloc) -> unsigned
             {
                 return alloc
                     .T_Allocator::CreationPolicy ::getAvailableSlotsAccelerator(
@@ -108,7 +108,7 @@ namespace mallocMC
         void * pool;
 
         MAMC_ACCELERATOR
-        void * malloc(size_t bytes)
+        auto malloc(size_t bytes) -> void *
         {
             DistributionPolicy distributionPolicy;
             bytes = AlignmentPolicy::applyPadding(bytes);
@@ -131,7 +131,7 @@ namespace mallocMC
          * from the accelerator
          */
         MAMC_ACCELERATOR
-        unsigned getAvailableSlots(size_t slotSize)
+        auto getAvailableSlots(size_t slotSize) -> unsigned
         {
             slotSize = AlignmentPolicy::applyPadding(slotSize);
             return detail::GetAvailableSlotsIfAvailAcc<

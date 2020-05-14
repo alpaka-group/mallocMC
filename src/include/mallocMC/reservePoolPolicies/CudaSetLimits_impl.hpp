@@ -38,7 +38,7 @@ namespace mallocMC
     {
         struct CudaSetLimits
         {
-            static void * setMemPool(size_t memsize)
+            static auto setMemPool(size_t memsize) -> void *
             {
                 cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
                 return nullptr;
@@ -49,7 +49,7 @@ namespace mallocMC
                 cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
             }
 
-            static std::string classname()
+            static auto classname() -> std::string
             {
                 return "CudaSetLimits";
             }

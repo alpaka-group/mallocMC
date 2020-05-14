@@ -64,11 +64,11 @@ bool verbose = false;
 // the type of the elements to allocate
 using allocElem_t = unsigned long long;
 
-bool run_heap_verification(
+auto run_heap_verification(
     const size_t,
     const unsigned,
     const unsigned,
-    const bool);
+    const bool) -> bool;
 void parse_cmdline(
     const int,
     char **,
@@ -85,7 +85,7 @@ struct nullstream : std::ostream
 };
 
 // uses global verbosity to switch between std::cout and a nullptr-output
-std::ostream & dout()
+auto dout() -> std::ostream &
 {
     static nullstream n;
     return verbose ? std::cout : n;
@@ -105,7 +105,7 @@ static constexpr size_t heapInMB_default = 1024; // 1GB
  * @return will return 0 if the verification was successful,
  *         otherwise returns 1
  */
-int main(int argc, char ** argv)
+auto main(int argc, char ** argv) -> int
 {
     bool correct = false;
     bool machine_readable = false;
@@ -496,11 +496,11 @@ void allocate(
  * @param threads the number of CUDA threads per block
  * @return true if the verification was successful, false otherwise
  */
-bool verify(
+auto verify(
     allocElem_t ** d_testData,
     const unsigned long long nSlots,
     const unsigned blocks,
-    const unsigned threads)
+    const unsigned threads) -> bool
 {
     dout() << "verifying on device... ";
 
@@ -658,11 +658,11 @@ void print_machine_readable(
  * @return true if the verification was successful,
  *         false otherwise
  */
-bool run_heap_verification(
+auto run_heap_verification(
     const size_t heapMB,
     const unsigned blocks,
     const unsigned threads,
-    const bool machine_readable)
+    const bool machine_readable) -> bool
 {
     cudaSetDeviceFlags(cudaDeviceMapHost);
 
