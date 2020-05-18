@@ -27,26 +27,29 @@
 
 #pragma once
 
-#include <string>
-
 #include "../mallocMC_prefixes.hpp"
 #include "ReturnNull.hpp"
 
-namespace mallocMC{
-namespace OOMPolicies{
+#include <string>
 
-  class ReturnNull
-  {
-    public:
-      MAMC_ACCELERATOR
-      static void* handleOOM(void* mem){
-        return nullptr;
-      }
+namespace mallocMC
+{
+    namespace OOMPolicies
+    {
+        class ReturnNull
+        {
+        public:
+            MAMC_ACCELERATOR
+            static auto handleOOM(void * mem) -> void *
+            {
+                return nullptr;
+            }
 
-      static std::string classname(){
-        return "ReturnNull";
-      }
-  };
+            static auto classname() -> std::string
+            {
+                return "ReturnNull";
+            }
+        };
 
-} //namespace OOMPolicies
-} //namespace mallocMC
+    } // namespace OOMPolicies
+} // namespace mallocMC

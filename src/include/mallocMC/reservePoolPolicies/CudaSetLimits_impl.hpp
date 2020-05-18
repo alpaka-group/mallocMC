@@ -27,29 +27,33 @@
 
 #pragma once
 
+#include "CudaSetLimits.hpp"
+
 #include <cuda_runtime_api.h>
 #include <string>
 
-#include "CudaSetLimits.hpp"
+namespace mallocMC
+{
+    namespace ReservePoolPolicies
+    {
+        struct CudaSetLimits
+        {
+            static auto setMemPool(size_t memsize) -> void *
+            {
+                cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
+                return nullptr;
+            }
 
-namespace mallocMC{
-namespace ReservePoolPolicies{
+            static void resetMemPool(void * p = nullptr)
+            {
+                cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
+            }
 
-  struct CudaSetLimits{
-    static void* setMemPool(size_t memsize){
-      cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
-      return nullptr;
-    }
+            static auto classname() -> std::string
+            {
+                return "CudaSetLimits";
+            }
+        };
 
-    static void resetMemPool(void *p=nullptr){
-      cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
-    }
-
-    static std::string classname(){
-      return "CudaSetLimits";
-    }
-
-  };
-
-} //namespace ReservePoolPolicies
-} //namespace mallocMC
+    } // namespace ReservePoolPolicies
+} // namespace mallocMC

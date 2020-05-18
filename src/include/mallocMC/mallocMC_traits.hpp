@@ -28,10 +28,12 @@
 
 #pragma once
 
-namespace mallocMC{
-    template <class T_Allocator>
-    struct Traits{
-        static constexpr bool providesAvailableSlots = T_Allocator::CreationPolicy::providesAvailableSlots;
+namespace mallocMC
+{
+    template<class T_Allocator>
+    struct Traits
+    {
+        static constexpr bool providesAvailableSlots
+            = T_Allocator::CreationPolicy::providesAvailableSlots;
     };
-} //namespace mallocMC
-
+} // namespace mallocMC

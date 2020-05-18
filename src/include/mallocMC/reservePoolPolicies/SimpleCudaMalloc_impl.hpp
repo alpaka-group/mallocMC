@@ -27,31 +27,34 @@
 
 #pragma once
 
-#include <string>
-
 #include "../mallocMC_utils.hpp"
-
 #include "SimpleCudaMalloc.hpp"
 
-namespace mallocMC{
-namespace ReservePoolPolicies{
+#include <string>
 
-  struct SimpleCudaMalloc{
-    static void* setMemPool(size_t memsize){
-      void* pool = nullptr;
-      MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
-      return pool;
-    }
+namespace mallocMC
+{
+    namespace ReservePoolPolicies
+    {
+        struct SimpleCudaMalloc
+        {
+            static auto setMemPool(size_t memsize) -> void *
+            {
+                void * pool = nullptr;
+                MALLOCMC_CUDA_CHECKED_CALL(cudaMalloc(&pool, memsize));
+                return pool;
+            }
 
-    static void resetMemPool(void* p){
-      MALLOCMC_CUDA_CHECKED_CALL(cudaFree(p));
-    }
+            static void resetMemPool(void * p)
+            {
+                MALLOCMC_CUDA_CHECKED_CALL(cudaFree(p));
+            }
 
-    static std::string classname(){
-      return "SimpleCudaMalloc";
-    }
+            static auto classname() -> std::string
+            {
+                return "SimpleCudaMalloc";
+            }
+        };
 
-  };
-
-} //namespace ReservePoolPolicies
-} //namespace mallocMC
+    } // namespace ReservePoolPolicies
+} // namespace mallocMC

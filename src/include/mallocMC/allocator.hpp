@@ -40,52 +40,45 @@
 #include <tuple>
 #include <vector>
 
-namespace mallocMC{
-namespace detail{
-
-    template<
-        typename T_Allocator,
-        bool T_providesAvailableSlots
-    >
-    struct GetAvailableSlotsIfAvailHost
+namespace mallocMC
+{
+    namespace detail
     {
-        MAMC_HOST static
-        unsigned
-        getAvailableSlots(
-            size_t,
-            T_Allocator &
-        )
+        template<typename T_Allocator, bool T_providesAvailableSlots>
+        struct GetAvailableSlotsIfAvailHost
         {
-            return 0;
-        }
-    };
+            MAMC_HOST static auto getAvailableSlots(size_t, T_Allocator &)
+                -> unsigned
+            {
+                return 0;
+            }
+        };
 
-    template<class T_Allocator>
-    struct GetAvailableSlotsIfAvailHost<T_Allocator, true>
-    {
-        MAMC_HOST
-        static unsigned
-        getAvailableSlots(
-            size_t slotSize,
-            T_Allocator& alloc
-        ){
-            return T_Allocator::CreationPolicy::getAvailableSlotsHost(slotSize, alloc.getAllocatorHandle().devAllocator);
-        }
-    };
-}  // namespace detail
+        template<class T_Allocator>
+        struct GetAvailableSlotsIfAvailHost<T_Allocator, true>
+        {
+            MAMC_HOST
+            static auto getAvailableSlots(size_t slotSize, T_Allocator & alloc)
+                -> unsigned
+            {
+                return T_Allocator::CreationPolicy::getAvailableSlotsHost(
+                    slotSize, alloc.getAllocatorHandle().devAllocator);
+            }
+        };
+    } // namespace detail
 
     struct HeapInfo
     {
-        void* p;
+        void * p;
         size_t size;
     };
 
     /**
      * @brief "HostClass" that combines all policies to a useful allocator
      *
-     * This class implements the necessary glue-logic to form an actual allocator
-     * from the provided policies. It implements the public interface and
-     * executes some constraint checking based on an instance of the class
+     * This class implements the necessary glue-logic to form an actual
+     * allocator from the provided policies. It implements the public interface
+     * and executes some constraint checking based on an instance of the class
      * PolicyConstraints.
      *
      * @tparam T_CreationPolicy The desired type of a CreationPolicy
@@ -95,20 +88,18 @@ namespace detail{
      * @tparam T_AlignmentPolicy The desired type of a AlignmentPolicy
      */
     template<
-       typename T_CreationPolicy,
-       typename T_DistributionPolicy,
-       typename T_OOMPolicy,
-       typename T_ReservePoolPolicy,
-       typename T_AlignmentPolicy
-    >
+        typename T_CreationPolicy,
+        typename T_DistributionPolicy,
+        typename T_OOMPolicy,
+        typename T_ReservePoolPolicy,
+        typename T_AlignmentPolicy>
     class Allocator :
-        public PolicyConstraints<
-            T_CreationPolicy,
-            T_DistributionPolicy,
-            T_OOMPolicy,
-            T_ReservePoolPolicy,
-            T_AlignmentPolicy
-        >
+            public PolicyConstraints<
+                T_CreationPolicy,
+                T_DistributionPolicy,
+                T_OOMPolicy,
+                T_ReservePoolPolicy,
+                T_AlignmentPolicy>
     {
         using uint32 = std::uint32_t;
 
@@ -135,29 +126,13 @@ namespace detail{
          * @param size number of bytes
          */
         MAMC_HOST
-        void
-        alloc(
-            size_t size
-        )
+        void alloc(size_t size)
         {
-            void* pool = ReservePoolPolicy::setMemPool( size );
-            std::tie(
-                pool,
-                size
-            ) = AlignmentPolicy::alignPool(
-                pool,
-                size
-            );
-            DevAllocator* devAllocatorPtr;
-            cudaMalloc(
-                ( void** ) &devAllocatorPtr,
-                sizeof( DevAllocator )
-            );
-            CreationPolicy::initHeap(
-                devAllocatorPtr,
-                pool,
-                size
-            );
+            void * pool = ReservePoolPolicy::setMemPool(size);
+            std::tie(pool, size) = AlignmentPolicy::alignPool(pool, size);
+            DevAllocator * devAllocatorPtr;
+            cudaMalloc((void **)&devAllocatorPtr, sizeof(DevAllocator));
+            CreationPolicy::initHeap(devAllocatorPtr, pool, size);
 
             allocatorHandle.devAllocator = devAllocatorPtr;
             heapInfos.p = pool;
@@ -172,8 +147,8 @@ namespace detail{
         MAMC_HOST
         void free()
         {
-            cudaFree( allocatorHandle.devAllocator );
-            ReservePoolPolicy::resetMemPool( heapInfos.p );
+            cudaFree(allocatorHandle.devAllocator);
+            ReservePoolPolicy::resetMemPool(heapInfos.p);
             allocatorHandle.devAllocator = nullptr;
             heapInfos.size = 0;
             heapInfos.p = nullptr;
@@ -181,24 +156,19 @@ namespace detail{
 
         /* forbid to copy the allocator */
         MAMC_HOST
-        Allocator( const Allocator& );
+        Allocator(const Allocator &);
 
     public:
-
-
         MAMC_HOST
-        Allocator(
-            size_t size = 8U * 1024U * 1024U
-        ) :
-            allocatorHandle( nullptr )
+        Allocator(size_t size = 8U * 1024U * 1024U) : allocatorHandle(nullptr)
         {
-            alloc( size );
+            alloc(size);
         }
 
         MAMC_HOST
-        ~Allocator( )
+        ~Allocator()
         {
-            free( );
+            free();
         }
 
         /** destroy current heap data and resize the heap
@@ -206,18 +176,14 @@ namespace detail{
          * @param size number of bytes
          */
         MAMC_HOST
-        void
-        destructiveResize(
-            size_t size
-        )
+        void destructiveResize(size_t size)
         {
-            free( );
-            alloc( size );
+            free();
+            alloc(size);
         }
 
         MAMC_HOST
-        AllocatorHandle
-        getAllocatorHandle( )
+        auto getAllocatorHandle() -> AllocatorHandle
         {
             return allocatorHandle;
         }
@@ -228,45 +194,41 @@ namespace detail{
             return getAllocatorHandle();
         }
 
-        MAMC_HOST static
-        std::string
-        info(
-            std::string linebreak = " "
-        )
+        MAMC_HOST static auto info(std::string linebreak = " ") -> std::string
         {
             std::stringstream ss;
-            ss << "CreationPolicy:      " << CreationPolicy::classname( ) << "    " << linebreak;
-            ss << "DistributionPolicy:  " << DistributionPolicy::classname( ) << "" << linebreak;
-            ss << "OOMPolicy:           " << OOMPolicy::classname( ) << "         " << linebreak;
-            ss << "ReservePoolPolicy:   " << ReservePoolPolicy::classname( ) << " " << linebreak;
-            ss << "AlignmentPolicy:     " << AlignmentPolicy::classname( ) << "   " << linebreak;
+            ss << "CreationPolicy:      " << CreationPolicy::classname()
+               << "    " << linebreak;
+            ss << "DistributionPolicy:  " << DistributionPolicy::classname()
+               << "" << linebreak;
+            ss << "OOMPolicy:           " << OOMPolicy::classname()
+               << "         " << linebreak;
+            ss << "ReservePoolPolicy:   " << ReservePoolPolicy::classname()
+               << " " << linebreak;
+            ss << "AlignmentPolicy:     " << AlignmentPolicy::classname()
+               << "   " << linebreak;
             return ss.str();
         }
 
-        // polymorphism over the availability of getAvailableSlots for calling from the host
+        // polymorphism over the availability of getAvailableSlots for calling
+        // from the host
         MAMC_HOST
-        unsigned
-        getAvailableSlots(
-            size_t slotSize
-        )
+        auto getAvailableSlots(size_t slotSize) -> unsigned
         {
-            slotSize = AlignmentPolicy::applyPadding( slotSize );
+            slotSize = AlignmentPolicy::applyPadding(slotSize);
             return detail::GetAvailableSlotsIfAvailHost<
                 Allocator,
-                Traits<Allocator>::providesAvailableSlots
-            >::getAvailableSlots( slotSize, *this );
+                Traits<Allocator>::providesAvailableSlots>::
+                getAvailableSlots(slotSize, *this);
         }
 
         MAMC_HOST
-        HeapInfoVector
-        getHeapLocations( )
+        auto getHeapLocations() -> HeapInfoVector
         {
-          HeapInfoVector v;
-          v.push_back( heapInfos );
-          return v;
+            HeapInfoVector v;
+            v.push_back(heapInfos);
+            return v;
         }
-
     };
 
-} //namespace mallocMC
-
+} // namespace mallocMC

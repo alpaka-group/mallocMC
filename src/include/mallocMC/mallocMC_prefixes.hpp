@@ -32,4 +32,3 @@
 
 #define MAMC_HOST __host__
 #define MAMC_ACCELERATOR __device__
-

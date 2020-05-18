@@ -27,43 +27,47 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "OldMalloc.hpp"
 
-namespace mallocMC{
-namespace CreationPolicies{
+#include <cstdint>
 
-  class OldMalloc
-  {
-    using uint32 = std::uint32_t;
-
-    public:
-    static constexpr auto providesAvailableSlots = false;
-
-    __device__ void* create(uint32 bytes) const
+namespace mallocMC
+{
+    namespace CreationPolicies
     {
-      return ::malloc(static_cast<size_t>(bytes));
-    }
+        class OldMalloc
+        {
+            using uint32 = std::uint32_t;
 
-    __device__ void destroy(void* mem) const
-    {
-      ::free(mem);
-    }
+        public:
+            static constexpr auto providesAvailableSlots = false;
 
-    __device__ bool isOOM(void* p, size_t s) const {
-      return s != 0 && (p == nullptr);
-    }
+            __device__ auto create(uint32 bytes) const -> void *
+            {
+                return ::malloc(static_cast<size_t>(bytes));
+            }
 
-    template < typename T >
-    static void* initHeap(T* dAlloc, void*, size_t) {
-      return dAlloc;
-    }
+            __device__ void destroy(void * mem) const
+            {
+                ::free(mem);
+            }
 
-    static std::string classname() {
-      return "OldMalloc";
-    }
-  };
+            __device__ auto isOOM(void * p, size_t s) const -> bool
+            {
+                return s != 0 && (p == nullptr);
+            }
 
-} //namespace CreationPolicies
-} //namespace mallocMC
+            template<typename T>
+            static auto initHeap(T * dAlloc, void *, size_t) -> void *
+            {
+                return dAlloc;
+            }
+
+            static auto classname() -> std::string
+            {
+                return "OldMalloc";
+            }
+        };
+
+    } // namespace CreationPolicies
+} // namespace mallocMC

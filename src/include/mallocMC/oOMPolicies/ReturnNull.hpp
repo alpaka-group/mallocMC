@@ -27,15 +27,16 @@
 
 #pragma once
 
-namespace mallocMC{
-namespace OOMPolicies{
+namespace mallocMC
+{
+    namespace OOMPolicies
+    {
+        /**
+         * @brief Returns a nullptr pointer on OutOfMemory conditions
+         *
+         * This OOMPolicy will return nullptr, if handleOOM() is called.
+         */
+        class ReturnNull;
 
-  /**
-   * @brief Returns a nullptr pointer on OutOfMemory conditions
-   *
-   * This OOMPolicy will return nullptr, if handleOOM() is called.
-   */
-  class ReturnNull;
-    
-} //namespace OOMPolicies
-} //namespace mallocMC
+    } // namespace OOMPolicies
+} // namespace mallocMC

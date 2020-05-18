@@ -27,16 +27,17 @@
 
 #pragma once
 
-namespace mallocMC{
-namespace DistributionPolicies{
+namespace mallocMC
+{
+    namespace DistributionPolicies
+    {
+        /**
+         * @brief a policy that does nothing
+         *
+         * This DistributionPolicy will not perform any distribution, but only
+         * return its input (identity function)
+         */
+        class Noop;
 
-  /**
-   * @brief a policy that does nothing
-   *
-   * This DistributionPolicy will not perform any distribution, but only return
-   * its input (identity function)
-   */
-  class Noop;
-
-} //namespace DistributionPolicies
-} //namespace mallocMC
+    } // namespace DistributionPolicies
+} // namespace mallocMC
