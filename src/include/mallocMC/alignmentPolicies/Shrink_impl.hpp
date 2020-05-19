@@ -96,26 +96,23 @@ namespace mallocMC
                     = ((PointerEquivalent)memory) & (dataAlignment - 1);
                 if(alignmentstatus != 0)
                 {
-                    std::cout << "Heap Warning: memory to use not ";
-                    std::cout << dataAlignment << " byte aligned..."
-                              << std::endl;
-                    std::cout << "Before:" << std::endl;
-                    std::cout << "dataAlignment:   " << dataAlignment
-                              << std::endl;
-                    std::cout << "Alignmentstatus: " << alignmentstatus
-                              << std::endl;
-                    std::cout << "size_t memsize   " << memsize << " byte"
-                              << std::endl;
-                    std::cout << "void *memory     " << memory << std::endl;
+                    std::cout << "Heap Warning: memory to use not "
+                              << dataAlignment << " byte aligned...\n"
+                              << "Before:\n"
+                              << "dataAlignment:   " << dataAlignment << '\n'
+                              << "Alignmentstatus: " << alignmentstatus << '\n'
+                              << "size_t memsize   " << memsize << " byte"
+                              << '\n'
+                              << "void *memory     " << memory << '\n';
 
                     memory
                         = (void *)(((PointerEquivalent)memory) + dataAlignment - alignmentstatus);
                     memsize -= dataAlignment + (size_t)alignmentstatus;
 
-                    std::cout << "Was shrunk automatically to: " << std::endl;
-                    std::cout << "size_t memsize   " << memsize << " byte"
-                              << std::endl;
-                    std::cout << "void *memory     " << memory << std::endl;
+                    std::cout << "Was shrunk automatically to: " << '\n'
+                              << "size_t memsize   " << memsize << " byte"
+                              << '\n'
+                              << "void *memory     " << memory << '\n';
                 }
 
                 return std::make_tuple(memory, memsize);
