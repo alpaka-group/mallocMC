@@ -97,7 +97,7 @@ namespace mallocMC
 
                 // init with initial counter
                 auto & warp_sizecounter = alpaka::block::shared::st::allocVar<
-                    std::uint32_t[MaxThreadsPerBlock::value / warpSize],
+                    std::uint32_t[maxThreadsPerBlock / warpSize],
                     __COUNTER__>(acc);
                 warp_sizecounter[warpid] = 16;
 
@@ -130,7 +130,7 @@ namespace mallocMC
             distribute(const AlpakaAcc & acc, void * allocatedMem) -> void *
             {
                 auto & warp_res = alpaka::block::shared::st::allocVar<
-                    char * [MaxThreadsPerBlock::value / warpSize],
+                    char * [maxThreadsPerBlock / warpSize],
                     __COUNTER__>(acc);
 
                 char * myalloc = (char *)allocatedMem;

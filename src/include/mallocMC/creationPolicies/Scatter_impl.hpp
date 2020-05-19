@@ -1289,11 +1289,11 @@ namespace mallocMC
                 const uint32 activeThreads = popc(activemask());
 
                 auto & activePerWarp = alpaka::block::shared::st::allocVar<
-                    std::uint32_t[MaxThreadsPerBlock::value / warpSize],
+                    std::uint32_t[maxThreadsPerBlock / warpSize],
                     __COUNTER__>(acc); // maximum number of warps in a block
 
                 auto & warpResults = alpaka::block::shared::st::allocVar<
-                    unsigned[MaxThreadsPerBlock::value / warpSize],
+                    unsigned[maxThreadsPerBlock / warpSize],
                     __COUNTER__>(acc);
 
                 warpResults[wId] = 0;
