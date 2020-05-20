@@ -1,11 +1,11 @@
 project(mallocMC LANGUAGES CUDA CXX)
 cmake_minimum_required(VERSION 3.8)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # helper for libs and packages
-set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/"
     "$ENV{CUDA_ROOT}" "$ENV{BOOST_ROOT}")
