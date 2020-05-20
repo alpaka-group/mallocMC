@@ -1,11 +1,11 @@
 project(mallocMC LANGUAGES CUDA CXX)
 cmake_minimum_required(VERSION 3.8)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # helper for libs and packages
-set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/"
     "$ENV{CUDA_ROOT}" "$ENV{BOOST_ROOT}")
@@ -22,6 +22,21 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 
+# find alpaka
+set(mallocMC_ALPAKA_PROVIDER "intern" CACHE STRING "Select which alpaka is used")
+set_property(CACHE mallocMC_ALPAKA_PROVIDER PROPERTY STRINGS "intern;extern")
+mark_as_advanced(mallocMC_ALPAKA_PROVIDER)
+if(${mallocMC_ALPAKA_PROVIDER} STREQUAL "intern")
+    set(alpaka_BUILD_EXAMPLES OFF)
+    set(BUILD_TESTING OFF)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/alpaka ${CMAKE_BINARY_DIR}/alpaka)
+else()
+    find_package(alpaka HINTS $ENV{ALPAKA_ROOT})
+endif()
+
+if(NOT TARGET alpaka::alpaka)
+    message(FATAL "Required mallocMC dependency alpaka could not be found!")
+endif()
 
 ###############################################################################
 # CUDA
