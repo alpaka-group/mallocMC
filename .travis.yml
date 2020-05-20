@@ -16,7 +16,7 @@ env:
   global:
     - INSTALL_DIR=~/mylibs
     - CXXFLAGS="-Werror"
-    - PATH: $PATH:$HOME/.cache/cmake-3.15.0/bin
+    - PATH: $HOME/.cache/cmake-3.15.0/bin:$PATH
     
 install:
   if [ ! -f $HOME/.cache/cmake-3.15.0/bin/cmake ]; then
@@ -48,6 +48,7 @@ before_script:
   - sudo apt-get install -qq nvidia-cuda-dev nvidia-cuda-toolkit # 9.1.85
   - sudo apt-get install -qq libboost-dev # 1.65.1
   - sudo find /usr/ -name libcuda*.so
+  - echo "use cmake: $(which cmake) version: $(cmake --version)"  
 
 after_script:
   - ls -halR $INSTALL_DIR
