@@ -4,6 +4,11 @@ sudo: required
 
 dist: bionic
 
+cache:
+  apt: true
+  directories:
+    - $HOME/.cache/cmake-3.15.0
+
 compiler:
   - gcc
 
@@ -11,6 +16,14 @@ env:
   global:
     - INSTALL_DIR=~/mylibs
     - CXXFLAGS="-Werror"
+    - PATH: $PATH:$HOME/.cache/cmake-3.15.0/bin
+    
+install:
+  if [ ! -f $HOME/.cache/cmake-3.15.0/bin/cmake ]; then
+    wget -O cmake.sh https://cmake.org/files/v3.15/cmake-3.15.0-Linux-x86_64.sh &&
+    sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.15.0 &&
+    rm cmake.sh;
+  fi;
 
 script:
   - mkdir build_tmp && cd build_tmp
@@ -28,7 +41,6 @@ before_script:
   - sudo dpkg --configure -a
   - sudo apt-get install -f -qq
   - sudo dpkg --get-selections | grep hold || { echo "All packages OK."; }
-  - sudo apt-get install -q -y cmake-data cmake
   - sudo apt-get install -qq build-essential g++-5
   - gcc-5 --version && g++-5 --version # 5.5.0
   - apt-cache search nvidia-*
