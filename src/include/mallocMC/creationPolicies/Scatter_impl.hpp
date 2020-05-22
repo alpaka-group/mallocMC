@@ -563,7 +563,8 @@ namespace mallocMC
                 uint32 page,
                 uint32 chunksize)
             {
-                const uint32 inpage_offset = ((char *)mem - _page[page].data);
+                const auto inpage_offset
+                    = static_cast<uint32>((char *)mem - _page[page].data);
                 if(chunksize <= HierarchyThreshold)
                 {
                     // one more level in hierarchy
@@ -852,11 +853,13 @@ namespace mallocMC
                 if(mem == 0)
                     return;
                 // lets see on which page we are on
-                const uint32 page = ((char *)mem - (char *)_page) / pagesize;
+                const auto page = static_cast<uint32>(
+                    ((char *)mem - (char *)_page) / pagesize);
                 const uint32 chunksize = _ptes[page].chunksize;
 
                 // is the pointer the beginning of a chunk?
-                const uint32 inpage_offset = ((char *)mem - _page[page].data);
+                const auto inpage_offset
+                    = static_cast<uint32>((char *)mem - _page[page].data);
                 const uint32 block = inpage_offset / chunksize;
                 const uint32 inblockoffset = inpage_offset - block * chunksize;
                 if(inblockoffset != 0)
@@ -1010,8 +1013,10 @@ namespace mallocMC
                     heap->pool = heapmem;
                     heap->initDeviceFunction(acc, heapmem, memsize);
                 };
-                using Dim = typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
-                using Idx = typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+                using Dim =
+                    typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
+                using Idx =
+                    typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
                     Idx{1},
                     Idx{256},
@@ -1093,8 +1098,8 @@ namespace mallocMC
             ALPAKA_FN_ACC auto getAvailaibleSlotsDeviceFunction(
                 const AlpakaAcc & acc,
                 size_t slotSize,
-                int gid,
-                int stride) -> unsigned
+                uint32 gid,
+                uint32 stride) -> unsigned
             {
                 unsigned slotcount = 0;
                 if(slotSize < pagesize)
@@ -1191,12 +1196,12 @@ namespace mallocMC
                                                    T_DeviceAllocator * heap,
                                                    size_t slotSize,
                                                    unsigned * slots) -> void {
-                    const int gid
+                    const auto gid
                         = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(
                               acc)
                               .sum();
 
-                    const int nWorker
+                    const auto nWorker
                         = alpaka::workdiv::
                               getWorkDiv<alpaka::Grid, alpaka::Threads>(acc)
                                   .prod();
@@ -1208,8 +1213,10 @@ namespace mallocMC
                             acc, slots, temp);
                 };
 
-                using Dim = typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
-                using Idx = typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+                using Dim =
+                    typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
+                using Idx =
+                    typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
                     Idx{64},
                     Idx{256},
@@ -1274,7 +1281,7 @@ namespace mallocMC
                 // the active threads obtain an id from 0 to activeThreads-1
                 if(slotSize == 0)
                     return 0;
-                const int linearId
+                const auto linearId
                     = alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
                         acc, &activePerWarp[wId], 1u);
 
