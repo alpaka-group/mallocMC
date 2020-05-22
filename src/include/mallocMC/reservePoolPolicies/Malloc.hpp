@@ -1,11 +1,10 @@
 /*
   mallocMC: Memory Allocator for Many Core Architectures.
-  https://www.hzdr.de/crp
 
-  Copyright 2014 Institute of Radiation Physics,
-                 Helmholtz-Zentrum Dresden - Rossendorf
+  Copyright 2020 Helmholtz-Zentrum Dresden - Rossendorf,
+                 CERN
 
-  Author(s):  Carlchristian Eckert - c.eckert ( at ) hzdr.de
+  Author(s):  Bernhard Manfred Gruber
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +27,26 @@
 
 #pragma once
 
-#include "reservePoolPolicies/CudaSetLimits.hpp"
-#include "reservePoolPolicies/CudaSetLimits_impl.hpp"
-#include "reservePoolPolicies/SimpleCudaMalloc.hpp"
-#include "reservePoolPolicies/SimpleCudaMalloc_impl.hpp"
-#include "reservePoolPolicies/SimpleMalloc.hpp"
-#include "reservePoolPolicies/Malloc.hpp"
+#include "SimpleCudaMalloc.hpp"
+#include "SimpleMalloc.hpp"
+
+#include <alpaka/alpaka.hpp>
+#include <cstdlib>
+#include <string>
+
+namespace mallocMC
+{
+    namespace ReservePoolPolicies
+    {
+        template<typename AlpakaAcc>
+        struct Malloc : SimpleMalloc
+        {};
+        template<typename Dim, typename Idx>
+        struct Malloc<alpaka::acc::AccGpuCudaRt<Dim, Idx>> : SimpleCudaMalloc
+        {};
+        template<typename Dim, typename Idx>
+        struct Malloc<alpaka::acc::AccGpuUniformCudaHipRt<Dim, Idx>> :
+                SimpleCudaMalloc
+        {};
+    } // namespace ReservePoolPolicies
+} // namespace mallocMC

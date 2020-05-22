@@ -73,11 +73,9 @@ void test1D()
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
         mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
-        mallocMC::DistributionPolicies::Noop,
-        // mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
+        mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        // mallocMC::ReservePoolPolicies::SimpleMalloc,
-        mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+        mallocMC::ReservePoolPolicies::Malloc<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
@@ -160,11 +158,9 @@ void test2D()
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
         mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
-        mallocMC::DistributionPolicies::Noop,
-        // mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
+        mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        // mallocMC::ReservePoolPolicies::SimpleMalloc,
-        mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+        mallocMC::ReservePoolPolicies::Malloc<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
@@ -262,11 +258,9 @@ void test3D()
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
         mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
-        mallocMC::DistributionPolicies::Noop,
-        // mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
+        mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        // mallocMC::ReservePoolPolicies::SimpleMalloc,
-        mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+        mallocMC::ReservePoolPolicies::Malloc<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
