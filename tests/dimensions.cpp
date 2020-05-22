@@ -84,6 +84,7 @@ void test1D()
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 1024;
+    static_assert(N <= mallocMC::MaxThreadsPerBlock::value, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
@@ -169,6 +170,7 @@ void test2D()
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 32;
+    static_assert(N * N <= mallocMC::MaxThreadsPerBlock::value, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
@@ -268,7 +270,8 @@ void test3D()
             0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
-    constexpr auto N = 16;
+    constexpr auto N = 8;
+    static_assert(N * N * N <= mallocMC::MaxThreadsPerBlock::value, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
