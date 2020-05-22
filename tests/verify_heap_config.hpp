@@ -42,8 +42,9 @@
 
 using Dim = alpaka::dim::DimInt<1>;
 using Idx = std::size_t;
-using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-// using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+//using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+//using Acc = alpaka::acc::AccCpuOmp2Threads<Dim, Idx>;
+using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
 // configurate the CreationPolicy "Scatter"
 struct ScatterConfig
@@ -80,9 +81,7 @@ struct AlignmentConfig
 using ScatterAllocator = mallocMC::Allocator<
     Acc,
     mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
-    mallocMC::DistributionPolicies::Noop,
-    //mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
+    mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
     mallocMC::OOMPolicies::ReturnNull,
-    mallocMC::ReservePoolPolicies::SimpleMalloc,
-    //mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+    mallocMC::ReservePoolPolicies::Malloc<Acc>,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;

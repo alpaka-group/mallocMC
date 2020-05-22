@@ -38,8 +38,9 @@
 
 using Dim = alpaka::dim::DimInt<1>;
 using Idx = std::size_t;
-using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-// using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+// using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+// using Acc = alpaka::acc::AccCpuOmp2Threads<Dim, Idx>;
+using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
 struct ScatterHeapConfig
 {
@@ -71,11 +72,9 @@ struct ShrinkConfig
 using ScatterAllocator = mallocMC::Allocator<
     Acc,
     mallocMC::CreationPolicies::Scatter<ScatterHeapConfig, ScatterHashConfig>,
-    // mallocMC::DistributionPolicies::XMallocSIMD<XMallocConfig>,
-    mallocMC::DistributionPolicies::Noop,
+    mallocMC::DistributionPolicies::XMallocSIMD<XMallocConfig>,
     mallocMC::OOMPolicies::ReturnNull,
-    // mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
-    mallocMC::ReservePoolPolicies::SimpleMalloc,
+    mallocMC::ReservePoolPolicies::Malloc<Acc>,
     mallocMC::AlignmentPolicies::Shrink<ShrinkConfig>>;
 
 ALPAKA_STATIC_ACC_MEM_GLOBAL int ** arA;

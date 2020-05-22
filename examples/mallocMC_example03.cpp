@@ -40,8 +40,9 @@
 
 using Dim = alpaka::dim::DimInt<1>;
 using Idx = std::size_t;
-using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-// using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+// using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+// using Acc = alpaka::acc::AccCpuOmp2Threads<Dim, Idx>;
+using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
 struct ScatterConfig
 {
@@ -70,8 +71,7 @@ using ScatterAllocator = mallocMC::Allocator<
     mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
     mallocMC::DistributionPolicies::Noop,
     mallocMC::OOMPolicies::ReturnNull,
-    // mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
-    mallocMC::ReservePoolPolicies::SimpleMalloc,
+    mallocMC::ReservePoolPolicies::Malloc<Acc>,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
 ALPAKA_STATIC_ACC_MEM_GLOBAL int * arA;
