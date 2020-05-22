@@ -83,12 +83,12 @@ void test1D()
             0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
-    constexpr auto N = 1024;
+    constexpr auto N = 16;
     static_assert(N <= mallocMC::MaxThreadsPerBlock::value, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
-    // make 1 allocation from 1 thread for N pointers
+    // make 1 allocation from 1 thread for N * N pointers
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
@@ -98,16 +98,16 @@ void test1D()
                 int N,
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
                 deviceArray
-                    = (int **)allocHandle.malloc(acc, sizeof(int *) * N);
+                    = (int **)allocHandle.malloc(acc, sizeof(int *) * N * N);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
 
-    // make N allocations from N threads for ints
+    // make N * N allocations from N block of N threads for ints
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
-            alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{N}, Idx{1}},
+            alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{N}, Idx{N}, Idx{1}},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
@@ -123,11 +123,11 @@ void test1D()
     std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName()
               << " slots: " << slots << " heap size: " << heapInfo.size << '\n';
 
-    // free N allocations from N threads for ints
+    // free N * N allocations from N block of N threads for ints
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
-            alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{N}, Idx{1}},
+            alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{N}, Idx{N}, Idx{1}},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
@@ -138,7 +138,7 @@ void test1D()
             },
             scatterAlloc.getAllocatorHandle()));
 
-    // free 1 allocation from 1 thread for N pointers
+    // free 1 allocation from 1 thread for N * N pointers
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
@@ -170,12 +170,12 @@ void test2D()
             0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
-    constexpr auto N = 32;
+    constexpr auto N = 8;
     static_assert(N * N <= mallocMC::MaxThreadsPerBlock::value, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
-    // make 1 allocation from 1 thread for N*N pointers
+    // make 1 allocation from 1 thread for N*N * N*N pointers
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
@@ -187,18 +187,18 @@ void test2D()
                 const Acc & acc,
                 int N,
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
-                deviceArray
-                    = (int **)allocHandle.malloc(acc, sizeof(int *) * N * N);
+                deviceArray = (int **)allocHandle.malloc(
+                    acc, sizeof(int *) * N * N * N * N);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
 
-    // make N*N allocations from N*N threads for ints
+    // make N*N * N*N allocations from N*N block of N*N threads for ints
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}},
+                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}}},
             [] ALPAKA_FN_ACC(
@@ -207,7 +207,7 @@ void test2D()
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
-                deviceArray[idx[0] * N + idx[1]]
+                deviceArray[idx[0] * N * N + idx[1]]
                     = (int *)allocHandle.malloc(acc, sizeof(int));
             },
             N,
@@ -218,12 +218,12 @@ void test2D()
     std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName()
               << " slots: " << slots << " heap size: " << heapInfo.size << '\n';
 
-    // free N*N allocations from N*N threads for ints
+    // free N*N * N*N allocations from N*N block of N*N threads for ints
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}},
+                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}}},
             [] ALPAKA_FN_ACC(
@@ -232,12 +232,12 @@ void test2D()
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
-                allocHandle.free(acc, deviceArray[idx[0] * N + idx[1]]);
+                allocHandle.free(acc, deviceArray[idx[0] * N * N + idx[1]]);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
 
-    // free 1 allocation from 1 thread for N*N pointers
+    // free 1 allocation from 1 thread for N*N * N*N pointers
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
@@ -272,12 +272,12 @@ void test3D()
             0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
-    constexpr auto N = 8;
+    constexpr auto N = 4;
     static_assert(N * N * N <= mallocMC::MaxThreadsPerBlock::value, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
-    // make 1 allocation from 1 thread for N*N*N pointers
+    // make 1 allocation from 1 thread for N*N*N * N*N*N pointers
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
@@ -290,17 +290,18 @@ void test3D()
                 int N,
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
                 deviceArray = (int **)allocHandle.malloc(
-                    acc, sizeof(int *) * N * N * N);
+                    acc, sizeof(int *) * N * N * N * N * N * N);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
 
-    // make N*N*N allocations from N*N*N threads for ints
+    // make N*N*N * N*N*N allocations from N*N*N blocks of N*N*N threads for
+    // ints
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
+                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}}},
             [] ALPAKA_FN_ACC(
@@ -309,7 +310,7 @@ void test3D()
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
-                deviceArray[idx[0] * N * N + idx[1] * N + idx[0]]
+                deviceArray[idx[0] * N * N * N * N + idx[1] * N * N + idx[0]]
                     = (int *)allocHandle.malloc(acc, sizeof(int));
             },
             N,
@@ -317,15 +318,16 @@ void test3D()
 
     const auto slots = scatterAlloc.getAvailableSlots(dev, queue, sizeof(int));
     const auto heapInfo = scatterAlloc.getHeapLocations().at(0);
-    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName() << " slots: "
-              << slots << " heap size: " << heapInfo.size << '\n';
+    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName()
+              << " slots: " << slots << " heap size: " << heapInfo.size << '\n';
 
-    // free N*N*N allocations from N*N*N threads for ints
+    // free N*N*N * N*N*N allocations from N*N*N blocks of N*N*N threads for
+    // ints
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
+                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
                 alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}}},
             [] ALPAKA_FN_ACC(
@@ -335,12 +337,14 @@ void test3D()
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
                 allocHandle.free(
-                    acc, deviceArray[idx[0] * N * N + idx[1] * N + idx[0]]);
+                    acc,
+                    deviceArray
+                        [idx[0] * N * N * N * N + idx[1] * N * N + idx[0]]);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
 
-    // free 1 allocation from 1 thread for N*N*N pointers
+    // free 1 allocation from 1 thread for N*N*N * N*N*N pointers
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
