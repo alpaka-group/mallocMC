@@ -40,8 +40,6 @@ namespace mallocMC
     {
         class Noop
         {
-            using uint32 = std::uint32_t;
-
         public:
             static auto alignPool(void * memory, size_t memsize)
                 -> std::tuple<void *, size_t>
@@ -50,7 +48,7 @@ namespace mallocMC
             }
 
             ALPAKA_FN_HOST_ACC
-            static auto applyPadding(uint32 bytes) -> uint32
+            static auto applyPadding(size_t bytes) -> size_t
             {
                 return bytes;
             }
