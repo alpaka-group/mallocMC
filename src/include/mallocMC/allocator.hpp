@@ -141,8 +141,8 @@ namespace mallocMC
         using DevAllocatorStorageBufferType = alpaka::mem::buf::Buf<
             alpaka::dev::Dev<AlpakaAcc>,
             DevAllocator,
-            typename alpaka::dim::traits::DimType<AlpakaAcc>::type,
-            typename alpaka::idx::traits::IdxType<AlpakaAcc>::type>;
+            alpaka::dim::DimInt<1>,
+            int>;
         std::unique_ptr<DevAllocatorStorageBufferType>
             devAllocatorStorage; // FIXME(bgruber): replace by std::optional<>
         HeapInfo heapInfos;
@@ -158,10 +158,9 @@ namespace mallocMC
             void * pool = ReservePoolPolicy::setMemPool(size);
             std::tie(pool, size) = AlignmentPolicy::alignPool(pool, size);
 
-            using Idx = alpaka::idx::traits::IdxType<AlpakaAcc>::type;
             devAllocatorStorage
                 = std::make_unique<DevAllocatorStorageBufferType>(
-                    alpaka::mem::buf::alloc<DevAllocator, Idx>(dev, Idx{1}));
+                    alpaka::mem::buf::alloc<DevAllocator, int>(dev, 1));
             CreationPolicy::template initHeap<AlpakaAcc>(
                 dev,
                 queue,

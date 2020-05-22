@@ -893,10 +893,9 @@ namespace mallocMC
                 void * memory,
                 size_t memsize)
             {
-                const auto linid = alpaka::idx::mapIdx<1u>(
-                    alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc),
-                    alpaka::workdiv::getWorkDiv<alpaka::Grid, alpaka::Threads>(
-                        acc))[0];
+                const auto linid
+                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc)
+                          .sum();
                 const auto totalThreads
                     = alpaka::workdiv::
                           getWorkDiv<alpaka::Grid, alpaka::Threads>(acc)
@@ -1011,12 +1010,12 @@ namespace mallocMC
                     heap->pool = heapmem;
                     heap->initDeviceFunction(acc, heapmem, memsize);
                 };
-                // TODO(bgruber): how do I know which dimension the user's
-                // AlpakaAcc is using?
                 using Dim = alpaka::dim::traits::DimType<AlpakaAcc>::type;
                 using Idx = alpaka::idx::traits::IdxType<AlpakaAcc>::type;
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                    Idx{1}, Idx{256}, Idx{1}};
+                    Idx{1},
+                    Idx{256},
+                    Idx{1}}; // Dim may be any dimension, but workDiv is 1D
                 alpaka::queue::enqueue(
                     queue,
                     alpaka::kernel::createTaskKernel<AlpakaAcc>(
@@ -1184,9 +1183,7 @@ namespace mallocMC
                 size_t const slotSize,
                 T_DeviceAllocator * heap) -> unsigned
             {
-                using Idx = alpaka::idx::traits::IdxType<AlpakaAcc>::type;
-                auto d_slots
-                    = alpaka::mem::buf::alloc<unsigned, Idx>(dev, Idx{1});
+                auto d_slots = alpaka::mem::buf::alloc<unsigned, int>(dev, 1);
                 alpaka::mem::view::set(queue, d_slots, 0, 1);
 
                 auto getAvailableSlotsKernel = [] ALPAKA_FN_ACC(
@@ -1194,10 +1191,10 @@ namespace mallocMC
                                                    T_DeviceAllocator * heap,
                                                    size_t slotSize,
                                                    unsigned * slots) -> void {
-                    const int gid = alpaka::idx::mapIdx<1u>(
-                        alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc),
-                        alpaka::workdiv::
-                            getWorkDiv<alpaka::Grid, alpaka::Threads>(acc))[0];
+                    const int gid
+                        = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(
+                              acc)
+                              .sum();
 
                     const int nWorker
                         = alpaka::workdiv::
@@ -1210,9 +1207,14 @@ namespace mallocMC
                         alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
                             acc, slots, temp);
                 };
+
                 using Dim = alpaka::dim::traits::DimType<AlpakaAcc>::type;
+                using Idx = alpaka::idx::traits::IdxType<AlpakaAcc>::type;
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                    Idx{64}, Idx{256}, Idx{1}};
+                    Idx{64},
+                    Idx{256},
+                    Idx{1}}; // Dim may be any dimension, but workDiv is 1D
+
                 alpaka::queue::enqueue(
                     queue,
                     alpaka::kernel::createTaskKernel<AlpakaAcc>(
@@ -1225,8 +1227,8 @@ namespace mallocMC
                 const auto hostDev = alpaka::pltf::getDevByIdx<
                     alpaka::pltf::Pltf<alpaka::dev::DevCpu>>(0);
                 auto h_slots
-                    = alpaka::mem::buf::alloc<unsigned, Idx>(hostDev, Idx{1});
-                alpaka::mem::view::copy(queue, h_slots, d_slots, Idx{1});
+                    = alpaka::mem::buf::alloc<unsigned, int>(hostDev, 1);
+                alpaka::mem::view::copy(queue, h_slots, d_slots, 1);
                 alpaka::wait::wait(queue);
 
                 return *alpaka::mem::view::getPtrNative(h_slots);
