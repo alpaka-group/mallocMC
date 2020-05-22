@@ -33,8 +33,6 @@
 
 #pragma once
 
-#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-
 #include "../mallocMC_utils.hpp"
 #include "XMallocSIMD.hpp"
 
@@ -90,8 +88,8 @@ namespace mallocMC
             static constexpr uint32 _pagesize = pagesize;
 
             template<typename AlpakaAcc>
-            ALPAKA_FN_ACC
-            auto collect(const AlpakaAcc & acc, uint32 bytes) -> uint32
+            ALPAKA_FN_ACC auto collect(const AlpakaAcc & acc, uint32 bytes)
+                -> uint32
             {
                 can_use_coalescing = false;
                 myoffset = 0;
@@ -106,7 +104,11 @@ namespace mallocMC
                 // second half: make sure that all coalesced allocations can fit
                 // within one page necessary for offset calculation
                 const bool coalescible = bytes > 0 && bytes < (pagesize / 32);
+#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
                 threadcount = popc(__ballot_sync(__activemask(), coalescible));
+#else
+                threadcount = 1; // TODO
+#endif
                 if(coalescible && threadcount > 1)
                 {
                     myoffset = atomicAdd(&warp_sizecounter[warpid], bytes);
@@ -121,9 +123,8 @@ namespace mallocMC
             }
 
             template<typename AlpakaAcc>
-            ALPAKA_FN_ACC
-            auto distribute(const AlpakaAcc & acc, void * allocatedMem)
-                -> void *
+            ALPAKA_FN_ACC auto
+            distribute(const AlpakaAcc & acc, void * allocatedMem) -> void *
             {
                 auto & warp_res = alpaka::block::shared::st::allocVar<
                     char * [MaxThreadsPerBlock::value / warpSize],
@@ -136,7 +137,12 @@ namespace mallocMC
                     if(myalloc != 0)
                         *(uint32 *)myalloc = threadcount;
                 }
+#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
                 __threadfence_block();
+#else
+                std::atomic_thread_fence(
+                    std::memory_order::memory_order_seq_cst);
+#endif
                 void * myres = myalloc;
                 if(can_use_coalescing)
                 {
@@ -160,5 +166,3 @@ namespace mallocMC
     } // namespace DistributionPolicies
 
 } // namespace mallocMC
-
-#endif
