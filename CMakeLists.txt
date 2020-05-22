@@ -72,4 +72,4 @@ alpaka_add_executable(tests EXCLUDE_FROM_ALL tests/dimensions.cpp)
 target_include_directories(tests PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/include)
 target_link_libraries(tests PUBLIC alpaka::alpaka warnings)
 
-add_custom_target(examples DEPENDS mallocMC_Example01 mallocMC_Example02 mallocMC_Example03 VerifyHeap)
+add_custom_target(examples DEPENDS mallocMC_Example01 mallocMC_Example03 VerifyHeap)
