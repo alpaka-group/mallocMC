@@ -460,7 +460,7 @@ namespace mallocMC
                        + (hashingDistWP + hashingDistWPRel * reloff) * warpid())
                     % pagesperblock;
                 const uint32 maxchunksize
-                    = alpaka::math::min(acc, pagesize, wastefactor * bytes);
+                    = alpaka::math::min(acc, +pagesize, wastefactor * bytes);
                 uint32 startblock = _firstfreeblock;
                 uint32 ptetry = startpage + startblock * pagesperblock;
                 uint32 checklevel = regionsize * 3 / 4;
@@ -493,7 +493,7 @@ namespace mallocMC
                                         // it is already padded
                                         const uint32 new_chunksize
                                             = alpaka::math::max(
-                                                acc, bytes, minChunkSize1);
+                                                acc, bytes, +minChunkSize1);
                                         const uint32 beforechunksize
                                             = alpaka::atomic::atomicOp<
                                                 alpaka::atomic::op::Cas>(
@@ -611,14 +611,14 @@ namespace mallocMC
                                 acc,
                                 (uint32 *)&_ptes[page].count,
                                 0u,
-                                pagesize);
+                                +pagesize);
                         if(old == 0)
                         {
                             // clean the bits for the hierarchy
                             _page[page].init();
                             // remove chunk information
                             _ptes[page].chunksize = 0;
-#if defined(__HIP__) || defined(_CUDA_ARCH_)
+#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
                             __threadfence(); // TODO alpaka
 #else
                             std::atomic_thread_fence(
@@ -626,7 +626,7 @@ namespace mallocMC
 #endif
                             // unlock it
                             alpaka::atomic::atomicOp<alpaka::atomic::op::Sub>(
-                                acc, (uint32 *)&_ptes[page].count, pagesize);
+                                acc, (uint32 *)&_ptes[page].count, +pagesize);
                         }
                     }
                 }
@@ -805,7 +805,7 @@ namespace mallocMC
             {
                 const uint32 pages = divup(bytes, pagesize);
                 for(uint32 p = page; p < page + pages; ++p) _page[p].init();
-#if defined(__HIP__) || defined(_CUDA_ARCH_)
+#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
                 __threadfence(); // TODO alpaka
 #else
                 std::atomic_thread_fence(
@@ -1010,8 +1010,8 @@ namespace mallocMC
                     heap->pool = heapmem;
                     heap->initDeviceFunction(acc, heapmem, memsize);
                 };
-                using Dim = alpaka::dim::traits::DimType<AlpakaAcc>::type;
-                using Idx = alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+                using Dim = typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
+                using Idx = typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
                     Idx{1},
                     Idx{256},
@@ -1103,7 +1103,7 @@ namespace mallocMC
                         currentpage += stride)
                     {
                         const uint32 maxchunksize = alpaka::math::min(
-                            acc, pagesize, wastefactor * (uint32)slotSize);
+                            acc, +pagesize, wastefactor * (uint32)slotSize);
                         const uint32 region = currentpage / regionsize;
                         const uint32 regionfilllevel = _regions[region];
 
@@ -1118,7 +1118,7 @@ namespace mallocMC
                             chunksize = alpaka::math::max(
                                 acc,
                                 (uint32)slotSize,
-                                minChunkSize1); // ensure minimum chunk size
+                                +minChunkSize1); // ensure minimum chunk size
                             slotcount += countFreeChunksInPage(
                                 acc,
                                 currentpage,
@@ -1208,8 +1208,8 @@ namespace mallocMC
                             acc, slots, temp);
                 };
 
-                using Dim = alpaka::dim::traits::DimType<AlpakaAcc>::type;
-                using Idx = alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+                using Dim = typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
+                using Idx = typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
                     Idx{64},
                     Idx{256},
@@ -1285,7 +1285,7 @@ namespace mallocMC
                 if(temp)
                     alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
                         acc, &warpResults[wId], temp);
-#if defined(__HIP__) || defined(_CUDA_ARCH_)
+#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
                 __threadfence_block();
 #else
                 std::atomic_thread_fence(

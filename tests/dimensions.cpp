@@ -67,8 +67,8 @@ ALPAKA_STATIC_ACC_MEM_GLOBAL int ** deviceArray;
 void test1D()
 {
     using Dim = alpaka::dim::DimInt<1>;
-    using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-    // using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+    // using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+    using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
@@ -76,8 +76,8 @@ void test1D()
         mallocMC::DistributionPolicies::Noop,
         // mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::SimpleMalloc,
-        // mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+        // mallocMC::ReservePoolPolicies::SimpleMalloc,
+        mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
@@ -154,8 +154,8 @@ void test1D()
 void test2D()
 {
     using Dim = alpaka::dim::DimInt<2>;
-    using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-    // using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+    // using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+    using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
@@ -163,8 +163,8 @@ void test2D()
         mallocMC::DistributionPolicies::Noop,
         // mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::SimpleMalloc,
-        // mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+        // mallocMC::ReservePoolPolicies::SimpleMalloc,
+        mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
@@ -256,8 +256,8 @@ void test2D()
 void test3D()
 {
     using Dim = alpaka::dim::DimInt<3>;
-    using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-    // using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+    // using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+    using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
@@ -265,8 +265,8 @@ void test3D()
         mallocMC::DistributionPolicies::Noop,
         // mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::SimpleMalloc,
-        // mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+        // mallocMC::ReservePoolPolicies::SimpleMalloc,
+        mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
@@ -357,10 +357,15 @@ void test3D()
 }
 
 auto main(int argc, char ** argv) -> int
+try
 {
     test1D();
     test2D();
     test3D();
 
     return 0;
+}
+catch(const std::exception & e)
+{
+    std::cerr << e.what() << '\n';
 }

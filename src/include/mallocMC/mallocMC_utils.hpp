@@ -59,8 +59,8 @@ namespace mallocMC
         using type = unsigned long long;
     };
 
-#if defined(__HIP__) || defined(_CUDA_ARCH_)
-    constexpr auto warpSize = ::warpsize;
+#if defined(__HIP__) || defined(__CUDA_ARCH__)
+    constexpr auto warpSize = 32; // TODO
 #else
     constexpr auto warpSize = 1;
 #endif
@@ -72,7 +72,7 @@ namespace mallocMC
     {
 #if defined(__HIP__) || defined(__HCC__)
         return __lane_id();
-#elif defined(_CUDA_ARCH_)
+#elif defined(__CUDA_ARCH__)
         std::uint32_t mylaneid;
         asm("mov.u32 %0, %%laneid;" : "=r"(mylaneid));
         return mylaneid;
@@ -97,7 +97,7 @@ namespace mallocMC
 #elif defined(__HCC__)
         // workaround because wave id is not available for HCC
         return clock() % 8;
-#elif defined(_CUDA_ARCH_)
+#elif defined(__CUDA_ARCH__)
         std::uint32_t mywarpid;
         asm("mov.u32 %0, %%warpid;" : "=r"(mywarpid));
         return mywarpid;
@@ -113,7 +113,7 @@ namespace mallocMC
 #elif defined(__HCC__)
         // workaround because __smid is not available for HCC
         return clock() % 8;
-#elif defined(_CUDA_ARCH_)
+#elif defined(__CUDA_ARCH__)
         std::uint32_t mysmid;
         asm("mov.u32 %0, %%smid;" : "=r"(mysmid));
         return mysmid;
@@ -126,7 +126,7 @@ namespace mallocMC
     {
 #if defined(__HIP__) || defined(__HCC__)
         return __lanemask_lt();
-#elif defined(_CUDA_ARCH_)
+#elif defined(__CUDA_ARCH__)
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_lt;" : "=r"(lanemask));
         return lanemask;
@@ -137,7 +137,7 @@ namespace mallocMC
 
     ALPAKA_FN_ACC inline auto activemask()
     {
-#if defined(__HIP__) || defined(__HCC__) || defined(_CUDA_ARCH_)
+#if defined(__HIP__) || defined(__HCC__) || defined(__CUDA_ARCH__)
         return __activemask();
 #else
         return 1u;
@@ -181,7 +181,7 @@ namespace mallocMC
 
     ALPAKA_FN_ACC inline auto ffs(std::uint32_t mask) -> std::uint32_t
     {
-#if defined(__HIP__) || defined(__HCC__) || defined(_CUDA_ARCH_)
+#if defined(__HIP__) || defined(__HCC__) || defined(__CUDA_ARCH__)
         return ::__ffs(mask);
 #else
         if(mask == 0)
@@ -198,7 +198,7 @@ namespace mallocMC
 
     ALPAKA_FN_ACC inline auto popc(std::uint32_t mask) -> std::uint32_t
     {
-#if defined(__HIP__) || defined(__HCC__) || defined(_CUDA_ARCH_)
+#if defined(__HIP__) || defined(__HCC__) || defined(__CUDA_ARCH__)
         return ::__popc(mask);
 #else
         // cf.
