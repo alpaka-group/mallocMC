@@ -64,11 +64,11 @@ struct AlignmentConfig
 
 ALPAKA_STATIC_ACC_MEM_GLOBAL int ** deviceArray;
 
+template<template<typename, typename> typename AccTemplate>
 void test1D()
 {
     using Dim = alpaka::dim::DimInt<1>;
-    // using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-    using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+    using Acc = AccTemplate<Dim, Idx>;
 
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
@@ -96,7 +96,7 @@ void test1D()
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 deviceArray
                     = (int **)allocHandle.malloc(acc, sizeof(int *) * N);
             },
@@ -110,7 +110,7 @@ void test1D()
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{N}, Idx{1}},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto i
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(
                         acc)[0];
@@ -129,7 +129,7 @@ void test1D()
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{N}, Idx{1}},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto i
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(
                         acc)[0];
@@ -144,17 +144,17 @@ void test1D()
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 allocHandle.free(acc, deviceArray);
             },
             scatterAlloc.getAllocatorHandle()));
 }
 
+template<template<typename, typename> typename AccTemplate>
 void test2D()
 {
     using Dim = alpaka::dim::DimInt<2>;
-    // using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-    using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+    using Acc = AccTemplate<Dim, Idx>;
 
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
@@ -185,7 +185,7 @@ void test2D()
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 deviceArray
                     = (int **)allocHandle.malloc(acc, sizeof(int *) * N * N);
             },
@@ -203,7 +203,7 @@ void test2D()
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
                 deviceArray[idx[0] * N + idx[1]]
@@ -227,7 +227,7 @@ void test2D()
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
                 allocHandle.free(acc, deviceArray[idx[0] * N + idx[1]]);
@@ -245,17 +245,17 @@ void test2D()
                 alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}}},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 allocHandle.free(acc, deviceArray);
             },
             scatterAlloc.getAllocatorHandle()));
 }
 
+template<template<typename, typename> typename AccTemplate>
 void test3D()
 {
     using Dim = alpaka::dim::DimInt<3>;
-    // using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-    using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
+    using Acc = AccTemplate<Dim, Idx>;
 
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
@@ -286,7 +286,7 @@ void test3D()
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 deviceArray = (int **)allocHandle.malloc(
                     acc, sizeof(int *) * N * N * N);
             },
@@ -304,7 +304,7 @@ void test3D()
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
                 deviceArray[idx[0] * N * N + idx[1] * N + idx[0]]
@@ -328,7 +328,7 @@ void test3D()
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 const auto idx
                     = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
                 allocHandle.free(
@@ -347,7 +347,7 @@ void test3D()
                 alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}}},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
-                ScatterAllocator::AllocatorHandle allocHandle) {
+                typename ScatterAllocator::AllocatorHandle allocHandle) {
                 allocHandle.free(acc, deviceArray);
             },
             scatterAlloc.getAllocatorHandle()));
@@ -356,9 +356,9 @@ void test3D()
 auto main(int argc, char ** argv) -> int
 try
 {
-    test1D();
-    test2D();
-    test3D();
+    test1D<alpaka::acc::AccGpuCudaRt>();
+    test2D<alpaka::acc::AccGpuCudaRt>();
+    test3D<alpaka::acc::AccGpuCudaRt>();
 
     return 0;
 }
