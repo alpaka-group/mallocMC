@@ -70,7 +70,7 @@ namespace alpaka
                 __device__ static auto max(
                     MaxUniformCudaHipBuiltIn const & max_ctx,
                     Tx const & x,
-                    Ty const & y)
+                    Ty const & y) -> Tx // FIXME(bgruber): return type is deduced as void when compiling with ALPAKA_ACC_GPU_CUDA_ONLY_MODE and MSVC as host compiler (nvcc deduces correct return type)
                 {
                     alpaka::ignore_unused(max_ctx);
                     return ::max(x, y);

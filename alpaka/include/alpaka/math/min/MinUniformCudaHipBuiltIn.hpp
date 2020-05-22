@@ -71,14 +71,14 @@ namespace alpaka
                 __device__ static auto min(
                     MinUniformCudaHipBuiltIn const & min_ctx,
                     Tx const & x,
-                    Ty const & y)
+                    Ty const & y) -> Tx // FIXME(bgruber): return type is deduced as void when compiling with ALPAKA_ACC_GPU_CUDA_ONLY_MODE and MSVC as host compiler (nvcc deduces correct return type)
                 {
                     alpaka::ignore_unused(min_ctx);
                     return ::min(x, y);
                 }
             };
             //#############################################################################
-            //! The standard library mixed integral floating point min trait specialization.
+            //! The CUDA mixed integral floating point min trait specialization.
             template<
                 typename Tx,
                 typename Ty>

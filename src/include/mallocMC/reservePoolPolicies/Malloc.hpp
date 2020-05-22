@@ -41,12 +41,15 @@ namespace mallocMC
         template<typename AlpakaAcc>
         struct Malloc : SimpleMalloc
         {};
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
         template<typename Dim, typename Idx>
         struct Malloc<alpaka::acc::AccGpuCudaRt<Dim, Idx>> : SimpleCudaMalloc
         {};
+#endif
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
         template<typename Dim, typename Idx>
-        struct Malloc<alpaka::acc::AccGpuUniformCudaHipRt<Dim, Idx>> :
-                SimpleCudaMalloc
+        struct Malloc<alpaka::acc::AccGpuHipRt<Dim, Idx>> : SimpleCudaMalloc
         {};
+#endif
     } // namespace ReservePoolPolicies
 } // namespace mallocMC
