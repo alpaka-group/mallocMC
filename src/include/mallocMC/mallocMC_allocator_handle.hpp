@@ -32,7 +32,7 @@
 
 namespace mallocMC
 {
-    template<typename AlpakaAcc, typename T_HostAllocator>
+    template<typename T_HostAllocator>
     struct AllocatorHandleImpl
     {
         using DevAllocator = typename T_HostAllocator::DevAllocator;
@@ -41,21 +41,21 @@ namespace mallocMC
 
         explicit AllocatorHandleImpl(DevAllocator * p) : devAllocator(p) {}
 
-        ALPAKA_FN_ACC
-        auto malloc(const AlpakaAcc & acc, size_t size) -> void *
+        template<typename AlpakaAcc>
+        ALPAKA_FN_ACC auto malloc(const AlpakaAcc & acc, size_t size) -> void *
         {
             return devAllocator->malloc(acc, size);
         }
 
-        ALPAKA_FN_ACC
-        void free(const AlpakaAcc & acc, void * p)
+        template<typename AlpakaAcc>
+        ALPAKA_FN_ACC void free(const AlpakaAcc & acc, void * p)
         {
             devAllocator->free(acc, p);
         }
 
-        ALPAKA_FN_ACC
-        auto getAvailableSlots(const AlpakaAcc & acc, size_t slotSize)
-            -> unsigned
+        template<typename AlpakaAcc>
+        ALPAKA_FN_ACC auto
+        getAvailableSlots(const AlpakaAcc & acc, size_t slotSize) -> unsigned
         {
             return devAllocator->getAvailableSlots(acc, slotSize);
         }

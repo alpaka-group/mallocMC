@@ -97,7 +97,6 @@ namespace mallocMC
      * @tparam T_AlignmentPolicy The desired type of a AlignmentPolicy
      */
     template<
-        typename AlpakaAcc,
         typename T_CreationPolicy,
         typename T_DistributionPolicy,
         typename T_OOMPolicy,
@@ -114,8 +113,8 @@ namespace mallocMC
 
         void * pool;
 
-        ALPAKA_FN_ACC
-        auto malloc(const AlpakaAcc & acc, size_t bytes) -> void *
+        template<typename AlpakaAcc>
+        ALPAKA_FN_ACC auto malloc(const AlpakaAcc & acc, size_t bytes) -> void *
         {
             bytes = AlignmentPolicy::applyPadding(bytes);
             DistributionPolicy distributionPolicy(acc);
@@ -126,8 +125,8 @@ namespace mallocMC
             return distributionPolicy.distribute(acc, memBlock);
         }
 
-        ALPAKA_FN_ACC
-        void free(const AlpakaAcc & acc, void * p)
+        template<typename AlpakaAcc>
+        ALPAKA_FN_ACC void free(const AlpakaAcc & acc, void * p)
         {
             CreationPolicy::destroy(acc, p);
         }
@@ -135,9 +134,9 @@ namespace mallocMC
         /* polymorphism over the availability of getAvailableSlots for calling
          * from the accelerator
          */
-        ALPAKA_FN_ACC
-        auto getAvailableSlots(const AlpakaAcc & acc, size_t slotSize)
-            -> unsigned
+        template<typename AlpakaAcc>
+        ALPAKA_FN_ACC auto
+        getAvailableSlots(const AlpakaAcc & acc, size_t slotSize) -> unsigned
         {
             slotSize = AlignmentPolicy::applyPadding(slotSize);
             return detail::GetAvailableSlotsIfAvailAcc<

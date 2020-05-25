@@ -126,12 +126,11 @@ namespace mallocMC
         using AlignmentPolicy = T_AlignmentPolicy;
         using HeapInfoVector = std::vector<HeapInfo>;
         using DevAllocator = DeviceAllocator<
-            AlpakaAcc,
             CreationPolicy,
             DistributionPolicy,
             OOMPolicy,
             AlignmentPolicy>;
-        using AllocatorHandle = AllocatorHandleImpl<AlpakaAcc, Allocator>;
+        using AllocatorHandle = AllocatorHandleImpl<Allocator>;
 
     private:
         using PoolBufferType = alpaka::mem::buf::Buf<
