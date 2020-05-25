@@ -619,7 +619,8 @@ namespace mallocMC
                             _page[page].init();
                             // remove chunk information
                             _ptes[page].chunksize = 0;
-#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
                             __threadfence(); // TODO alpaka
 #else
                             std::atomic_thread_fence(
@@ -806,7 +807,8 @@ namespace mallocMC
             {
                 const uint32 pages = divup(bytes, pagesize);
                 for(uint32 p = page; p < page + pages; ++p) _page[p].init();
-#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
                 __threadfence(); // TODO alpaka
 #else
                 std::atomic_thread_fence(
@@ -1292,7 +1294,8 @@ namespace mallocMC
                 if(temp)
                     alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
                         acc, &warpResults[wId], temp);
-#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
                 __threadfence_block();
 #else
                 std::atomic_thread_fence(

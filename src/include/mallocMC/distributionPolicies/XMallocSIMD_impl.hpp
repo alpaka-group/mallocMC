@@ -104,7 +104,8 @@ namespace mallocMC
                 // second half: make sure that all coalesced allocations can fit
                 // within one page necessary for offset calculation
                 const bool coalescible = bytes > 0 && bytes < (pagesize / 32);
-#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
                 threadcount = popc(__ballot_sync(__activemask(), coalescible));
 #else
                 threadcount = 1; // TODO
@@ -139,7 +140,8 @@ namespace mallocMC
                     if(myalloc != 0)
                         *(uint32 *)myalloc = threadcount;
                 }
-#if defined(__HIP_DEVICE_COMPILE__) || defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
                 __threadfence_block();
 #else
                 std::atomic_thread_fence(
