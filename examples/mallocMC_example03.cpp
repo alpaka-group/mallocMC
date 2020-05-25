@@ -88,7 +88,7 @@ struct ExampleKernel
         const auto slots = allocHandle.getAvailableSlots(acc, 1);
         alpaka::block::sync::syncBlockThreads(acc);
         arA[id] = id;
-        printf("id: %d array: %d slots %d\n", id, arA[id], slots);
+        printf("id: %zu array: %d slots %u\n", id, arA[id], slots);
 
         if(id == 0)
             allocHandle.free(acc, arA);
