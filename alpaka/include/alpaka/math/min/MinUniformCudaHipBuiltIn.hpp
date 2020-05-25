@@ -72,9 +72,7 @@ namespace alpaka
                     MinUniformCudaHipBuiltIn const & min_ctx,
                     Tx const & x,
                     Ty const & y)
-#ifdef _MSC_VER
-                    -> Tx // FIXME(bgruber): return type is deduced as void by MSVC as host compiler (nvcc deduces correct return type)
-#endif
+                    -> decltype(::min(x, y))
                 {
                     alpaka::ignore_unused(min_ctx);
                     return ::min(x, y);

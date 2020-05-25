@@ -71,9 +71,7 @@ namespace alpaka
                     MaxUniformCudaHipBuiltIn const & max_ctx,
                     Tx const & x,
                     Ty const & y)
-#ifdef _MSC_VER
-                    -> Tx // FIXME(bgruber): return type is deduced as void by MSVC as host compiler (nvcc deduces correct return type)
-#endif
+                    -> decltype(::max(x, y))
                 {
                     alpaka::ignore_unused(max_ctx);
                     return ::max(x, y);
