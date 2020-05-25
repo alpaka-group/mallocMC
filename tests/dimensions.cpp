@@ -26,6 +26,7 @@
 */
 
 #include <alpaka/alpaka.hpp>
+#include <catch2/catch.hpp>
 #include <mallocMC/AlignmentPolicies.hpp>
 #include <mallocMC/CreationPolicies.hpp>
 #include <mallocMC/DistributionPolicies.hpp>
@@ -360,24 +361,47 @@ void test3D()
             scatterAlloc.getAllocatorHandle()));
 }
 
-auto main(int argc, char ** argv) -> int
-try
+TEST_CASE("1D AccGpuCudaRt")
 {
     test1D<alpaka::acc::AccGpuCudaRt>();
-    test2D<alpaka::acc::AccGpuCudaRt>();
-    test3D<alpaka::acc::AccGpuCudaRt>();
-
-    test1D<alpaka::acc::AccCpuThreads>();
-    test2D<alpaka::acc::AccCpuThreads>();
-    test3D<alpaka::acc::AccCpuThreads>();
-
-    test1D<alpaka::acc::AccCpuOmp2Threads>();
-    test2D<alpaka::acc::AccCpuOmp2Threads>();
-    test3D<alpaka::acc::AccCpuOmp2Threads>();
-
-    return 0;
 }
-catch(const std::exception & e)
+
+TEST_CASE("2D AccGpuCudaRt")
 {
-    std::cerr << e.what() << '\n';
+    test2D<alpaka::acc::AccGpuCudaRt>();
+}
+
+TEST_CASE("3D AccGpuCudaRt")
+{
+    test3D<alpaka::acc::AccGpuCudaRt>();
+}
+
+TEST_CASE("1D AccCpuThreads")
+{
+    test1D<alpaka::acc::AccCpuThreads>();
+}
+
+TEST_CASE("2D AccCpuThreads")
+{
+    test2D<alpaka::acc::AccCpuThreads>();
+}
+
+TEST_CASE("3D AccCpuThreads")
+{
+    test3D<alpaka::acc::AccCpuThreads>();
+}
+
+TEST_CASE("1D AccCpuOmp2Threads")
+{
+    test1D<alpaka::acc::AccCpuOmp2Threads>();
+}
+
+TEST_CASE("2D AccCpuOmp2Threads")
+{
+    test2D<alpaka::acc::AccCpuOmp2Threads>();
+}
+
+TEST_CASE("3D AccCpuOmp2Threads")
+{
+    test3D<alpaka::acc::AccCpuOmp2Threads>();
 }
