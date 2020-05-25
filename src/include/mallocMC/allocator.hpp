@@ -102,7 +102,6 @@ namespace mallocMC
      * @tparam T_CreationPolicy The desired type of a CreationPolicy
      * @tparam T_DistributionPolicy The desired type of a DistributionPolicy
      * @tparam T_OOMPolicy The desired type of a OOMPolicy
-     * @tparam T_ReservePoolPolicy The desired type of a ReservePoolPolicy
      * @tparam T_AlignmentPolicy The desired type of a AlignmentPolicy
      */
     template<
@@ -110,14 +109,12 @@ namespace mallocMC
         typename T_CreationPolicy,
         typename T_DistributionPolicy,
         typename T_OOMPolicy,
-        typename T_ReservePoolPolicy,
         typename T_AlignmentPolicy>
     class Allocator :
             public PolicyConstraints<
                 T_CreationPolicy,
                 T_DistributionPolicy,
                 T_OOMPolicy,
-                T_ReservePoolPolicy,
                 T_AlignmentPolicy>
     {
         using uint32 = std::uint32_t;
@@ -126,7 +123,6 @@ namespace mallocMC
         using CreationPolicy = T_CreationPolicy;
         using DistributionPolicy = T_DistributionPolicy;
         using OOMPolicy = T_OOMPolicy;
-        using ReservePoolPolicy = T_ReservePoolPolicy;
         using AlignmentPolicy = T_AlignmentPolicy;
         using HeapInfoVector = std::vector<HeapInfo>;
         using DevAllocator = DeviceAllocator<
@@ -138,6 +134,13 @@ namespace mallocMC
         using AllocatorHandle = AllocatorHandleImpl<AlpakaAcc, Allocator>;
 
     private:
+        using PoolBufferType = alpaka::mem::buf::Buf<
+            alpaka::dev::Dev<AlpakaAcc>,
+            unsigned char,
+            alpaka::dim::DimInt<1>,
+            size_t>;
+        std::unique_ptr<PoolBufferType>
+            poolBuffer; // FIXME(bgruber): replace by std::optional<>
         using DevAllocatorStorageBufferType = alpaka::mem::buf::Buf<
             alpaka::dev::Dev<AlpakaAcc>,
             DevAllocator,
@@ -155,7 +158,9 @@ namespace mallocMC
         ALPAKA_FN_HOST void
         alloc(AlpakaDevice & dev, AlpakaQueue & queue, size_t size)
         {
-            void * pool = ReservePoolPolicy::setMemPool(size);
+            poolBuffer = std::make_unique<PoolBufferType>(
+                alpaka::mem::buf::alloc<unsigned char, size_t>(dev, size));
+            void * pool = alpaka::mem::view::getPtrNative(*poolBuffer);
             std::tie(pool, size) = AlignmentPolicy::alignPool(pool, size);
 
             devAllocatorStorage
@@ -180,9 +185,8 @@ namespace mallocMC
         ALPAKA_FN_HOST void free()
         {
             devAllocatorStorage = {};
-            ReservePoolPolicy::resetMemPool(heapInfos.p);
-            heapInfos.size = 0;
-            heapInfos.p = nullptr;
+            poolBuffer = {};
+            heapInfos = {};
         }
 
         /* forbid to copy the allocator */
@@ -240,8 +244,6 @@ namespace mallocMC
                << "" << linebreak;
             ss << "OOMPolicy:           " << OOMPolicy::classname()
                << "         " << linebreak;
-            ss << "ReservePoolPolicy:   " << ReservePoolPolicy::classname()
-               << " " << linebreak;
             ss << "AlignmentPolicy:     " << AlignmentPolicy::classname()
                << "   " << linebreak;
             return ss.str();

@@ -72,9 +72,7 @@ namespace mallocMC
         typename T_CreationPolicy,
         typename T_DistributionPolicy,
         typename T_OOMPolicy,
-        typename T_GetHeapPolicy,
         typename T_AlignmentPolicy>
-
     class PolicyConstraints :
             PolicyCheck2<T_CreationPolicy, T_DistributionPolicy>
     {};

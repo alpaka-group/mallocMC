@@ -31,7 +31,6 @@
 #include <mallocMC/CreationPolicies.hpp>
 #include <mallocMC/DistributionPolicies.hpp>
 #include <mallocMC/OOMPolicies.hpp>
-#include <mallocMC/ReservePoolPolicies.hpp>
 #include <mallocMC/mallocMC_hostclass.hpp>
 
 using Idx = std::size_t;
@@ -76,7 +75,6 @@ void test1D()
         mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
         mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::Malloc<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
@@ -163,7 +161,6 @@ void test2D()
         mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
         mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::Malloc<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev
@@ -265,7 +262,6 @@ void test3D()
         mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
         mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::Malloc<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev

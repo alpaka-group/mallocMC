@@ -38,7 +38,6 @@
 #include <mallocMC/CreationPolicies.hpp>
 #include <mallocMC/DistributionPolicies.hpp>
 #include <mallocMC/OOMPolicies.hpp>
-#include <mallocMC/ReservePoolPolicies.hpp>
 
 using Dim = alpaka::dim::DimInt<1>;
 using Idx = std::size_t;
@@ -83,5 +82,4 @@ using ScatterAllocator = mallocMC::Allocator<
     mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
     mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
     mallocMC::OOMPolicies::ReturnNull,
-    mallocMC::ReservePoolPolicies::Malloc<Acc>,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
