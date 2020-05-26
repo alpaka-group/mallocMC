@@ -38,6 +38,17 @@ if(NOT TARGET alpaka::alpaka)
     message(FATAL "Required mallocMC dependency alpaka could not be found!")
 endif()
 
+# Catch2
+set(mallocMC_CATCH2_PROVIDER "intern" CACHE STRING "Select which Catch2 is used")
+set_property(CACHE mallocMC_CATCH2_PROVIDER PROPERTY STRINGS "intern;extern")
+mark_as_advanced(mallocMC_CATCH2_PROVIDER)
+if(${mallocMC_CATCH2_PROVIDER} STREQUAL "intern")
+    add_library(Catch2::Catch2 INTERFACE IMPORTED)
+    target_include_directories(Catch2::Catch2 INTERFACE ${CMAKE_CURRENT_LIST_DIR}/thirdParty/catch2/include)
+else()
+    find_package(Catch2 CONFIG REQUIRED)
+endif()
+
 ###############################################################################
 # CUDA
 ###############################################################################
