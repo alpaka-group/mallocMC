@@ -41,14 +41,14 @@ install(
     DESTINATION include
 )
 
-add_library(warnings INTERFACE)
 # warnings
+add_library(warnings INTERFACE)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(warnings INTERFACE "-Wall -Wshadow -Wno-unknown-pragmas -Wextra -Wno-unused-parameter -Wno-unused-local-typedefs")
+    target_compile_options(warnings INTERFACE -Wall -Wshadow -Wno-unknown-pragmas -Wextra -Wno-unused-parameter -Wno-unused-local-typedefs)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-    target_compile_options(warnings INTERFACE "-Wall -Wshadow")
+    target_compile_options(warnings INTERFACE -Wall -Wshadow)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
-    target_compile_options(warnings INTERFACE "-Minform=inform")
+    target_compile_options(warnings INTERFACE -Minform=inform)
 endif()
 
 # Executables
