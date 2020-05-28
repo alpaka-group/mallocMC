@@ -178,9 +178,9 @@ void test2D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
@@ -196,9 +196,9 @@ void test2D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
@@ -221,9 +221,9 @@ void test2D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
@@ -240,9 +240,9 @@ void test2D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
@@ -279,9 +279,9 @@ void test3D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
@@ -298,9 +298,9 @@ void test3D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
@@ -324,9 +324,9 @@ void test3D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{N}, Idx{N}, Idx{N}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(N),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 int N,
@@ -346,9 +346,9 @@ void test3D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
-                alpaka::vec::Vec<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}}},
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1),
+                alpaka::vec::Vec<Dim, Idx>::all(1)},
             [] ALPAKA_FN_ACC(
                 const Acc & acc,
                 typename ScatterAllocator::AllocatorHandle allocHandle) {
