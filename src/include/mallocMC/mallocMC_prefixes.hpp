@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <device_launch_parameters.h>
+
 #define MAMC_HOST __host__
 #define MAMC_ACCELERATOR __device__
-

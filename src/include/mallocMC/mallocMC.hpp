@@ -43,8 +43,8 @@
 #include "mallocMC_hostclass.hpp"
 
 // all the policies
+#include "AlignmentPolicies.hpp"
 #include "CreationPolicies.hpp"
 #include "DistributionPolicies.hpp"
-#include "ReservePoolPolicies.hpp"
-#include "AlignmentPolicies.hpp"
 #include "OOMPolicies.hpp"
+#include "ReservePoolPolicies.hpp"

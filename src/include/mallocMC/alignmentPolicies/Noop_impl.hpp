@@ -27,34 +27,39 @@
 
 #pragma once
 
-#include <boost/cstdint.hpp>
-#include <string>
-
-#include "Noop.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "Noop.hpp"
 
-namespace mallocMC{
-namespace AlignmentPolicies{
+#include <cstdint>
+#include <string>
+#include <tuple>
 
-  class Noop{
-    typedef boost::uint32_t uint32;
+namespace mallocMC
+{
+    namespace AlignmentPolicies
+    {
+        class Noop
+        {
+            using uint32 = std::uint32_t;
 
-    public:
+        public:
+            static auto alignPool(void * memory, size_t memsize)
+                -> std::tuple<void *, size_t>
+            {
+                return std::make_tuple(memory, memsize);
+            }
 
-    static boost::tuple<void*,size_t> alignPool(void* memory, size_t memsize){
-      return boost::make_tuple(memory,memsize);
-    }
+            MAMC_HOST MAMC_ACCELERATOR static auto applyPadding(uint32 bytes)
+                -> uint32
+            {
+                return bytes;
+            }
 
-    MAMC_HOST MAMC_ACCELERATOR
-    static uint32 applyPadding(uint32 bytes){
-      return bytes;
-    }
+            static auto classname() -> std::string
+            {
+                return "Noop";
+            }
+        };
 
-    static std::string classname(){
-      return "Noop";
-    }
-
-  };
-
-} //namespace AlignmentPolicies
-} //namespace mallocMC
+    } // namespace AlignmentPolicies
+} // namespace mallocMC

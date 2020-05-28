@@ -27,19 +27,21 @@
 
 #pragma once
 
+#include "../mallocMC_prefixes.hpp"
+#include "BadAllocException.hpp"
+
 #include <cassert>
 #include <string>
 
-#include "BadAllocException.hpp"
-#include "../mallocMC_prefixes.hpp"
-
-namespace mallocMC{
-namespace OOMPolicies{
-
-  struct BadAllocException
-  {
-    MAMC_ACCELERATOR
-    static void* handleOOM(void* mem){
+namespace mallocMC
+{
+    namespace OOMPolicies
+    {
+        struct BadAllocException
+        {
+            MAMC_ACCELERATOR
+            static auto handleOOM(void * mem) -> void *
+            {
 #ifdef __CUDACC__
 //#if __CUDA_ARCH__ < 350
 #define PM_EXCEPTIONS_NOT_SUPPORTED_HERE
@@ -48,18 +50,18 @@ namespace OOMPolicies{
 
 #ifdef PM_EXCEPTIONS_NOT_SUPPORTED_HERE
 #undef PM_EXCEPTIONS_NOT_SUPPORTED_HERE
-      assert(false);
+                assert(false);
 #else
-      std::bad_alloc exception;
-      throw exception;
+                throw std::bad_alloc{};
 #endif
-      return mem;
-    }
+                return mem;
+            }
 
-    static std::string classname(){
-      return "BadAllocException";
-    }
-  };
+            static auto classname() -> std::string
+            {
+                return "BadAllocException";
+            }
+        };
 
-} //namespace OOMPolicies
-} //namespace mallocMC
+    } // namespace OOMPolicies
+} // namespace mallocMC

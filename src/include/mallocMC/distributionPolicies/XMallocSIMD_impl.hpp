@@ -33,39 +33,43 @@
 
 #pragma once
 
-#include <boost/cstdint.hpp>
-#include <boost/static_assert.hpp>
-#include <limits>
-#include <string>
-#include <sstream>
-
-#include "../mallocMC_utils.hpp"
 #include "../mallocMC_prefixes.hpp"
+#include "../mallocMC_utils.hpp"
 #include "XMallocSIMD.hpp"
 
-namespace mallocMC{
-namespace DistributionPolicies{
+#include <cstdint>
+#include <limits>
+#include <sstream>
+#include <string>
 
-  template<class T_Config>
-  class XMallocSIMD
-  {
-    private:
+namespace mallocMC
+{
+    namespace DistributionPolicies
+    {
+        template<class T_Config>
+        class XMallocSIMD
+        {
+        private:
+            using uint32 = std::uint32_t;
+            bool can_use_coalescing;
+            uint32 warpid;
+            uint32 myoffset;
+            uint32 threadcount;
+            uint32 req_size;
 
-      typedef boost::uint32_t uint32;
-      bool can_use_coalescing;
-      uint32 warpid;
-      uint32 myoffset;
-      uint32 threadcount;
-      uint32 req_size;
-    public:
-      typedef T_Config Properties;
+        public:
+            using Properties = T_Config;
 
-      MAMC_ACCELERATOR
-      XMallocSIMD() : can_use_coalescing(false), warpid(warpid_withinblock()),
-        myoffset(0), threadcount(0), req_size(0)
-      {}
+            MAMC_ACCELERATOR
+            XMallocSIMD() :
+                    can_use_coalescing(false),
+                    warpid(warpid_withinblock()),
+                    myoffset(0),
+                    threadcount(0),
+                    req_size(0)
+            {}
 
-    private:
+        private:
 /** Allow for a hierarchical validation of parameters:
  *
  * shipped default-parameters (in the inherited struct) have lowest precedence.
@@ -76,86 +80,82 @@ namespace DistributionPolicies{
  * default-struct < template-struct < command-line parameter
  */
 #ifndef MALLOCMC_DP_XMALLOCSIMD_PAGESIZE
-#define MALLOCMC_DP_XMALLOCSIMD_PAGESIZE Properties::pagesize::value
+#define MALLOCMC_DP_XMALLOCSIMD_PAGESIZE (Properties::pagesize)
 #endif
-      BOOST_STATIC_CONSTEXPR uint32 pagesize      = MALLOCMC_DP_XMALLOCSIMD_PAGESIZE;
+            static constexpr uint32 pagesize = MALLOCMC_DP_XMALLOCSIMD_PAGESIZE;
 
-      //all the properties must be unsigned integers > 0
-      BOOST_STATIC_ASSERT(!std::numeric_limits<typename Properties::pagesize::type>::is_signed);
+        public:
+            static constexpr uint32 _pagesize = pagesize;
 
-      // \TODO: The static_cast can be removed once the minimal dependencies of
-      //        this project is are at least CUDA 7.0 and gcc 4.8.2
-      BOOST_STATIC_ASSERT(static_cast<uint32>(pagesize) > 0);
+            MAMC_ACCELERATOR
+            auto collect(uint32 bytes) -> uint32
+            {
+                can_use_coalescing = false;
+                myoffset = 0;
+                threadcount = 0;
 
-    public:
-      BOOST_STATIC_CONSTEXPR uint32 _pagesize = pagesize;
+                // init with initial counter
+                __shared__ uint32 warp_sizecounter
+                    [MaxThreadsPerBlock::value / WarpSize::value];
+                warp_sizecounter[warpid] = 16;
 
-      MAMC_ACCELERATOR
-      uint32 collect(uint32 bytes){
-
-        can_use_coalescing = false;
-        myoffset = 0;
-        threadcount = 0;
-
-        //init with initial counter
-        __shared__ uint32 warp_sizecounter[MaxThreadsPerBlock::value / WarpSize::value];
-        warp_sizecounter[warpid] = 16;
-
-        //second half: make sure that all coalesced allocations can fit within one page
-        //necessary for offset calculation
-        bool coalescible = bytes > 0 && bytes < (pagesize / 32);
+                // second half: make sure that all coalesced allocations can fit
+                // within one page necessary for offset calculation
+                bool coalescible = bytes > 0 && bytes < (pagesize / 32);
 #if(__CUDACC_VER_MAJOR__ >= 9)
-        threadcount = __popc(__ballot_sync(__activemask(), coalescible));
+                threadcount
+                    = __popc(__ballot_sync(__activemask(), coalescible));
 #else
-        threadcount = __popc(__ballot(coalescible));
+                threadcount = __popc(__ballot(coalescible));
 #endif
-        if (coalescible && threadcount > 1)
-        {
-          myoffset = atomicAdd(&warp_sizecounter[warpid], bytes);
-          can_use_coalescing = true;
-        }
+                if(coalescible && threadcount > 1)
+                {
+                    myoffset = atomicAdd(&warp_sizecounter[warpid], bytes);
+                    can_use_coalescing = true;
+                }
 
-        req_size = bytes;
-        if (can_use_coalescing)
-          req_size = (myoffset == 16) ? warp_sizecounter[warpid] : 0;
+                req_size = bytes;
+                if(can_use_coalescing)
+                    req_size = (myoffset == 16) ? warp_sizecounter[warpid] : 0;
 
-        return req_size;
-      }
+                return req_size;
+            }
 
+            MAMC_ACCELERATOR
+            auto distribute(void * allocatedMem) -> void *
+            {
+                __shared__ char *
+                    warp_res[MaxThreadsPerBlock::value / WarpSize::value];
 
-      MAMC_ACCELERATOR
-      void* distribute(void* allocatedMem){
-        __shared__ char* warp_res[MaxThreadsPerBlock::value / WarpSize::value];
+                char * myalloc = (char *)allocatedMem;
+                if(req_size && can_use_coalescing)
+                {
+                    warp_res[warpid] = myalloc;
+                    if(myalloc != 0)
+                        *(uint32 *)myalloc = threadcount;
+                }
+                __threadfence_block();
 
-        char* myalloc = (char*) allocatedMem;
-        if (req_size && can_use_coalescing)
-        {
-          warp_res[warpid] = myalloc;
-          if (myalloc != 0)
-            *(uint32*)myalloc = threadcount;
-        }
-        __threadfence_block();
+                void * myres = myalloc;
+                if(can_use_coalescing)
+                {
+                    if(warp_res[warpid] != 0)
+                        myres = warp_res[warpid] + myoffset;
+                    else
+                        myres = 0;
+                }
+                return myres;
+            }
 
-        void *myres = myalloc;
-        if(can_use_coalescing)
-        {
-          if(warp_res[warpid] != 0)
-            myres = warp_res[warpid] + myoffset;
-          else
-            myres = 0;
-        }
-        return myres;
-      }
+            MAMC_HOST
+            static auto classname() -> std::string
+            {
+                std::stringstream ss;
+                ss << "XMallocSIMD[" << pagesize << "]";
+                return ss.str();
+            }
+        };
 
-      MAMC_HOST
-      static std::string classname(){
-        std::stringstream ss;
-        ss << "XMallocSIMD[" << pagesize << "]";
-        return ss.str();
-      }
+    } // namespace DistributionPolicies
 
-  };
-
-} //namespace DistributionPolicies
-
-} //namespace mallocMC
+} // namespace mallocMC
