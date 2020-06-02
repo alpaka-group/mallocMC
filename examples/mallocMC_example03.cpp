@@ -33,6 +33,7 @@
 #include <mallocMC/CreationPolicies.hpp>
 #include <mallocMC/DistributionPolicies.hpp>
 #include <mallocMC/OOMPolicies.hpp>
+#include <mallocMC/ReservePoolPolicies.hpp>
 #include <mallocMC/mallocMC_hostclass.hpp>
 #include <numeric>
 #include <vector>
@@ -70,6 +71,7 @@ using ScatterAllocator = mallocMC::Allocator<
     mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
     mallocMC::DistributionPolicies::Noop,
     mallocMC::OOMPolicies::ReturnNull,
+    mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
 ALPAKA_STATIC_ACC_MEM_GLOBAL int * arA;

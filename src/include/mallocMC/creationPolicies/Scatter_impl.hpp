@@ -992,12 +992,12 @@ namespace mallocMC
                 typename AlpakaDevice,
                 typename AlpakaQueue,
                 typename T_DeviceAllocator>
-            static auto initHeap(
+            static void initHeap(
                 AlpakaDevice & dev,
                 AlpakaQueue & queue,
                 T_DeviceAllocator * heap,
                 void * pool,
-                size_t memsize) -> void *
+                size_t memsize)
             {
                 if(pool == nullptr && memsize != 0)
                 {
@@ -1027,7 +1027,6 @@ namespace mallocMC
                     queue,
                     alpaka::kernel::createTaskKernel<AlpakaAcc>(
                         workDiv, initKernel, heap, pool, memsize));
-                return heap;
             }
 
             /** counts how many elements of a size fit inside a given page

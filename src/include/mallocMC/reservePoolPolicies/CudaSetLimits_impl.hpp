@@ -27,59 +27,39 @@
 
 #pragma once
 
-#include "OldMalloc.hpp"
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 
-#include <alpaka/core/Common.hpp>
-#include <cstdint>
+#include "CudaSetLimits.hpp"
+
+#include <cuda_runtime_api.h>
+#include <string>
 
 namespace mallocMC
 {
-    namespace CreationPolicies
+    namespace ReservePoolPolicies
     {
-        class OldMalloc
+        // TODO alpaka
+        struct CudaSetLimits
         {
-            using uint32 = std::uint32_t;
-
-        public:
-            static constexpr auto providesAvailableSlots = false;
-
-            template<typename AlpakaAcc>
-            ALPAKA_FN_ACC auto create(const AlpakaAcc & acc, uint32 bytes) const
-                -> void *
+            template<typename AlpakaDev>
+            auto setMemPool(const AlpakaDev & dev, size_t memsize) -> void *
             {
-                return ::malloc(static_cast<size_t>(bytes));
+                cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
+                return nullptr;
             }
 
-            template<typename AlpakaAcc>
-            ALPAKA_FN_ACC void
-            destroy(const AlpakaAcc & /*acc*/, void * mem) const
+            static void resetMemPool(void * p = nullptr)
             {
-                ::free(mem);
+                cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
             }
-
-            ALPAKA_FN_ACC auto isOOM(void * p, size_t s) const -> bool
-            {
-                return s != 0 && (p == nullptr);
-            }
-
-            template<
-                typename AlpakaAcc,
-                typename AlpakaDevice,
-                typename AlpakaQueue,
-                typename T_DeviceAllocator>
-            static void initHeap(
-                AlpakaDevice & dev,
-                AlpakaQueue & queue,
-                T_DeviceAllocator * heap,
-                void * pool,
-                size_t memsize)
-            {}
 
             static auto classname() -> std::string
             {
-                return "OldMalloc";
+                return "CudaSetLimits";
             }
         };
 
-    } // namespace CreationPolicies
+    } // namespace ReservePoolPolicies
 } // namespace mallocMC
+
+#endif
