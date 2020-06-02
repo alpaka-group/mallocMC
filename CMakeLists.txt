@@ -75,11 +75,11 @@ if (CUDA_VERSION VERSION_LESS 10.2) # TODO(bgruber): I do not know exactly where
     target_include_directories(tests_main PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/include)
     target_link_libraries(tests_main PUBLIC Catch2::Catch2 warnings)
 
-    alpaka_add_executable(tests EXCLUDE_FROM_ALL tests/dimensions.cpp)
+    alpaka_add_executable(tests EXCLUDE_FROM_ALL tests/dimensions.cpp tests/policies.cpp)
     target_include_directories(tests PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/include)
     target_link_libraries(tests PUBLIC tests_main alpaka::alpaka Catch2::Catch2 warnings)
 else()
-    alpaka_add_executable(tests EXCLUDE_FROM_ALL tests/main.cpp tests/dimensions.cpp)
+    alpaka_add_executable(tests EXCLUDE_FROM_ALL tests/main.cpp tests/dimensions.cpp tests/policies.cpp)
     target_include_directories(tests PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/include)
     target_link_libraries(tests PUBLIC alpaka::alpaka Catch2::Catch2 warnings)
 endif()

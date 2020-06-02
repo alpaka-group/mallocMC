@@ -32,6 +32,7 @@
 #include "CudaSetLimits.hpp"
 
 #include <cuda_runtime_api.h>
+#include <mutex>
 #include <string>
 
 namespace mallocMC
@@ -44,13 +45,22 @@ namespace mallocMC
             template<typename AlpakaDev>
             auto setMemPool(const AlpakaDev & dev, size_t memsize) -> void *
             {
-                cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
+                // FIXME: cannot call cudaDeviceSetLimit() anymore if any kernel has been launched
+                static auto first = cudaDeviceSetLimit(
+                    cudaLimitMallocHeapSize,
+                    memsize); // abusing thread-safe static init for calling
+                              // cudaDeviceSetLimit only once per process
                 return nullptr;
             }
 
             static void resetMemPool(void * p = nullptr)
             {
-                cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
+                // see:
+                // https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DEVICE.html#group__CUDART__DEVICE_1g05956f16eaa47ef3a4efee84563ccb7d
+                // "Setting cudaLimitMallocHeapSize must not be performed after
+                // launching any kernel that uses the malloc() or free() device
+                // system calls"
+                // cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
             }
 
             static auto classname() -> std::string
