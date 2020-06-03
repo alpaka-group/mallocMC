@@ -135,6 +135,7 @@ TEST_CASE("Scatter Noop ReturnNull AlpakaBuf Noop")
     run<ScatterAllocator>();
 }
 
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 TEST_CASE("OldMalloc XMallocSIMD ReturnNull CudaSetLimits Shrink")
 {
     using ScatterAllocator = mallocMC::Allocator<
@@ -145,6 +146,8 @@ TEST_CASE("OldMalloc XMallocSIMD ReturnNull CudaSetLimits Shrink")
         mallocMC::ReservePoolPolicies::CudaSetLimits,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
     run<ScatterAllocator>();
+
+    cudaDeviceReset();
 }
 
 TEST_CASE("OldMalloc XMallocSIMD ReturnNull CudaSetLimits Noop")
@@ -157,6 +160,8 @@ TEST_CASE("OldMalloc XMallocSIMD ReturnNull CudaSetLimits Noop")
         mallocMC::ReservePoolPolicies::CudaSetLimits,
         mallocMC::AlignmentPolicies::Noop>;
     run<ScatterAllocator>();
+
+    cudaDeviceReset();
 }
 
 TEST_CASE("OldMalloc Noop ReturnNull CudaSetLimits Shrink")
@@ -169,6 +174,8 @@ TEST_CASE("OldMalloc Noop ReturnNull CudaSetLimits Shrink")
         mallocMC::ReservePoolPolicies::CudaSetLimits,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
     run<ScatterAllocator>();
+
+    cudaDeviceReset();
 }
 
 TEST_CASE("OldMalloc Noop ReturnNull CudaSetLimits Noop")
@@ -181,4 +188,7 @@ TEST_CASE("OldMalloc Noop ReturnNull CudaSetLimits Noop")
         mallocMC::ReservePoolPolicies::CudaSetLimits,
         mallocMC::AlignmentPolicies::Noop>;
     run<ScatterAllocator>();
+
+    cudaDeviceReset();
 }
+#endif

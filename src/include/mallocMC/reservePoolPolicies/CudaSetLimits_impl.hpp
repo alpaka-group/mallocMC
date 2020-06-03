@@ -52,6 +52,9 @@ namespace mallocMC
             static void resetMemPool(void * p = nullptr)
             {
                 cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
+                cudaGetLastError(); // cudaDeviceSetLimit() usually fails if any
+                                    // kernel before used ::malloc(), so let's
+                                    // clear the error state
             }
 
             static auto classname() -> std::string
