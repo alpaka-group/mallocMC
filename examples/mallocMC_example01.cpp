@@ -88,9 +88,7 @@ auto main() -> int
     constexpr auto length = 100;
     static_assert(length <= block * grid, ""); // necessary for used algorithm
 
-    const auto dev
-        = alpaka::pltf::getDevByIdx<alpaka::pltf::Pltf<alpaka::dev::Dev<Acc>>>(
-            0);
+    const auto dev = alpaka::pltf::getDevByIdx<Acc>(0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     // init the heap
@@ -182,8 +180,7 @@ auto main() -> int
                 length,
                 alpaka::mem::view::getPtrNative(sumsBufferAcc)));
 
-        const auto hostDev = alpaka::pltf::getDevByIdx<
-            alpaka::pltf::Pltf<alpaka::dev::DevCpu>>(0);
+        const auto hostDev = alpaka::pltf::getDevByIdx<alpaka::dev::DevCpu>(0);
         auto sumsBufferHost
             = alpaka::mem::buf::alloc<int, Idx>(hostDev, Idx{block * grid});
         alpaka::mem::view::copy(

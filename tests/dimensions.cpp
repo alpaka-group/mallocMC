@@ -81,9 +81,7 @@ void test1D()
         //mallocMC::ReservePoolPolicies::CudaSetLimits,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
-    const auto dev
-        = alpaka::pltf::getDevByIdx<alpaka::pltf::Pltf<alpaka::dev::Dev<Acc>>>(
-            0);
+    const auto dev = alpaka::pltf::getDevByIdx<Acc>(0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 16;
@@ -168,9 +166,7 @@ void test2D()
         mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
-    const auto dev
-        = alpaka::pltf::getDevByIdx<alpaka::pltf::Pltf<alpaka::dev::Dev<Acc>>>(
-            0);
+    const auto dev = alpaka::pltf::getDevByIdx<Acc>(0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 8;
@@ -270,9 +266,7 @@ void test3D()
         mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
-    const auto dev
-        = alpaka::pltf::getDevByIdx<alpaka::pltf::Pltf<alpaka::dev::Dev<Acc>>>(
-            0);
+    const auto dev = alpaka::pltf::getDevByIdx<Acc>(0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 4;

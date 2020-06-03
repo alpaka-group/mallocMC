@@ -99,9 +99,7 @@ struct ExampleKernel
 
 auto main() -> int
 {
-    const auto dev
-        = alpaka::pltf::getDevByIdx<alpaka::pltf::Pltf<alpaka::dev::Dev<Acc>>>(
-            0);
+    const auto dev = alpaka::pltf::getDevByIdx<Acc>(0);
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     ScatterAllocator scatterAlloc(

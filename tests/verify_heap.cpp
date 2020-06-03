@@ -644,7 +644,7 @@ auto run_heap_verification(
     const unsigned threads,
     const bool machine_readable) -> bool
 {
-    const auto dev = alpaka::pltf::getDevByIdx<alpaka::pltf::Pltf<Device>>(0);
+    const auto dev = alpaka::pltf::getDevByIdx<Acc>(0);
     auto queue = Queue{dev};
 
     const size_t heapSize = size_t(1024U * 1024U) * heapMB;
