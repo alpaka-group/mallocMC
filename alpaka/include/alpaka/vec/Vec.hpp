@@ -110,7 +110,6 @@ namespace alpaka
             static_assert(TDim::value >= 0u, "Invalid dimensionality");
 
             using Dim = TDim;
-            static constexpr auto s_uiDim = TDim::value;
             using Val = TVal;
 
         private:
@@ -156,7 +155,7 @@ namespace alpaka
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC
-            Vec(Vec &&) = default;
+            Vec(Vec &&) noexcept = default;
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC
@@ -164,7 +163,7 @@ namespace alpaka
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC
-            auto operator=(Vec &&) -> Vec & = default;
+            auto operator=(Vec &&) noexcept -> Vec & = default;
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC ~Vec() = default;
