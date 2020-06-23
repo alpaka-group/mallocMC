@@ -16,6 +16,7 @@
  */
 
 #include <alpaka/alpaka.hpp>
+#include <alpaka/example/ExampleDefaultAcc.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -120,20 +121,15 @@ auto main( ) -> int
     using Idx = uint32_t;
 
     // Select accelerator-types for host and device
-    using Acc = alpaka::acc::AccCpuSerial<
-        Dim,
-        Idx
-    >;
-
-    using DevAcc = alpaka::dev::Dev< Acc >;
-    using PltfAcc = alpaka::pltf::Pltf< DevAcc >;
+    // using Acc = alpaka::acc::AccCpuSerial<Dim, Idx>;
+    using Acc = alpaka::example::ExampleDefaultAcc<Dim, Idx>;
+    std::cout << "Using alpaka accelerator: " << alpaka::acc::getAccName<Acc>() << std::endl;
 
     using DevHost = alpaka::dev::DevCpu;
-    using PltfHost = alpaka::pltf::Pltf< DevHost >;
 
     // Select specific devices
-    DevAcc const devAcc { alpaka::pltf::getDevByIdx< PltfAcc >( 0u ) };
-    DevHost const devHost { alpaka::pltf::getDevByIdx< PltfHost >( 0u ) };
+    auto const devAcc = alpaka::pltf::getDevByIdx< Acc >( 0u );
+    auto const devHost = alpaka::pltf::getDevByIdx< DevHost >( 0u );
 
     // Get valid workdiv for the given problem
     uint32_t elemPerThread = 1;
@@ -200,7 +196,7 @@ auto main( ) -> int
 
     // Accelerator buffer
     using BufAcc = alpaka::mem::buf::Buf<
-        DevAcc,
+        Acc,
         double,
         Dim,
         Idx
