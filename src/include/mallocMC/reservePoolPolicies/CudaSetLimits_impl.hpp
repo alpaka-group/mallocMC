@@ -27,18 +27,23 @@
 
 #pragma once
 
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+
 #include "CudaSetLimits.hpp"
 
 #include <cuda_runtime_api.h>
+#include <mutex>
 #include <string>
 
 namespace mallocMC
 {
     namespace ReservePoolPolicies
     {
+        // TODO alpaka
         struct CudaSetLimits
         {
-            static auto setMemPool(size_t memsize) -> void *
+            template<typename AlpakaDev>
+            auto setMemPool(const AlpakaDev & dev, size_t memsize) -> void *
             {
                 cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
                 return nullptr;
@@ -47,6 +52,9 @@ namespace mallocMC
             static void resetMemPool(void * p = nullptr)
             {
                 cudaDeviceSetLimit(cudaLimitMallocHeapSize, 8192U);
+                cudaGetLastError(); // cudaDeviceSetLimit() usually fails if any
+                                    // kernel before used ::malloc(), so let's
+                                    // clear the error state
             }
 
             static auto classname() -> std::string
@@ -57,3 +65,5 @@ namespace mallocMC
 
     } // namespace ReservePoolPolicies
 } // namespace mallocMC
+
+#endif

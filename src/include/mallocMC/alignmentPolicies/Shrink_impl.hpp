@@ -31,9 +31,9 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
 #include "Shrink.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cstdint>
 #include <iostream>
 #include <sstream>
@@ -64,7 +64,6 @@ namespace mallocMC
             using Properties = T_Config;
 
         private:
-            using uint32 = std::uint32_t;
             using PointerEquivalent
                 = Shrink2NS::__PointerEquivalent<sizeof(char *)>::type;
 
@@ -80,7 +79,7 @@ namespace mallocMC
 #ifndef MALLOCMC_AP_SHRINK_DATAALIGNMENT
 #define MALLOCMC_AP_SHRINK_DATAALIGNMENT (Properties::dataAlignment)
 #endif
-            static constexpr uint32 dataAlignment
+            static constexpr size_t dataAlignment
                 = MALLOCMC_AP_SHRINK_DATAALIGNMENT;
 
             // dataAlignment must be a power of 2!
@@ -111,7 +110,7 @@ namespace mallocMC
 
                     memory
                         = (void *)(((PointerEquivalent)memory) + dataAlignment - alignmentstatus);
-                    memsize -= (size_t)dataAlignment + (size_t)alignmentstatus;
+                    memsize -= dataAlignment + (size_t)alignmentstatus;
 
                     std::cout << "Was shrunk automatically to: " << std::endl;
                     std::cout << "size_t memsize   " << memsize << " byte"
@@ -122,14 +121,14 @@ namespace mallocMC
                 return std::make_tuple(memory, memsize);
             }
 
-            MAMC_HOST
-            MAMC_ACCELERATOR
-            static auto applyPadding(uint32 bytes) -> uint32
+            ALPAKA_FN_HOST_ACC
+            static auto applyPadding(size_t bytes) -> size_t
             {
-                return (bytes + dataAlignment - 1) & ~(dataAlignment - 1);
+                constexpr auto bitsToClear = dataAlignment - 1;
+                return (bytes + bitsToClear) & ~bitsToClear;
             }
 
-            MAMC_HOST
+            ALPAKA_FN_HOST
             static auto classname() -> std::string
             {
                 std::stringstream ss;

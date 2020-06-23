@@ -36,6 +36,8 @@
 #include "../mallocMC_utils.hpp"
 #include "Scatter.hpp"
 
+#include <alpaka/alpaka.hpp>
+#include <atomic>
 #include <cassert>
 #include <cstdint> /* uint32_t */
 #include <cstdio>
@@ -47,38 +49,6 @@ namespace mallocMC
 {
     namespace CreationPolicies
     {
-        namespace ScatterKernelDetail
-        {
-            template<typename T_Allocator>
-            __global__ void
-            initKernel(T_Allocator * heap, void * heapmem, size_t memsize)
-            {
-                heap->pool = heapmem;
-                heap->initDeviceFunction(heapmem, memsize);
-            }
-
-            template<typename T_Allocator>
-            __global__ void getAvailableSlotsKernel(
-                T_Allocator * heap,
-                size_t slotSize,
-                unsigned * slots)
-            {
-                int gid = threadIdx.x + blockIdx.x * blockDim.x;
-                int nWorker = gridDim.x * blockDim.x;
-                unsigned temp = heap->getAvailaibleSlotsDeviceFunction(
-                    slotSize, gid, nWorker);
-                if(temp)
-                    atomicAdd(slots, temp);
-            }
-
-            template<typename T_Allocator>
-            __global__ void finalizeKernel(T_Allocator * heap)
-            {
-                heap->finalizeDeviceFunction();
-            }
-
-        } // namespace ScatterKernelDetail
-
         template<class T_Config, class T_Hashing>
         class Scatter
         {
@@ -140,7 +110,6 @@ namespace mallocMC
 #if _DEBUG || ANALYSEHEAP
         public:
 #endif
-            // static constexpr uint32 minChunkSize0 = pagesize/(32*32);
             static constexpr uint32 minChunkSize1 = 0x10;
             static constexpr uint32 HierarchyThreshold
                 = (pagesize - 2 * sizeof(uint32)) / 33;
@@ -187,7 +156,7 @@ namespace mallocMC
                 uint32 count;
                 uint32 bitmask;
 
-                __device__ void init()
+                ALPAKA_FN_ACC void init()
                 {
                     chunksize = 0;
                     count = 0;
@@ -212,7 +181,7 @@ namespace mallocMC
                  * @param previous_chunksize the chunksize which was uses for
                  * the page before
                  */
-                __device__ void init()
+                ALPAKA_FN_ACC void init()
                 {
                     // clear the entire data which can hold bitfields
                     uint32 * write
@@ -236,7 +205,7 @@ namespace mallocMC
              * randInit should create an random offset which can be used
              * as the initial position in a bitfield
              */
-            static __device__ inline auto randInit() -> uint32
+            static ALPAKA_FN_ACC inline auto randInit() -> uint32
             {
                 // start with the laneid offset
                 return laneid();
@@ -252,7 +221,7 @@ namespace mallocMC
              * @param spots number of bits that can be used
              * @return next free spot in the bitfield
              */
-            static __device__ inline auto
+            static ALPAKA_FN_ACC inline auto
             nextspot(uint32 bitfield, uint32 spot, uint32 spots) -> uint32
             {
                 // wrap around the bitfields from the current spot to the left
@@ -260,7 +229,7 @@ namespace mallocMC
                             | (bitfield << (spots - (spot + 1))))
                     & ((1 << spots) - 1);
                 // compute the step from the current spot in the bitfield
-                const uint32 step = __ffs(~bitfield);
+                const uint32 step = ffs(~bitfield);
                 // and return the new spot
                 return (spot + step) % spots;
             }
@@ -274,7 +243,7 @@ namespace mallocMC
              * @return pointer to the first address inside the page that holds
              * metadata bitfields.
              */
-            __device__ inline auto
+            ALPAKA_FN_ACC inline auto
             onPageMasksPosition(uint32 page, uint32 nMasks) -> uint32 *
             {
                 return (
@@ -290,21 +259,25 @@ namespace mallocMC
              * @return if there is a free spot it returns the spot'S offset,
              * otherwise -1
              */
-            static __device__ inline auto
-            usespot(uint32 * bitfield, uint32 spots) -> int
+            template<typename AlpakaAcc>
+            static ALPAKA_FN_ACC inline auto
+            usespot(const AlpakaAcc & acc, uint32 * bitfield, uint32 spots)
+                -> int
             {
                 // get first spot
                 uint32 spot = randInit() % spots;
                 for(;;)
                 {
                     const uint32 mask = 1 << spot;
-                    const uint32 old = atomicOr(bitfield, mask);
+                    const uint32 old
+                        = alpaka::atomic::atomicOp<alpaka::atomic::op::Or>(
+                            acc, bitfield, mask);
                     if((old & mask) == 0)
                         return spot;
-                    // note: __popc(old) == spots should be sufficient,
+                    // note: popc(old) == spots should be sufficient,
                     // but if someone corrupts the memory we end up in an
                     // endless loop in here...
-                    if(__popc(old) >= spots)
+                    if(popc(old) >= spots)
                         return -1;
                     spot = nextspot(old, spot, spots);
                 }
@@ -326,13 +299,17 @@ namespace mallocMC
              * of the fullsegments. For any correct input, this number is
              * smaller than 32
              */
-            static __device__ inline auto calcAdditionalChunks(
+            template<typename AlpakaAcc>
+            static ALPAKA_FN_ACC inline auto calcAdditionalChunks(
+                const AlpakaAcc & acc,
                 uint32 fullsegments,
                 uint32 segmentsize,
                 uint32 chunksize) -> uint32
             {
                 if(fullsegments != 32)
-                    return max(0,
+                    return alpaka::math::max(
+                               acc,
+                               0u,
                                (int)pagesize - (int)fullsegments * segmentsize
                                    - (int)sizeof(uint32))
                         / chunksize;
@@ -352,7 +329,9 @@ namespace mallocMC
              * @return pointer to a free chunk on the page, 0 if we were unable
              * to obtain a free chunk
              */
-            __device__ inline auto addChunkHierarchy(
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC inline auto addChunkHierarchy(
+                const AlpakaAcc & acc,
                 uint32 chunksize,
                 uint32 fullsegments,
                 uint32 additional_chunks,
@@ -364,17 +343,19 @@ namespace mallocMC
                 const uint32 mask = _ptes[page].bitmask;
                 if((mask & (1 << spot)) != 0)
                     spot = nextspot(mask, spot, segments);
-                const uint32 tries = segments - __popc(mask);
+                const uint32 tries = segments - popc(mask);
                 uint32 * onpagemasks = onPageMasksPosition(page, segments);
                 for(uint32 i = 0; i < tries; ++i)
                 {
                     const int hspot = usespot(
+                        acc,
                         &onpagemasks[spot],
                         spot < fullsegments ? 32 : additional_chunks);
                     if(hspot != -1)
                         return _page[page].data
                             + (32 * spot + hspot) * chunksize;
-                    atomicOr((uint32 *)&_ptes[page].bitmask, 1 << spot);
+                    alpaka::atomic::atomicOp<alpaka::atomic::op::Or>(
+                        acc, (uint32 *)&_ptes[page].bitmask, 1u << spot);
                     spot = nextspot(mask, spot, segments);
                 }
                 return 0;
@@ -389,11 +370,15 @@ namespace mallocMC
              * @return pointer to a free chunk on the page, 0 if we were unable
              * to obtain a free chunk
              */
-            __device__ inline auto
-            addChunkNoHierarchy(uint32 chunksize, uint32 page, uint32 spots)
-                -> void *
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC inline auto addChunkNoHierarchy(
+                const AlpakaAcc & acc,
+                uint32 chunksize,
+                uint32 page,
+                uint32 spots) -> void *
             {
-                const int spot = usespot((uint32 *)&_ptes[page].bitmask, spots);
+                const int spot
+                    = usespot(acc, (uint32 *)&_ptes[page].bitmask, spots);
                 if(spot == -1)
                     return 0; // that should be impossible :)
                 return _page[page].data + spot * chunksize;
@@ -406,14 +391,17 @@ namespace mallocMC
              * @return pointer to a free chunk on the page, 0 if we were unable
              * to obtain a free chunk
              */
-            __device__ inline auto tryUsePage(uint32 page, uint32 chunksize)
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC inline auto
+            tryUsePage(const AlpakaAcc & acc, uint32 page, uint32 chunksize)
                 -> void *
             {
                 void * chunk_ptr = nullptr;
 
                 // increse the fill level
                 const uint32 filllevel
-                    = atomicAdd((uint32 *)&(_ptes[page].count), 1);
+                    = alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
+                        acc, (uint32 *)&(_ptes[page].count), 1u);
                 // recheck chunck size (it could be that the page got freed in
                 // the meanwhile...)
                 if(!resetfreedpages || _ptes[page].chunksize == chunksize)
@@ -424,12 +412,13 @@ namespace mallocMC
                         // bitfield can be used
                         const uint32 segmentsize
                             = chunksize * 32 + sizeof(uint32);
-                        const uint32 fullsegments
-                            = min(32, pagesize / segmentsize);
+                        const uint32 fullsegments = alpaka::math::min(
+                            acc, 32u, pagesize / segmentsize);
                         const uint32 additional_chunks = calcAdditionalChunks(
-                            fullsegments, segmentsize, chunksize);
+                            acc, fullsegments, segmentsize, chunksize);
                         if(filllevel < fullsegments * 32 + additional_chunks)
                             chunk_ptr = addChunkHierarchy(
+                                acc,
                                 chunksize,
                                 fullsegments,
                                 additional_chunks,
@@ -438,16 +427,17 @@ namespace mallocMC
                     else
                     {
                         const uint32 chunksinpage
-                            = min(pagesize / chunksize, 32);
+                            = alpaka::math::min(acc, pagesize / chunksize, 32u);
                         if(filllevel < chunksinpage)
                             chunk_ptr = addChunkNoHierarchy(
-                                chunksize, page, chunksinpage);
+                                acc, chunksize, page, chunksinpage);
                     }
                 }
 
                 // this one is full/not useable
                 if(chunk_ptr == nullptr)
-                    atomicSub((uint32 *)&(_ptes[page].count), 1);
+                    alpaka::atomic::atomicOp<alpaka::atomic::op::Sub>(
+                        acc, (uint32 *)&(_ptes[page].count), 1u);
 
                 return chunk_ptr;
             }
@@ -459,7 +449,9 @@ namespace mallocMC
              * @return pointer to a free chunk on a page, 0 if we were unable to
              * obtain a free chunk
              */
-            __device__ auto allocChunked(uint32 bytes) -> void *
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto allocChunked(const AlpakaAcc & acc, uint32 bytes)
+                -> void *
             {
                 const uint32 pagesperblock = _numpages / accessblocks;
                 const uint32 reloff = warpSize * bytes / pagesize;
@@ -467,7 +459,8 @@ namespace mallocMC
                     = (bytes * hashingK + hashingDistMP * smid()
                        + (hashingDistWP + hashingDistWPRel * reloff) * warpid())
                     % pagesperblock;
-                const uint32 maxchunksize = min(pagesize, wastefactor * bytes);
+                const uint32 maxchunksize
+                    = alpaka::math::min(acc, +pagesize, wastefactor * bytes);
                 uint32 startblock = _firstfreeblock;
                 uint32 ptetry = startpage + startblock * pagesperblock;
                 uint32 checklevel = regionsize * 3 / 4;
@@ -489,8 +482,8 @@ namespace mallocMC
                                     if(chunksize >= bytes
                                        && chunksize <= maxchunksize)
                                     {
-                                        void * res
-                                            = tryUsePage(ptetry, chunksize);
+                                        void * res = tryUsePage(
+                                            acc, ptetry, chunksize);
                                         if(res != 0)
                                             return res;
                                     }
@@ -499,17 +492,20 @@ namespace mallocMC
                                         // lets open up a new page
                                         // it is already padded
                                         const uint32 new_chunksize
-                                            = max(bytes, minChunkSize1);
+                                            = alpaka::math::max(
+                                                acc, bytes, +minChunkSize1);
                                         const uint32 beforechunksize
-                                            = atomicCAS(
+                                            = alpaka::atomic::atomicOp<
+                                                alpaka::atomic::op::Cas>(
+                                                acc,
                                                 (uint32 *)&_ptes[ptetry]
                                                     .chunksize,
-                                                0,
+                                                0u,
                                                 new_chunksize);
                                         if(beforechunksize == 0)
                                         {
                                             void * res = tryUsePage(
-                                                ptetry, new_chunksize);
+                                                acc, ptetry, new_chunksize);
                                             if(res != 0)
                                                 return res;
                                         }
@@ -520,7 +516,7 @@ namespace mallocMC
                                             // someone else aquired the page,
                                             // but we can also use it
                                             void * res = tryUsePage(
-                                                ptetry, beforechunksize);
+                                                acc, ptetry, beforechunksize);
                                             if(res != 0)
                                                 return res;
                                         }
@@ -528,7 +524,9 @@ namespace mallocMC
                                 }
                                 // could not alloc in region, tell that
                                 if(regionfilllevel + 1 <= regionsize)
-                                    atomicMax(
+                                    alpaka::atomic::atomicOp<
+                                        alpaka::atomic::op::Max>(
+                                        acc,
                                         (uint32 *)(_regions + region),
                                         regionfilllevel + 1);
                             }
@@ -558,17 +556,23 @@ namespace mallocMC
              * @param page the page the chunk is on
              * @param chunksize the chunksize used for the page
              */
-            __device__ void
-            deallocChunked(void * mem, uint32 page, uint32 chunksize)
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC void deallocChunked(
+                const AlpakaAcc & acc,
+                void * mem,
+                uint32 page,
+                uint32 chunksize)
             {
-                const uint32 inpage_offset = ((char *)mem - _page[page].data);
+                const auto inpage_offset
+                    = static_cast<uint32>((char *)mem - _page[page].data);
                 if(chunksize <= HierarchyThreshold)
                 {
                     // one more level in hierarchy
                     const uint32 segmentsize = chunksize * 32 + sizeof(uint32);
-                    const uint32 fullsegments = min(32, pagesize / segmentsize);
+                    const uint32 fullsegments
+                        = alpaka::math::min(acc, 32u, pagesize / segmentsize);
                     const uint32 additional_chunks = calcAdditionalChunks(
-                        fullsegments, segmentsize, chunksize);
+                        acc, fullsegments, segmentsize, chunksize);
                     const uint32 segment = inpage_offset / (chunksize * 32);
                     const uint32 withinsegment
                         = (inpage_offset - segment * (chunksize * 32))
@@ -577,21 +581,25 @@ namespace mallocMC
                     const uint32 nMasks
                         = fullsegments + (additional_chunks > 0 ? 1 : 0);
                     uint32 * onpagemasks = onPageMasksPosition(page, nMasks);
-                    uint32 old = atomicAnd(
-                        &onpagemasks[segment], ~(1 << withinsegment));
+                    uint32 old
+                        = alpaka::atomic::atomicOp<alpaka::atomic::op::And>(
+                            acc, &onpagemasks[segment], ~(1u << withinsegment));
 
                     // always do this, since it might fail due to a
                     // race-condition with addChunkHierarchy
-                    atomicAnd((uint32 *)&_ptes[page].bitmask, ~(1 << segment));
+                    alpaka::atomic::atomicOp<alpaka::atomic::op::And>(
+                        acc, (uint32 *)&_ptes[page].bitmask, ~(1u << segment));
                 }
                 else
                 {
                     const uint32 segment = inpage_offset / chunksize;
-                    atomicAnd((uint32 *)&_ptes[page].bitmask, ~(1 << segment));
+                    alpaka::atomic::atomicOp<alpaka::atomic::op::And>(
+                        acc, (uint32 *)&_ptes[page].bitmask, ~(1u << segment));
                 }
                 // reduce filllevel as free
                 const uint32 oldfilllevel
-                    = atomicSub((uint32 *)&_ptes[page].count, 1);
+                    = alpaka::atomic::atomicOp<alpaka::atomic::op::Sub>(
+                        acc, (uint32 *)&_ptes[page].count, 1u);
 
                 if(resetfreedpages)
                 {
@@ -599,17 +607,28 @@ namespace mallocMC
                     {
                         // this page now got free!
                         // -> try lock it
-                        const uint32 old = atomicCAS(
-                            (uint32 *)&_ptes[page].count, 0, pagesize);
+                        const uint32 old
+                            = alpaka::atomic::atomicOp<alpaka::atomic::op::Cas>(
+                                acc,
+                                (uint32 *)&_ptes[page].count,
+                                0u,
+                                +pagesize);
                         if(old == 0)
                         {
                             // clean the bits for the hierarchy
                             _page[page].init();
                             // remove chunk information
                             _ptes[page].chunksize = 0;
-                            __threadfence();
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+                            __threadfence(); // TODO alpaka
+#else
+                            std::atomic_thread_fence(
+                                std::memory_order::memory_order_seq_cst);
+#endif
                             // unlock it
-                            atomicSub((uint32 *)&_ptes[page].count, pagesize);
+                            alpaka::atomic::atomicOp<alpaka::atomic::op::Sub>(
+                                acc, (uint32 *)&_ptes[page].count, +pagesize);
                         }
                     }
                 }
@@ -623,7 +642,8 @@ namespace mallocMC
                     const uint32 block
                         = region * regionsize * accessblocks / _numpages;
                     if(warpid() + laneid() == 0)
-                        atomicMin((uint32 *)&_firstfreeblock, block);
+                        alpaka::atomic::atomicOp<alpaka::atomic::op::Min>(
+                            acc, (uint32 *)&_firstfreeblock, block);
                 }
             }
 
@@ -634,15 +654,23 @@ namespace mallocMC
              * @param bytes number of overall bytes to mark pages for
              * @return true on success, false if one of the pages is not free
              */
-            __device__ auto
-            markpages(uint32 startpage, uint32 pages, uint32 bytes) -> bool
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto markpages(
+                const AlpakaAcc & acc,
+                uint32 startpage,
+                uint32 pages,
+                uint32 bytes) -> bool
             {
                 int abord = -1;
                 for(uint32 trypage = startpage; trypage < startpage + pages;
                     ++trypage)
                 {
-                    const uint32 old = atomicCAS(
-                        (uint32 *)&_ptes[trypage].chunksize, 0, bytes);
+                    const uint32 old
+                        = alpaka::atomic::atomicOp<alpaka::atomic::op::Cas>(
+                            acc,
+                            (uint32 *)&_ptes[trypage].chunksize,
+                            0u,
+                            bytes);
                     if(old != 0)
                     {
                         abord = trypage;
@@ -652,7 +680,8 @@ namespace mallocMC
                 if(abord == -1)
                     return true;
                 for(uint32 trypage = startpage; trypage < abord; ++trypage)
-                    atomicCAS((uint32 *)&_ptes[trypage].chunksize, bytes, 0);
+                    alpaka::atomic::atomicOp<alpaka::atomic::op::Cas>(
+                        acc, (uint32 *)&_ptes[trypage].chunksize, bytes, 0u);
                 return false;
             }
 
@@ -665,7 +694,9 @@ namespace mallocMC
              * @return pointer to the first page to use, 0 if we were unable to
              * use all the requested pages
              */
-            __device__ auto allocPageBasedSingleRegion(
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto allocPageBasedSingleRegion(
+                const AlpakaAcc & acc,
                 uint32 startpage,
                 uint32 endpage,
                 uint32 bytes) -> void *
@@ -681,11 +712,13 @@ namespace mallocMC
                         if(++freecount == pagestoalloc)
                         {
                             // try filling it up
-                            if(markpages(search_page, pagestoalloc, bytes))
+                            if(markpages(acc, search_page, pagestoalloc, bytes))
                             {
                                 // mark that we filled up everything up to here
                                 if(!left_free)
-                                    atomicCAS(
+                                    alpaka::atomic::atomicOp<
+                                        alpaka::atomic::op::Cas>(
+                                        acc,
                                         (uint32 *)&_firstFreePageBased,
                                         startpage,
                                         search_page - 1);
@@ -711,20 +744,26 @@ namespace mallocMC
              * @pre only a single thread of a warp is allowed to call the
              * function concurrently
              */
-            __device__ auto allocPageBasedSingle(uint32 bytes) -> void *
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto
+            allocPageBasedSingle(const AlpakaAcc & acc, uint32 bytes) -> void *
             {
                 // acquire mutex
-                while(atomicExch(&_pagebasedMutex, 1) != 0)
+                while(alpaka::atomic::atomicOp<alpaka::atomic::op::Exch>(
+                          acc, &_pagebasedMutex, 1u)
+                      != 0)
                     ;
                 // search for free spot from the back
                 const uint32 spage = _firstFreePageBased;
-                void * res = allocPageBasedSingleRegion(spage, 0, bytes);
+                void * res = allocPageBasedSingleRegion(acc, spage, 0, bytes);
                 if(res == 0)
                     // also check the rest of the pages
-                    res = allocPageBasedSingleRegion(_numpages, spage, bytes);
+                    res = allocPageBasedSingleRegion(
+                        acc, _numpages, spage, bytes);
 
                 // free mutex
-                atomicExch(&_pagebasedMutex, 0);
+                alpaka::atomic::atomicOp<alpaka::atomic::op::Exch>(
+                    acc, &_pagebasedMutex, 0u);
                 return res;
             }
             /**
@@ -734,24 +773,22 @@ namespace mallocMC
              * @return pointer to the first page to use, 0 if we were unable to
              * use all the requested pages
              */
-            __device__ auto allocPageBased(uint32 bytes) -> void *
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto
+            allocPageBased(const AlpakaAcc & acc, uint32 bytes) -> void *
             {
                 // this is rather slow, but we dont expect that to happen often
                 // anyway
 
                 // only one thread per warp can acquire the mutex
                 void * res = 0;
-#if(__CUDACC_VER_MAJOR__ >= 9)
-                const unsigned int mask = __activemask();
-#else
-                const unsigned int mask = __ballot(1);
-#endif
-                const unsigned int num = __popc(mask);
-                const unsigned int lanemask = mallocMC::lanemask_lt();
-                const unsigned int local_id = __popc(lanemask & mask);
+                const uint32_t mask = activemask();
+                const uint64_t num = popc(mask);
+                const uint64_t lanemask = lanemask_lt();
+                const auto local_id = popc(lanemask & mask);
                 for(unsigned int active = 0; active < num; ++active)
                     if(active == local_id)
-                        res = allocPageBasedSingle(bytes);
+                        res = allocPageBasedSingle(acc, bytes);
                 return res;
             }
 
@@ -761,15 +798,27 @@ namespace mallocMC
              * @param page the first page
              * @param bytes the number of bytes to be freed
              */
-            __device__ void
-            deallocPageBased(void * mem, uint32 page, uint32 bytes)
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC void deallocPageBased(
+                const AlpakaAcc & acc,
+                void * mem,
+                uint32 page,
+                uint32 bytes)
             {
                 const uint32 pages = divup(bytes, pagesize);
                 for(uint32 p = page; p < page + pages; ++p) _page[p].init();
-                __threadfence();
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+                __threadfence(); // TODO alpaka
+#else
+                std::atomic_thread_fence(
+                    std::memory_order::memory_order_seq_cst);
+#endif
                 for(uint32 p = page; p < page + pages; ++p)
-                    atomicCAS((uint32 *)&_ptes[p].chunksize, bytes, 0);
-                atomicMax((uint32 *)&_firstFreePageBased, page + pages - 1);
+                    alpaka::atomic::atomicOp<alpaka::atomic::op::Cas>(
+                        acc, (uint32 *)&_ptes[p].chunksize, bytes, 0u);
+                alpaka::atomic::atomicOp<alpaka::atomic::op::Max>(
+                    acc, (uint32 *)&_firstFreePageBased, page + pages - 1);
             }
 
         public:
@@ -779,7 +828,9 @@ namespace mallocMC
              * @param bytes number of bytes to allocate
              * @return pointer to the allocated memory
              */
-            __device__ auto create(uint32 bytes) -> void *
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto create(const AlpakaAcc & acc, uint32 bytes)
+                -> void *
             {
                 if(bytes == 0)
                     return 0;
@@ -788,26 +839,29 @@ namespace mallocMC
                 // in alignment-policy
                 if(bytes < pagesize)
                     // chunck based
-                    return allocChunked(bytes);
+                    return allocChunked(acc, bytes);
                 else
                     // allocate a range of pages
-                    return allocPageBased(bytes);
+                    return allocPageBased(acc, bytes);
             }
 
             /**
              * destroy frees the memory regions previously acllocted via create
              * @param mempointer to the memory region to free
              */
-            __device__ void destroy(void * mem)
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC void destroy(const AlpakaAcc & acc, void * mem)
             {
                 if(mem == 0)
                     return;
                 // lets see on which page we are on
-                const uint32 page = ((char *)mem - (char *)_page) / pagesize;
+                const auto page = static_cast<uint32>(
+                    ((char *)mem - (char *)_page) / pagesize);
                 const uint32 chunksize = _ptes[page].chunksize;
 
                 // is the pointer the beginning of a chunk?
-                const uint32 inpage_offset = ((char *)mem - _page[page].data);
+                const auto inpage_offset
+                    = static_cast<uint32>((char *)mem - _page[page].data);
                 const uint32 block = inpage_offset / chunksize;
                 const uint32 inblockoffset = inpage_offset - block * chunksize;
                 if(inblockoffset != 0)
@@ -815,16 +869,19 @@ namespace mallocMC
                     uint32 * counter
                         = (uint32 *)(_page[page].data + block * chunksize);
                     // coalesced mem free
-                    uint32 old = atomicSub(counter, 1);
+
+                    const uint32 old
+                        = alpaka::atomic::atomicOp<alpaka::atomic::op::Sub>(
+                            acc, counter, 1u);
                     if(old != 1)
                         return;
                     mem = (void *)counter;
                 }
 
                 if(chunksize < pagesize)
-                    deallocChunked(mem, page, chunksize);
+                    deallocChunked(acc, mem, page, chunksize);
                 else
-                    deallocPageBased(mem, page, chunksize);
+                    deallocPageBased(acc, mem, page, chunksize);
             }
 
             /**
@@ -835,15 +892,19 @@ namespace mallocMC
              * @param memory pointer to the memory used for the heap
              * @param memsize size of the memory in bytes
              */
-            __device__ void initDeviceFunction(void * memory, size_t memsize)
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC void initDeviceFunction(
+                const AlpakaAcc & acc,
+                void * memory,
+                size_t memsize)
             {
-                uint32 linid = threadIdx.x
-                    + blockDim.x * (threadIdx.y + threadIdx.z * blockDim.y);
-                uint32 threads = blockDim.x * blockDim.y * blockDim.z;
-                const uint32 linblockid = blockIdx.x
-                    + gridDim.x * (blockIdx.y + blockIdx.z * gridDim.y);
-                uint32 blocks = gridDim.x * gridDim.y * gridDim.z;
-                linid += linblockid * threads;
+                const auto linid
+                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc)
+                          .sum();
+                const auto totalThreads
+                    = alpaka::workdiv::
+                          getWorkDiv<alpaka::Grid, alpaka::Threads>(acc)
+                              .prod();
 
                 uint32 numregions = ((unsigned long long)memsize)
                     / (((unsigned long long)regionsize)
@@ -879,7 +940,8 @@ namespace mallocMC
                    > (((char *)memory) + memsize))
                 {
                     --numregions;
-                    numpages = min(numregions * regionsize, numpages);
+                    numpages = alpaka::math::min(
+                        acc, numregions * regionsize, numpages);
                     if(linid == 0)
                         printf(
                             "c Heap Warning: needed to reduce number of "
@@ -894,14 +956,13 @@ namespace mallocMC
                 //  printf("c size_t memsize   %llu byte\n", memsize);
                 //  printf("c void *memory     %p\n", page);
                 //}
-                threads *= blocks;
 
-                for(uint32 i = linid; i < numpages; i += threads)
+                for(uint32 i = linid; i < numpages; i += totalThreads)
                 {
                     ptes[i].init();
                     page[i].init();
                 }
-                for(uint32 i = linid; i < numregions; i += threads)
+                for(uint32 i = linid; i < numregions; i += totalThreads)
                     regions[i] = 0;
 
                 if(linid == 0)
@@ -920,16 +981,23 @@ namespace mallocMC
                 }
             }
 
-            static __device__ auto isOOM(void * p, size_t s) -> bool
+            static ALPAKA_FN_ACC auto isOOM(void * p, size_t s) -> bool
             {
                 // one thread that requested memory returned null
                 return s && (p == nullptr);
             }
 
-            template<typename T_DeviceAllocator>
-            static auto
-            initHeap(T_DeviceAllocator * heap, void * pool, size_t memsize)
-                -> void *
+            template<
+                typename AlpakaAcc,
+                typename AlpakaDevice,
+                typename AlpakaQueue,
+                typename T_DeviceAllocator>
+            static void initHeap(
+                AlpakaDevice & dev,
+                AlpakaQueue & queue,
+                T_DeviceAllocator * heap,
+                void * pool,
+                size_t memsize)
             {
                 if(pool == nullptr && memsize != 0)
                 {
@@ -939,9 +1007,26 @@ namespace mallocMC
                         "Maybe you are using an incompatible ReservePoolPolicy "
                         "or AlignmentPolicy.");
                 }
-                ScatterKernelDetail::initKernel<<<1, 256>>>(
-                    heap, pool, memsize);
-                return heap;
+                auto initKernel = [] ALPAKA_FN_ACC(
+                                      const AlpakaAcc & acc,
+                                      T_DeviceAllocator * heap,
+                                      void * heapmem,
+                                      size_t memsize) {
+                    heap->pool = heapmem;
+                    heap->initDeviceFunction(acc, heapmem, memsize);
+                };
+                using Dim =
+                    typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
+                using Idx =
+                    typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+                const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
+                    Idx{1},
+                    Idx{256},
+                    Idx{1}}; // Dim may be any dimension, but workDiv is 1D
+                alpaka::queue::enqueue(
+                    queue,
+                    alpaka::kernel::createTaskKernel<AlpakaAcc>(
+                        workDiv, initKernel, heap, pool, memsize));
             }
 
             /** counts how many elements of a size fit inside a given page
@@ -958,8 +1043,11 @@ namespace mallocMC
              * the page. This size must be appropriate to the formatting of the
              *        page.
              */
-            __device__ auto countFreeChunksInPage(uint32 page, uint32 chunksize)
-                -> unsigned
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto countFreeChunksInPage(
+                const AlpakaAcc & acc,
+                uint32 page,
+                uint32 chunksize) -> unsigned
             {
                 const uint32 filledChunks = _ptes[page].count;
                 if(chunksize <= HierarchyThreshold)
@@ -967,22 +1055,25 @@ namespace mallocMC
                     const uint32 segmentsize = chunksize * 32
                         + sizeof(uint32); // each segment can hold 32 2nd-level
                                           // chunks
-                    const uint32 fullsegments = min(
-                        32, pagesize / segmentsize); // there might be space for
-                                                     // more than 32 segments
-                                                     // with 32 2nd-level chunks
+                    const uint32 fullsegments = alpaka::math::min(
+                        acc,
+                        32u,
+                        pagesize / segmentsize); // there might be space for
+                                                 // more than 32 segments
+                                                 // with 32 2nd-level chunks
                     const uint32 additional_chunks = calcAdditionalChunks(
-                        fullsegments, segmentsize, chunksize);
+                        acc, fullsegments, segmentsize, chunksize);
                     const uint32 level2Chunks
                         = fullsegments * 32 + additional_chunks;
                     return level2Chunks - filledChunks;
                 }
                 else
                 {
-                    const uint32 chunksinpage = min(
+                    const uint32 chunksinpage = alpaka::math::min(
+                        acc,
                         pagesize / chunksize,
-                        32); // without hierarchy, there can not be more than 32
-                             // chunks
+                        32u); // without hierarchy, there can not be more than
+                              // 32 chunks
                     return chunksinpage - filledChunks;
                 }
             }
@@ -1001,14 +1092,15 @@ namespace mallocMC
              * for
              * @param gid the id of the thread. this id does not have to
              * correspond with threadId.x, but there must be a continous range
-             * of ids beginning from 0.
              * @param stride the stride should be equal to the number of
              * different gids (and therefore of value max(gid)-1)
              */
-            __device__ auto getAvailaibleSlotsDeviceFunction(
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto getAvailaibleSlotsDeviceFunction(
+                const AlpakaAcc & acc,
                 size_t slotSize,
-                int gid,
-                int stride) -> unsigned
+                uint32 gid,
+                uint32 stride) -> unsigned
             {
                 unsigned slotcount = 0;
                 if(slotSize < pagesize)
@@ -1016,8 +1108,8 @@ namespace mallocMC
                     for(uint32 currentpage = gid; currentpage < _numpages;
                         currentpage += stride)
                     {
-                        const uint32 maxchunksize
-                            = min(pagesize, wastefactor * (uint32)slotSize);
+                        const uint32 maxchunksize = alpaka::math::min(
+                            acc, +pagesize, wastefactor * (uint32)slotSize);
                         const uint32 region = currentpage / regionsize;
                         const uint32 regionfilllevel = _regions[region];
 
@@ -1025,14 +1117,16 @@ namespace mallocMC
                         if(chunksize >= slotSize && chunksize <= maxchunksize)
                         { // how many chunks left? (each chunk is big enough)
                             slotcount += countFreeChunksInPage(
-                                currentpage, chunksize);
+                                acc, currentpage, chunksize);
                         }
                         else if(chunksize == 0)
                         {
-                            chunksize = max(
+                            chunksize = alpaka::math::max(
+                                acc,
                                 (uint32)slotSize,
-                                minChunkSize1); // ensure minimum chunk size
+                                +minChunkSize1); // ensure minimum chunk size
                             slotcount += countFreeChunksInPage(
+                                acc,
                                 currentpage,
                                 chunksize); // how many chunks fit in one page?
                         }
@@ -1084,30 +1178,68 @@ namespace mallocMC
              * @param obj a reference to the allocator instance (host-side)
              */
         public:
-            template<typename T_DeviceAllocator>
+            template<
+                typename AlpakaAcc,
+                typename AlpakaDevice,
+                typename AlpakaQueue,
+                typename T_DeviceAllocator>
             static auto getAvailableSlotsHost(
+                AlpakaDevice & dev,
+                AlpakaQueue & queue,
                 size_t const slotSize,
                 T_DeviceAllocator * heap) -> unsigned
             {
-                unsigned h_slots = 0;
-                unsigned * d_slots;
-                cudaMalloc((void **)&d_slots, sizeof(unsigned));
-                cudaMemcpy(
-                    d_slots,
-                    &h_slots,
-                    sizeof(unsigned),
-                    cudaMemcpyHostToDevice);
+                auto d_slots = alpaka::mem::buf::alloc<unsigned, int>(dev, 1);
+                alpaka::mem::view::set(queue, d_slots, 0, 1);
 
-                ScatterKernelDetail::getAvailableSlotsKernel<<<64, 256>>>(
-                    heap, slotSize, d_slots);
+                auto getAvailableSlotsKernel = [] ALPAKA_FN_ACC(
+                                                   const AlpakaAcc & acc,
+                                                   T_DeviceAllocator * heap,
+                                                   size_t slotSize,
+                                                   unsigned * slots) -> void {
+                    const auto gid
+                        = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(
+                              acc)
+                              .sum();
 
-                cudaMemcpy(
-                    &h_slots,
-                    d_slots,
-                    sizeof(unsigned),
-                    cudaMemcpyDeviceToHost);
-                cudaFree(d_slots);
-                return h_slots;
+                    const auto nWorker
+                        = alpaka::workdiv::
+                              getWorkDiv<alpaka::Grid, alpaka::Threads>(acc)
+                                  .prod();
+                    const unsigned temp
+                        = heap->getAvailaibleSlotsDeviceFunction(
+                            acc, slotSize, gid, nWorker);
+                    if(temp)
+                        alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
+                            acc, slots, temp);
+                };
+
+                using Dim =
+                    typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
+                using Idx =
+                    typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+                const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
+                    Idx{64},
+                    Idx{256},
+                    Idx{1}}; // Dim may be any dimension, but workDiv is 1D
+
+                alpaka::queue::enqueue(
+                    queue,
+                    alpaka::kernel::createTaskKernel<AlpakaAcc>(
+                        workDiv,
+                        getAvailableSlotsKernel,
+                        heap,
+                        slotSize,
+                        alpaka::mem::view::getPtrNative(d_slots)));
+
+                const auto hostDev = alpaka::pltf::getDevByIdx<
+                    alpaka::pltf::Pltf<alpaka::dev::DevCpu>>(0);
+                auto h_slots
+                    = alpaka::mem::buf::alloc<unsigned, int>(hostDev, 1);
+                alpaka::mem::view::copy(queue, h_slots, d_slots, 1);
+                alpaka::wait::wait(queue);
+
+                return *alpaka::mem::view::getPtrNative(h_slots);
             }
 
             /** Count, how many elements can be allocated at maximum
@@ -1124,39 +1256,51 @@ namespace mallocMC
              *
              * @param slotSize the size of allocatable elements to count
              */
-            __device__ auto getAvailableSlotsAccelerator(size_t slotSize)
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto
+            getAvailableSlotsAccelerator(const AlpakaAcc & acc, size_t slotSize)
                 -> unsigned
             {
-                const int wId
-                    = warpid_withinblock(); // do not use warpid-function, since
-                                            // this value is not guaranteed to
-                                            // be stable across warp lifetime
+                const int wId = warpid_withinblock(
+                    acc); // do not use warpid-function, since
+                          // this value is not guaranteed to
+                          // be stable across warp lifetime
 
-#if(__CUDACC_VER_MAJOR__ >= 9)
-                const uint32 activeThreads = __popc(__activemask());
-#else
-                const uint32 activeThreads = __popc(__ballot(true));
-#endif
-                __shared__ uint32 activePerWarp
-                    [MaxThreadsPerBlock::value
-                     / WarpSize::value]; // maximum number of warps in a block
-                __shared__ unsigned
-                    warpResults[MaxThreadsPerBlock::value / WarpSize::value];
+                const uint32 activeThreads = popc(activemask());
+
+                auto & activePerWarp = alpaka::block::shared::st::allocVar<
+                    std::uint32_t[MaxThreadsPerBlock::value / warpSize],
+                    __COUNTER__>(acc); // maximum number of warps in a block
+
+                auto & warpResults = alpaka::block::shared::st::allocVar<
+                    unsigned[MaxThreadsPerBlock::value / warpSize],
+                    __COUNTER__>(acc);
+
                 warpResults[wId] = 0;
                 activePerWarp[wId] = 0;
 
                 // the active threads obtain an id from 0 to activeThreads-1
                 if(slotSize == 0)
                     return 0;
-                const int linearId = atomicAdd(&activePerWarp[wId], 1);
+                const auto linearId
+                    = alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
+                        acc, &activePerWarp[wId], 1u);
 
                 // printf("Block %d, id %d: activeThreads=%d
                 // linearId=%d\n",blockIdx.x,threadIdx.x,activeThreads,linearId);
                 const unsigned temp = getAvailaibleSlotsDeviceFunction(
-                    slotSize, linearId, activeThreads);
+                    acc, slotSize, linearId, activeThreads);
                 if(temp)
-                    atomicAdd(&warpResults[wId], temp);
+                    alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
+                        acc, &warpResults[wId], temp);
+#if defined(__CUDA_ARCH__) \
+    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
                 __threadfence_block();
+#else
+                std::atomic_thread_fence(
+                    std::memory_order::memory_order_seq_cst);
+#endif
+
                 return warpResults[wId];
             }
 

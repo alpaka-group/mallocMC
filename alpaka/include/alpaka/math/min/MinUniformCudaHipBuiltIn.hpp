@@ -72,13 +72,14 @@ namespace alpaka
                     MinUniformCudaHipBuiltIn const & min_ctx,
                     Tx const & x,
                     Ty const & y)
+                    -> decltype(::min(x, y))
                 {
                     alpaka::ignore_unused(min_ctx);
                     return ::min(x, y);
                 }
             };
             //#############################################################################
-            //! The standard library mixed integral floating point min trait specialization.
+            //! The CUDA mixed integral floating point min trait specialization.
             template<
                 typename Tx,
                 typename Ty>

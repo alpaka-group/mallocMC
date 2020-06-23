@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
 #include "BadAllocException.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cassert>
 #include <string>
 
@@ -39,7 +39,7 @@ namespace mallocMC
     {
         struct BadAllocException
         {
-            MAMC_ACCELERATOR
+            ALPAKA_FN_ACC
             static auto handleOOM(void * mem) -> void *
             {
 #ifdef __CUDACC__

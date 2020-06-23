@@ -71,6 +71,7 @@ namespace alpaka
                     MaxUniformCudaHipBuiltIn const & max_ctx,
                     Tx const & x,
                     Ty const & y)
+                    -> decltype(::max(x, y))
                 {
                     alpaka::ignore_unused(max_ctx);
                     return ::max(x, y);

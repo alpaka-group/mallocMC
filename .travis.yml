@@ -32,6 +32,7 @@ script:
   - make
   - make install
   - make examples
+  - make tests
 
 before_script:
   - cat /etc/apt/sources.list

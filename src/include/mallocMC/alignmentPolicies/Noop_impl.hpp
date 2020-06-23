@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include "../mallocMC_prefixes.hpp"
 #include "Noop.hpp"
 
+#include <alpaka/core/Common.hpp>
 #include <cstdint>
 #include <string>
 #include <tuple>
@@ -40,8 +40,6 @@ namespace mallocMC
     {
         class Noop
         {
-            using uint32 = std::uint32_t;
-
         public:
             static auto alignPool(void * memory, size_t memsize)
                 -> std::tuple<void *, size_t>
@@ -49,8 +47,8 @@ namespace mallocMC
                 return std::make_tuple(memory, memsize);
             }
 
-            MAMC_HOST MAMC_ACCELERATOR static auto applyPadding(uint32 bytes)
-                -> uint32
+            ALPAKA_FN_HOST_ACC
+            static auto applyPadding(size_t bytes) -> size_t
             {
                 return bytes;
             }
