@@ -44,6 +44,14 @@
 #include <stdexcept>
 #include <string>
 
+/* HIP-clang is doing something wrong and uses the host path of the code when __HIP_DEVICE_COMPILE__
+ * only is used to detect the device compile path.
+ * Since we require devices with support for ballot we can high-jack __HIP_ARCH_HAS_WARP_BALLOT__.
+ */
+#if(defined(__HIP_ARCH_HAS_WARP_BALLOT__) || defined(__CUDA_ARCH__) || __HIP_DEVICE_COMPILE__ == 1)
+#   define MALLOCMC_DEVICE_COMPILE 1
+#endif
+
 namespace mallocMC
 {
     template<int PSIZE>
@@ -59,9 +67,10 @@ namespace mallocMC
         using type = unsigned long long;
     };
 
-#if defined(__CUDA_ARCH__) \
-    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+#if defined(__CUDA_ARCH__)
     constexpr auto warpSize = 32; // TODO
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
+    constexpr auto warpSize = 64;
 #else
     constexpr auto warpSize = 1;
 #endif
@@ -95,7 +104,7 @@ namespace mallocMC
         std::uint32_t mywarpid;
         asm("mov.u32 %0, %%warpid;" : "=r"(mywarpid));
         return mywarpid;
-#elif defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__)
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
         // get wave id
         // https://github.com/ROCm-Developer-Tools/HIP/blob/f72a669487dd352e45321c4b3038f8fe2365c236/include/hip/hcc_detail/device_functions.h#L974-L1024
         return __builtin_amdgcn_s_getreg(GETREG_IMMED(3, 0, 4));
@@ -110,7 +119,7 @@ namespace mallocMC
         std::uint32_t mysmid;
         asm("mov.u32 %0, %%smid;" : "=r"(mysmid));
         return mysmid;
-#elif defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__)
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
         return __smid();
 #else
         return 0u;
@@ -123,18 +132,33 @@ namespace mallocMC
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_lt;" : "=r"(lanemask));
         return lanemask;
-#elif defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__)
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
         return __lanemask_lt();
 #else
         return 0u;
 #endif
     }
 
+    ALPAKA_FN_ACC inline auto ballot(int pred)
+    {
+#if defined(__CUDA_ARCH__)
+        return __ballot_sync(__activemask(), pred);
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
+        // return value is 64bit for HIP-clang
+        return __ballot(pred);
+#else
+        return 1u;
+#endif
+    }
+
+
     ALPAKA_FN_ACC inline auto activemask()
     {
-#if defined(__CUDA_ARCH__) \
-    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+#if defined(__CUDA_ARCH__)
         return __activemask();
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
+        // return value is 64bit for HIP-clang
+        return ballot(1);
 #else
         return 1u;
 #endif
@@ -175,11 +199,14 @@ namespace mallocMC
         return localId / warpSize;
     }
 
-    ALPAKA_FN_ACC inline auto ffs(std::uint32_t mask) -> std::uint32_t
+    template<typename T>
+    ALPAKA_FN_ACC inline auto ffs(T mask) -> std::uint32_t
     {
-#if defined(__CUDA_ARCH__) \
-    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+#if defined(__CUDA_ARCH__)
         return ::__ffs(mask);
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
+        // return value is 64bit for HIP-clang
+        return ::__ffsll(static_cast<unsigned long long int>(mask));
 #else
         if(mask == 0)
             return 0;
@@ -193,11 +220,14 @@ namespace mallocMC
 #endif
     }
 
-    ALPAKA_FN_ACC inline auto popc(std::uint32_t mask) -> std::uint32_t
+    template<typename T>
+    ALPAKA_FN_ACC inline auto popc(T mask) -> std::uint32_t
     {
-#if defined(__CUDA_ARCH__) \
-    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+#if defined(__CUDA_ARCH__)
         return ::__popc(mask);
+#elif(MALLOCMC_DEVICE_COMPILE && BOOST_COMP_HIP)
+        // return value is 64bit for HIP-clang
+        return ::__popcll(static_cast<unsigned long long int>(mask));
 #else
         // cf.
         // https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
