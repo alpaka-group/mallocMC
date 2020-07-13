@@ -27,6 +27,11 @@
 
 #pragma once
 
+#include "ReturnNull.hpp"
+
+#include <alpaka/core/Common.hpp>
+#include <string>
+
 namespace mallocMC
 {
     namespace OOMPolicies
@@ -36,7 +41,20 @@ namespace mallocMC
          *
          * This OOMPolicy will return nullptr, if handleOOM() is called.
          */
-        class ReturnNull;
+        class ReturnNull
+        {
+        public:
+            ALPAKA_FN_ACC
+            static auto handleOOM(void * mem) -> void *
+            {
+                return nullptr;
+            }
+
+            static auto classname() -> std::string
+            {
+                return "ReturnNull";
+            }
+        };
 
     } // namespace OOMPolicies
 } // namespace mallocMC

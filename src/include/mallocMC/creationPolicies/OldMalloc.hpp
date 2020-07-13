@@ -27,6 +27,11 @@
 
 #pragma once
 
+#include "OldMalloc.hpp"
+
+#include <alpaka/core/Common.hpp>
+#include <cstdint>
+
 namespace mallocMC
 {
     namespace CreationPolicies
@@ -38,7 +43,50 @@ namespace mallocMC
          * free system calls that is offered by CUDA-capable accelerator of
          * compute capability 2.0 and higher
          */
-        class OldMalloc;
+        class OldMalloc
+        {
+            using uint32 = std::uint32_t;
+
+        public:
+            static constexpr auto providesAvailableSlots = false;
+
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto create(const AlpakaAcc & acc, uint32 bytes) const
+                -> void *
+            {
+                return ::malloc(static_cast<size_t>(bytes));
+            }
+
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC void
+            destroy(const AlpakaAcc & /*acc*/, void * mem) const
+            {
+                ::free(mem);
+            }
+
+            ALPAKA_FN_ACC auto isOOM(void * p, size_t s) const -> bool
+            {
+                return s != 0 && (p == nullptr);
+            }
+
+            template<
+                typename AlpakaAcc,
+                typename AlpakaDevice,
+                typename AlpakaQueue,
+                typename T_DeviceAllocator>
+            static void initHeap(
+                AlpakaDevice & dev,
+                AlpakaQueue & queue,
+                T_DeviceAllocator * heap,
+                void * pool,
+                size_t memsize)
+            {}
+
+            static auto classname() -> std::string
+            {
+                return "OldMalloc";
+            }
+        };
 
     } // namespace CreationPolicies
 } // namespace mallocMC

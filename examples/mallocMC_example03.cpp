@@ -29,12 +29,7 @@
 #include <alpaka/alpaka.hpp>
 #include <cassert>
 #include <iostream>
-#include <mallocMC/AlignmentPolicies.hpp>
-#include <mallocMC/CreationPolicies.hpp>
-#include <mallocMC/DistributionPolicies.hpp>
-#include <mallocMC/OOMPolicies.hpp>
-#include <mallocMC/ReservePoolPolicies.hpp>
-#include <mallocMC/mallocMC_hostclass.hpp>
+#include <mallocMC/mallocMC.hpp>
 #include <numeric>
 #include <vector>
 

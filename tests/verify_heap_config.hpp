@@ -29,16 +29,7 @@
 #pragma once
 
 #include <alpaka/alpaka.hpp>
-
-// basic files for mallocMC
-#include <mallocMC/mallocMC_hostclass.hpp>
-
-// Load all available policies for mallocMC
-#include <mallocMC/AlignmentPolicies.hpp>
-#include <mallocMC/CreationPolicies.hpp>
-#include <mallocMC/DistributionPolicies.hpp>
-#include <mallocMC/OOMPolicies.hpp>
-#include <mallocMC/ReservePoolPolicies.hpp>
+#include <mallocMC/mallocMC.hpp>
 
 using Dim = alpaka::dim::DimInt<1>;
 using Idx = std::size_t;

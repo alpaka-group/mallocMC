@@ -27,12 +27,7 @@
 
 #include <alpaka/alpaka.hpp>
 #include <catch2/catch.hpp>
-#include <mallocMC/AlignmentPolicies.hpp>
-#include <mallocMC/CreationPolicies.hpp>
-#include <mallocMC/DistributionPolicies.hpp>
-#include <mallocMC/OOMPolicies.hpp>
-#include <mallocMC/ReservePoolPolicies.hpp>
-#include <mallocMC/mallocMC_hostclass.hpp>
+#include <mallocMC/mallocMC.hpp>
 
 using Idx = std::size_t;
 using Dim = alpaka::dim::DimInt<1>;
