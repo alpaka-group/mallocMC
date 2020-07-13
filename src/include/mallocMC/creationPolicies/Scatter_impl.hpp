@@ -619,8 +619,8 @@ namespace mallocMC
                             _page[page].init();
                             // remove chunk information
                             _ptes[page].chunksize = 0;
-#if defined(__CUDA_ARCH__) \
-    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+
+#if(MALLOCMC_DEVICE_COMPILE)
                             __threadfence(); // TODO alpaka
 #else
                             std::atomic_thread_fence(
@@ -782,10 +782,12 @@ namespace mallocMC
 
                 // only one thread per warp can acquire the mutex
                 void * res = 0;
-                const uint32_t mask = activemask();
-                const uint64_t num = popc(mask);
-                const uint64_t lanemask = lanemask_lt();
-                const auto local_id = popc(lanemask & mask);
+                // based on the alpaka backend the lanemask type can be 64bit
+                const auto mask = activemask();
+                const uint32_t num = popc(mask);
+                // based on the alpaka backend the lanemask type can be 64bit
+                const auto lanemask = lanemask_lt();
+                const uint32_t local_id = popc(lanemask & mask);
                 for(unsigned int active = 0; active < num; ++active)
                     if(active == local_id)
                         res = allocPageBasedSingle(acc, bytes);
@@ -807,8 +809,8 @@ namespace mallocMC
             {
                 const uint32 pages = divup(bytes, pagesize);
                 for(uint32 p = page; p < page + pages; ++p) _page[p].init();
-#if defined(__CUDA_ARCH__) \
-    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+
+#if(MALLOCMC_DEVICE_COMPILE)
                 __threadfence(); // TODO alpaka
 #else
                 std::atomic_thread_fence(
@@ -829,7 +831,12 @@ namespace mallocMC
              * @return pointer to the allocated memory
              */
             template<typename AlpakaAcc>
-            ALPAKA_FN_ACC auto create(const AlpakaAcc & acc, uint32 bytes)
+            ALPAKA_FN_ACC
+#if(BOOST_COMP_CLANG && BOOST_LANG_HIP)
+            // The clang HIP compiler is producing runtime errors if this method is inlined.
+            __noinline__
+#endif
+            auto create(const AlpakaAcc & acc, uint32 bytes)
                 -> void *
             {
                 if(bytes == 0)
@@ -1019,10 +1026,15 @@ namespace mallocMC
                     typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
                 using Idx =
                     typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+                using VecType = alpaka::vec::Vec<Dim, Idx>;
+
+                auto threadsPerBlock = VecType::ones();
+                threadsPerBlock[Dim::value - 1] = 256u;
+
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                    Idx{1},
-                    Idx{256},
-                    Idx{1}}; // Dim may be any dimension, but workDiv is 1D
+                    VecType::ones(),
+                    threadsPerBlock,
+                    VecType::ones()}; // Dim may be any dimension, but workDiv is 1D
                 alpaka::queue::enqueue(
                     queue,
                     alpaka::kernel::createTaskKernel<AlpakaAcc>(
@@ -1218,10 +1230,18 @@ namespace mallocMC
                     typename alpaka::dim::traits::DimType<AlpakaAcc>::type;
                 using Idx =
                     typename alpaka::idx::traits::IdxType<AlpakaAcc>::type;
+
+                using VecType = alpaka::vec::Vec<Dim, Idx>;
+
+                auto numBlocks = VecType::ones();
+                numBlocks[Dim::value - 1] = 64u;
+                auto threadsPerBlock = VecType::ones();
+                threadsPerBlock[Dim::value - 1] = 256u;
+
                 const auto workDiv = alpaka::workdiv::WorkDivMembers<Dim, Idx>{
-                    Idx{64},
-                    Idx{256},
-                    Idx{1}}; // Dim may be any dimension, but workDiv is 1D
+                    numBlocks,
+                    threadsPerBlock,
+                    VecType::ones()}; // Dim may be any dimension, but workDiv is 1D
 
                 alpaka::queue::enqueue(
                     queue,
@@ -1293,8 +1313,8 @@ namespace mallocMC
                 if(temp)
                     alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
                         acc, &warpResults[wId], temp);
-#if defined(__CUDA_ARCH__) \
-    || (defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__))
+
+#if(MALLOCMC_DEVICE_COMPILE)
                 __threadfence_block();
 #else
                 std::atomic_thread_fence(
