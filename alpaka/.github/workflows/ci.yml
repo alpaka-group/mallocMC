@@ -1,7 +1,7 @@
 #
 # Copyright 2015-2020 Benjamin Worpitz
 #
-# This file is part of Alpaka.
+# This file is part of alpaka.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -42,7 +42,7 @@ on: [push, pull_request]
 # ALPAKA_ACC_CPU_BT_OMP4_ENABLE                 : {ON, OFF}
 #   [ON] OMP_NUM_THREADS                        : {1, 2, 3, 4}
 # ALPAKA_ACC_GPU_CUDA_ENABLE                    : {ON, OFF}
-#   [ON] ALPAKA_CUDA_VERSION                    : {9.0, 9.1, 9.2, 10.0, 10.1, 10.2}
+#   [ON] ALPAKA_CUDA_VERSION                    : {9.0, 9.1, 9.2, 10.0, 10.1, 10.2, 11.0}
 #   [ON] ALPAKA_CUDA_COMPILER                   : {nvcc, [CXX==clang++]:clang}
 # ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE             : {ON, OFF}
 # ALPAKA_ACC_GPU_HIP_ENABLE                     : {ON, OFF}
@@ -74,107 +74,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [
-          linux_gcc-8_debug_analysis,
-          linux_clang-8_debug_analysis,
-          linux_nvcc-9.1_gcc-5_debug_analysis,
-          linux_clang-6_cuda-9.0_debug_analysis,
-          windows_cl-2019_debug_analysis,
-          macos_xcode-11.3_debug_analysis,
-
-          macos_xcode-11_debug,
-          macos_xcode-11_release,
-          macos_xcode-11.1_debug,
-          macos_xcode-11.1_release,
-          macos_xcode-11.2_debug,
-          macos_xcode-11.2_release,
-          macos_xcode-11.3_debug,
-          macos_xcode-11.3_release,
-          macos_xcode-11.4_debug,
-          macos_xcode-11.4_release,
-
-          windows_cl-2017_release,
-          windows_cl-2017_debug,
-          windows_cl-2019_release,
-          windows_cl-2019_debug,
-
-          windows_nvcc-10.0_cl-2017_release_cuda-only_separable-compilation,
-          windows_nvcc-10.0_cl-2017_debug,
-          windows_nvcc-10.1_cl-2017_debug_cuda-only,
-          windows_nvcc-10.1_cl-2017_release,
-          windows_nvcc-10.2_cl-2017_debug_cuda-only,
-          windows_nvcc-10.2_cl-2017_release,
-
-          linux_gcc-5_release,
-          linux_gcc-6_debug_c++17,
-          linux_gcc-7_release,
-          linux_gcc-8_debug,
-          linux_gcc-9_debug_c++17,
-          linux_gcc-10_release,
-
-          linux_clang-4_debug_ubsan,
-          linux_clang-5_debug_c++17,
-          linux_clang-6_release_asan_c++17,
-          linux_clang-7_release_c++17,
-          linux_clang-8_release,
-          linux_clang-9_debug,
-          linux_clang-10_release,
-
-          linux_nvcc-9.0_gcc-5_debug,
-          linux_clang-6_cuda-9.0_debug,
-          linux_clang-7_cuda-9.0_release,
-          linux_clang-8_cuda-9.0_debug,
-
-          linux_nvcc-9.1_gcc-5_release,
-          linux_nvcc-9.1_clang-4_debug,
-          linux_clang-7_cuda-9.1_release,
-          linux_clang-8_cuda-9.1_release,
-
-          linux_nvcc-9.2_gcc-5_release,
-          linux_nvcc-9.2_gcc-6_debug_separable_compilation,
-          linux_nvcc-9.2_gcc-7_release_extended_lambda_off,
-          linux_nvcc-9.2_clang-4_release,
-          linux_clang-7_cuda-9.2_release_c++17,
-          linux_clang-8_cuda-9.2_debug,
-          linux_clang-9_cuda-9.2_release,
-          linux_clang-10_cuda-9.2_release,
-
-          linux_nvcc-10.0_gcc-5_release,
-          linux_nvcc-10.0_gcc-6_debug,
-          linux_nvcc-10.0_gcc-7_release,
-          linux_nvcc-10.0_clang-4_debug,
-          linux_nvcc-10.0_clang-5_release_separable_compilation,
-          linux_nvcc-10.0_clang-6_debug,
-          linux_clang-8_cuda-10.0_release,
-          linux_clang-9_cuda-10.0_debug,
-          linux_clang-10_cuda-10.0_release,
-
-          linux_nvcc-10.1_gcc-5_debug,
-          linux_nvcc-10.1_gcc-6_release,
-          linux_nvcc-10.1_gcc-7_debug,
-          linux_nvcc-10.1_gcc-8_release,
-          linux_nvcc-10.1_clang-4_debug,
-          linux_nvcc-10.1_clang-5_release_cuda_only,
-          linux_nvcc-10.1_clang-6_debug,
-          linux_nvcc-10.1_clang-7_release,
-          linux_nvcc-10.1_clang-8_debug,
-          linux_clang-9_cuda-10.1_debug,
-          linux_clang-10_cuda-10.1_release,
-
-          linux_nvcc-10.2_gcc-5_debug,
-          linux_nvcc-10.2_gcc-6_release,
-          linux_nvcc-10.2_gcc-7_debug,
-          linux_nvcc-10.2_gcc-8_release,
-          linux_nvcc-10.2_clang-4_release,
-          linux_nvcc-10.2_clang-5_debug,
-          linux_nvcc-10.2_clang-6_release_cuda_only,
-          linux_nvcc-10.2_clang-7_debug,
-          linux_nvcc-10.2_clang-8_release,
-
-          linux_hip_nvcc-9.2_gcc-5_debug_hip_only,
-          linux_hip_nvcc-9.2_gcc-5_release_hip_only,
-        ]
-
         include:
         ### Analysis builds
         - name: linux_gcc-8_debug_analysis
@@ -481,6 +380,43 @@ jobs:
           os: ubuntu-latest
           env: {TRAVIS_OS_NAME: linux,   CXX: clang++, CC: clang,  ALPAKA_CI_CLANG_VER: 8.0.0,  CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.72.0, ALPAKA_CI_CMAKE_VER: 3.16.4,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:16.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "10.2", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "70"}
 
+        ## CUDA 11.0
+        # nvcc + g++
+        - name: linux_nvcc-11.0_gcc-5_debug
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: g++,     CC: gcc,    ALPAKA_CI_GCC_VER: 5,        CMAKE_BUILD_TYPE: Debug,   ALPAKA_CI_BOOST_BRANCH: boost-1.65.1, ALPAKA_CI_CMAKE_VER: 3.15.7,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:16.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "35;80"}
+        - name: linux_nvcc-11.0_gcc-6_release
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: g++,     CC: gcc,    ALPAKA_CI_GCC_VER: 6,        CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.68.0, ALPAKA_CI_CMAKE_VER: 3.16.4,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:16.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc}
+        - name: linux_nvcc-11.0_gcc-7_debug
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: g++,     CC: gcc,    ALPAKA_CI_GCC_VER: 7,        CMAKE_BUILD_TYPE: Debug,   ALPAKA_CI_BOOST_BRANCH: boost-1.67.0, ALPAKA_CI_CMAKE_VER: 3.17.1,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:20.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc}
+        - name: linux_nvcc-11.0_gcc-8_release
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: g++,     CC: gcc,    ALPAKA_CI_GCC_VER: 8,        CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.69.0, ALPAKA_CI_CMAKE_VER: 3.15.7,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:18.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "35;50", ALPAKA_EMU_MEMCPY3D: ON}
+        - name: linux_nvcc-11.0_gcc-9_release
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: g++,     CC: gcc,    ALPAKA_CI_GCC_VER: 9,        CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.69.0, ALPAKA_CI_CMAKE_VER: 3.16.4,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:18.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc}
+        # nvcc + clang++
+        - name: linux_nvcc-11.0_clang-4_release
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: clang++, CC: clang,  ALPAKA_CI_CLANG_VER: 4.0.0,  CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.67.0, ALPAKA_CI_CMAKE_VER: 3.15.7,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:16.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "35;60"}
+        - name: linux_nvcc-11.0_clang-5_debug
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: clang++, CC: clang,  ALPAKA_CI_CLANG_VER: 5.0.2,  CMAKE_BUILD_TYPE: Debug,   ALPAKA_CI_BOOST_BRANCH: boost-1.65.1, ALPAKA_CI_CMAKE_VER: 3.17.1,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:18.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "80"}
+        - name: linux_nvcc-11.0_clang-6_release_cuda_only
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: clang++, CC: clang,  ALPAKA_CI_CLANG_VER: 6.0.1,  CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.69.0, ALPAKA_CI_CMAKE_VER: 3.16.4,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:16.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "60", ALPAKA_ACC_GPU_CUDA_ONLY_MODE: ON}
+        - name: linux_nvcc-11.0_clang-7_debug
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: clang++, CC: clang,  ALPAKA_CI_CLANG_VER: 7.0.1,  CMAKE_BUILD_TYPE: Debug,   ALPAKA_CI_BOOST_BRANCH: boost-1.72.0, ALPAKA_CI_CMAKE_VER: 3.17.1,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:20.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "75", ALPAKA_CI_CLANG_LIBSTDCPP_VERSION: 7}
+        - name: linux_nvcc-11.0_clang-8_release
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: clang++, CC: clang,  ALPAKA_CI_CLANG_VER: 8.0.0,  CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.72.0, ALPAKA_CI_CMAKE_VER: 3.16.4,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:16.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CI_CLANG_LIBSTDCPP_VERSION: 7}
+        - name: linux_nvcc-11.0_clang-9_release
+          os: ubuntu-latest
+          env: {TRAVIS_OS_NAME: linux,   CXX: clang++, CC: clang,  ALPAKA_CI_CLANG_VER: 9.0.0,  CMAKE_BUILD_TYPE: Release, ALPAKA_CI_BOOST_BRANCH: boost-1.72.0, ALPAKA_CI_CMAKE_VER: 3.17.1,                     ALPAKA_CI_STDLIB: libstdc++, ALPAKA_CI_DOCKER_BASE_IMAGE_NAME: "ubuntu:18.04", ALPAKA_ACC_GPU_CUDA_ENABLE: ON, ALPAKA_CUDA_VERSION: "11.0", ALPAKA_CUDA_COMPILER: nvcc, ALPAKA_CUDA_ARCH: "70"}
+
         ## HIP
         - name: linux_hip_nvcc-9.2_gcc-5_debug_hip_only
           os: ubuntu-latest
@@ -491,10 +427,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+      if: (!contains(github.event.head_commit.message, 'ci_filter') || contains(github.event.head_commit.message, matrix.name ))
     - name: build + test
-      if: runner.os == 'Windows'
+      if: (!contains(github.event.head_commit.message, 'ci_filter') || contains(github.event.head_commit.message, matrix.name )) && (runner.os == 'Windows')
       shell: bash
       run: cd ${GITHUB_WORKSPACE} && ./script/ci.sh
     - name: build + test
-      if: runner.os == 'Linux' || runner.os == 'macOS'
+      if: (!contains(github.event.head_commit.message, 'ci_filter') || contains(github.event.head_commit.message, matrix.name )) && (runner.os == 'Linux' || runner.os == 'macOS')
       run: cd ${GITHUB_WORKSPACE} && ./script/ci.sh

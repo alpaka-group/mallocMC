@@ -1,6 +1,6 @@
 /* Copyright 2019 Alexander Matthes, Axel Huebl, Benjamin Worpitz, Bert Wesarg
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -72,14 +72,13 @@ namespace alpaka
                     MinUniformCudaHipBuiltIn const & min_ctx,
                     Tx const & x,
                     Ty const & y)
-                    -> decltype(::min(x, y))
                 {
                     alpaka::ignore_unused(min_ctx);
                     return ::min(x, y);
                 }
             };
             //#############################################################################
-            //! The CUDA mixed integral floating point min trait specialization.
+            //! The standard library mixed integral floating point min trait specialization.
             template<
                 typename Tx,
                 typename Ty>

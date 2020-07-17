@@ -1,6 +1,6 @@
 /* Copyright 2020 Sergei Bastrakov
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -91,7 +91,7 @@ namespace alpaka
                     std::int32_t value)
                 -> std::int32_t
                 {
-                    return __ffs(value);
+                    return __ffs(static_cast<int>(value));
                 }
 
                 //-----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ namespace alpaka
                     std::int64_t value)
                 -> std::int32_t
                 {
-                    return __ffsll(value);
+                    return __ffsll(static_cast<long long>(value));
                 }
             };
         }

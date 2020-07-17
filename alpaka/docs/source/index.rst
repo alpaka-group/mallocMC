@@ -23,7 +23,7 @@ Individual chapters are based on the information of the chapters before.
 
 .. only:: html
 
-   The online version of this document is **versioned** and shows by default the manual of the last *stable* version of Alpaka.
+   The online version of this document is **versioned** and shows by default the manual of the last *stable* version of alpaka.
    If you are looking for the latest *development* version, `click here <https://alpaka.readthedocs.io/en/latest/>`_.
 
 .. note::
@@ -48,6 +48,7 @@ Individual chapters are based on the information of the chapters before.
    usage/abstraction
    usage/implementation
    usage/cmake_example
+   usage/cheatsheet
 
 .. toctree::
    :caption: DEVELOPMENT

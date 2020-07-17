@@ -1,6 +1,6 @@
 /* Copyright 2019 Benjamin Worpitz, René Widera
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -34,6 +34,7 @@
 #include <alpaka/intrinsic/IntrinsicUniformCudaHipBuiltIn.hpp>
 #include <alpaka/rand/RandUniformCudaHipRand.hpp>
 #include <alpaka/time/TimeUniformCudaHipBuiltIn.hpp>
+#include <alpaka/warp/WarpUniformCudaHipBuiltIn.hpp>
 
 // Specialized traits.
 #include <alpaka/acc/Traits.hpp>
@@ -85,7 +86,9 @@ namespace alpaka
             public block::sync::BlockSyncUniformCudaHipBuiltIn,
             public intrinsic::IntrinsicUniformCudaHipBuiltIn,
             public rand::RandUniformCudaHipRand,
-            public time::TimeUniformCudaHipBuiltIn
+            public time::TimeUniformCudaHipBuiltIn,
+            public warp::WarpUniformCudaHipBuiltIn,
+            public concepts::Implements<ConceptAcc, AccGpuUniformCudaHipRt<TDim, TIdx>>
         {
         public:
             //-----------------------------------------------------------------------------

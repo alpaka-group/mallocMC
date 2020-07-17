@@ -1,6 +1,6 @@
 /* Copyright 2019 Axel Huebl, Benjamin Worpitz, René Widera
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,6 +24,7 @@
 #include <alpaka/intrinsic/IntrinsicCpu.hpp>
 #include <alpaka/rand/RandStdLib.hpp>
 #include <alpaka/time/TimeStdLib.hpp>
+#include <alpaka/warp/WarpSingleThread.hpp>
 
 // Specialized traits.
 #include <alpaka/acc/Traits.hpp>
@@ -80,6 +81,7 @@ namespace alpaka
             public intrinsic::IntrinsicCpu,
             public rand::RandStdLib,
             public time::TimeStdLib,
+            public warp::WarpSingleThread,
             public concepts::Implements<ConceptAcc, AccCpuThreads<TDim, TIdx>>
         {
         public:
