@@ -3,7 +3,7 @@
 #
 # Copyright 2017-2019 Benjamin Worpitz
 #
-# This file is part of Alpaka.
+# This file is part of alpaka.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -23,6 +23,13 @@ if [ "$TRAVIS_OS_NAME" = "linux" ]
 then
     travis_retry apt-get -y --quiet update
     travis_retry apt-get -y install sudo
+
+    # tzdata is installed by software-properties-common but it requires some special handling
+    if [[ "${ALPAKA_CI_DOCKER_BASE_IMAGE_NAME}" == *"20.04"* ]]
+    then
+        export DEBIAN_FRONTEND=noninteractive
+        travis_retry sudo apt-get --quiet --allow-unauthenticated --no-install-recommends install tzdata
+    fi
 
     # software-properties-common: 'add-apt-repository' and certificates for wget https download
     # binutils: ld

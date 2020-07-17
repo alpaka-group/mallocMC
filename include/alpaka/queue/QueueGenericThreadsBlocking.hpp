@@ -1,6 +1,6 @@
 /* Copyright 2019 Axel Huebl, Benjamin Worpitz, Matthias Werner
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -56,7 +56,7 @@ namespace alpaka
                 {
                 public:
                     //-----------------------------------------------------------------------------
-                    QueueGenericThreadsBlockingImpl(
+                    explicit QueueGenericThreadsBlockingImpl(
                         TDev const & dev) noexcept :
                             m_dev(dev),
                             m_bCurrentlyExecutingTask(false)
@@ -101,7 +101,7 @@ namespace alpaka
         {
         public:
             //-----------------------------------------------------------------------------
-            QueueGenericThreadsBlocking(
+            explicit QueueGenericThreadsBlocking(
                 TDev const & dev) :
                     m_spQueueImpl(std::make_shared<generic::detail::QueueGenericThreadsBlockingImpl<TDev>>(dev))
             {

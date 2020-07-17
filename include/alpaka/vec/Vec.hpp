@@ -1,6 +1,6 @@
 /* Copyright 2019 Axel Huebl, Benjamin Worpitz, Erik Zenker, Matthias Werner, René Widera
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -110,7 +110,6 @@ namespace alpaka
             static_assert(TDim::value >= 0u, "Invalid dimensionality");
 
             using Dim = TDim;
-            static constexpr auto s_uiDim = TDim::value;
             using Val = TVal;
 
         private:
@@ -156,7 +155,7 @@ namespace alpaka
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC
-            Vec(Vec &&) = default;
+            Vec(Vec &&) noexcept = default;
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC
@@ -164,7 +163,7 @@ namespace alpaka
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC
-            auto operator=(Vec &&) -> Vec & = default;
+            auto operator=(Vec &&) noexcept -> Vec & = default;
             //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC ~Vec() = default;

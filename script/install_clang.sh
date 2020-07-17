@@ -3,7 +3,7 @@
 #
 # Copyright 2017-2019 Benjamin Worpitz
 #
-# This file is part of Alpaka.
+# This file is part of alpaka.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,10 +20,11 @@ source ./script/set.sh
 : "${ALPAKA_CI_STDLIB?'ALPAKA_CI_STDLIB must be specified'}"
 : "${CXX?'CXX must be specified'}"
 
+ALPAKA_CI_CLANG_VER_SEMANTIC=( ${ALPAKA_CI_CLANG_VER//./ } )
+ALPAKA_CI_CLANG_VER_MAJOR="${ALPAKA_CI_CLANG_VER_SEMANTIC[0]}"
+
 if [ -z "$(ls -A "${ALPAKA_CI_CLANG_DIR}")" ]
 then
-    ALPAKA_CI_CLANG_VER_SEMANTIC=( ${ALPAKA_CI_CLANG_VER//./ } )
-    ALPAKA_CI_CLANG_VER_MAJOR="${ALPAKA_CI_CLANG_VER_SEMANTIC[0]}"
 
     if (( "${ALPAKA_CI_CLANG_VER_MAJOR}" >= 10 ))
     then
@@ -37,6 +38,13 @@ then
     xzcat "${ALPAKA_CLANG_PKG_FILE_NAME}" | tar -xf - --strip 1 -C "${ALPAKA_CI_CLANG_DIR}"
     sudo rm -rf "${ALPAKA_CLANG_PKG_FILE_NAME}"
 fi
+if [[ "${ALPAKA_CI_DOCKER_BASE_IMAGE_NAME}" == *"20.04"* ]]
+then
+    if (( ("${ALPAKA_CI_CLANG_VER_MAJOR}" >= 9) && ("${ALPAKA_CI_CLANG_VER_MAJOR}" <= 10) ))
+    then
+        travis_retry sudo apt-get -y --quiet --allow-unauthenticated --no-install-recommends install libtinfo5
+    fi
+fi
 "${ALPAKA_CI_CLANG_DIR}/bin/llvm-config" --version
 export LLVM_CONFIG="${ALPAKA_CI_CLANG_DIR}/bin/llvm-config"
 
@@ -49,7 +57,6 @@ then
     travis_retry sudo apt-get -y --quiet --allow-unauthenticated --no-install-recommends install libc++-dev
     travis_retry sudo apt-get -y --quiet --allow-unauthenticated --no-install-recommends install libc++abi-dev
 fi
-travis_retry sudo apt-get -y --quiet --allow-unauthenticated --no-install-recommends install libiomp-dev
 sudo update-alternatives --install /usr/bin/clang clang "${ALPAKA_CI_CLANG_DIR}"/bin/clang 50
 sudo update-alternatives --install /usr/bin/clang++ clang++ "${ALPAKA_CI_CLANG_DIR}"/bin/clang++ 50
 sudo update-alternatives --install /usr/bin/cc cc "${ALPAKA_CI_CLANG_DIR}"/bin/clang 50

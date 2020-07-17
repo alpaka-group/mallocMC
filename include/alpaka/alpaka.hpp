@@ -1,6 +1,6 @@
 /* Copyright 2019 Axel Huebl, Benjamin Worpitz, Erik Zenker, Matthias Werner, René Widera
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -46,12 +46,14 @@
         // dynamic
         #include <alpaka/block/shared/dyn/BlockSharedMemDynUniformCudaHipBuiltIn.hpp>
         #include <alpaka/block/shared/dyn/BlockSharedMemDynBoostAlignedAlloc.hpp>
+        #include <alpaka/block/shared/dyn/BlockSharedMemDynMember.hpp>
         #include <alpaka/block/shared/dyn/Traits.hpp>
         //-----------------------------------------------------------------------------
         // static
         #include <alpaka/block/shared/st/BlockSharedMemStUniformCudaHipBuiltIn.hpp>
         #include <alpaka/block/shared/st/BlockSharedMemStMasterSync.hpp>
         #include <alpaka/block/shared/st/BlockSharedMemStNoSync.hpp>
+        #include <alpaka/block/shared/st/BlockSharedMemStMember.hpp>
         #include <alpaka/block/shared/st/Traits.hpp>
     //-----------------------------------------------------------------------------
     // sync

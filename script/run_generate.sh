@@ -3,7 +3,7 @@
 #
 # Copyright 2014-2019 Benjamin Worpitz
 #
-# This file is part of Alpaka.
+# This file is part of alpaka.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -44,6 +44,12 @@ then
     echo "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}"
 fi
 
+ALPAKA_CI_CMAKE_EXECUTABLE=cmake
+if [ "$TRAVIS_OS_NAME" = "linux" ]
+then
+    ALPAKA_CI_CMAKE_EXECUTABLE="${ALPAKA_CI_CMAKE_DIR}/bin/cmake"
+fi
+
 ALPAKA_CI_CMAKE_GENERATOR_PLATFORM=""
 if [ "$TRAVIS_OS_NAME" = "linux" ] || [ "$TRAVIS_OS_NAME" = "osx" ]
 then
@@ -66,7 +72,8 @@ fi
 mkdir -p build/
 cd build/
 
-cmake -G "${ALPAKA_CI_CMAKE_GENERATOR}" ${ALPAKA_CI_CMAKE_GENERATOR_PLATFORM} \
+"${ALPAKA_CI_CMAKE_EXECUTABLE}" -G "${ALPAKA_CI_CMAKE_GENERATOR}" ${ALPAKA_CI_CMAKE_GENERATOR_PLATFORM} \
+    -Dalpaka_BUILD_EXAMPLES=ON -DBUILD_TESTING=ON \
     "$(env2cmake BOOST_ROOT)" -DBOOST_LIBRARYDIR="${ALPAKA_CI_BOOST_LIB_DIR}/lib" -DBoost_USE_STATIC_LIBS=ON -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF \
     "$(env2cmake CMAKE_BUILD_TYPE)" "$(env2cmake CMAKE_CXX_FLAGS)" "$(env2cmake CMAKE_EXE_LINKER_FLAGS)" \
     "$(env2cmake ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE)" "$(env2cmake ALPAKA_ACC_CPU_B_SEQ_T_THREADS_ENABLE)" "$(env2cmake ALPAKA_ACC_CPU_B_SEQ_T_FIBERS_ENABLE)" \
@@ -76,6 +83,7 @@ cmake -G "${ALPAKA_CI_CMAKE_GENERATOR}" ${ALPAKA_CI_CMAKE_GENERATOR_PLATFORM} \
     "$(env2cmake ALPAKA_ACC_GPU_CUDA_ENABLE)" "$(env2cmake ALPAKA_CUDA_VERSION)" "$(env2cmake ALPAKA_ACC_GPU_CUDA_ONLY_MODE)" "$(env2cmake ALPAKA_CUDA_ARCH)" "$(env2cmake ALPAKA_CUDA_COMPILER)" \
     "$(env2cmake ALPAKA_CUDA_FAST_MATH)" "$(env2cmake ALPAKA_CUDA_FTZ)" "$(env2cmake ALPAKA_CUDA_SHOW_REGISTER)" "$(env2cmake ALPAKA_CUDA_KEEP_FILES)" "$(env2cmake ALPAKA_CUDA_NVCC_EXPT_EXTENDED_LAMBDA)" "$(env2cmake ALPAKA_CUDA_NVCC_SEPARABLE_COMPILATION)" \
     "$(env2cmake ALPAKA_ACC_GPU_HIP_ENABLE)" "$(env2cmake ALPAKA_ACC_GPU_HIP_ONLY_MODE)" "$(env2cmake ALPAKA_HIP_PLATFORM)" \
+    "$(env2cmake ALPAKA_EMU_MEMCPY3D)" \
     "$(env2cmake ALPAKA_DEBUG)" "$(env2cmake ALPAKA_CI)" "$(env2cmake ALPAKA_CI_ANALYSIS)" "$(env2cmake ALPAKA_CXX_STANDARD)" \
     ".."
 

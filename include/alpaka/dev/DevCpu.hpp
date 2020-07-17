@@ -1,6 +1,6 @@
 /* Copyright 2019 Axel Huebl, Benjamin Worpitz, Matthias Werner
  *
- * This file is part of Alpaka.
+ * This file is part of alpaka.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -126,7 +126,9 @@ namespace alpaka
 
         //#############################################################################
         //! The CPU device handle.
-        class DevCpu : public concepts::Implements<wait::ConceptCurrentThreadWaitFor, DevCpu>
+        class DevCpu :
+            public concepts::Implements<wait::ConceptCurrentThreadWaitFor, DevCpu>,
+            public concepts::Implements<ConceptDev, DevCpu>
         {
             friend struct pltf::traits::GetDevByIdx<pltf::PltfCpu>;
         protected:
@@ -230,6 +232,23 @@ namespace alpaka
                     alpaka::ignore_unused(dev);
 
                     return dev::cpu::detail::getFreeGlobalMemSizeBytes();
+                }
+            };
+
+            //#############################################################################
+            //! The CPU device warp size get trait specialization.
+            template<>
+            struct GetWarpSize<
+                dev::DevCpu>
+            {
+                //-----------------------------------------------------------------------------
+                ALPAKA_FN_HOST static auto getWarpSize(
+                    dev::DevCpu const & dev)
+                -> std::size_t
+                {
+                    alpaka::ignore_unused(dev);
+
+                    return 1u;
                 }
             };
 

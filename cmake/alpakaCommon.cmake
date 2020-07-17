@@ -1,7 +1,8 @@
 #
 # Copyright 2014-2020 Benjamin Worpitz, Erik Zenker, Axel Huebl, Jan Stephan
+#                     Rene Widera
 #
-# This file is part of Alpaka.
+# This file is part of alpaka.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,6 +21,8 @@ set(ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE_DEFAULT ON)
 set(ALPAKA_ACC_CPU_B_SEQ_T_OMP2_ENABLE_DEFAULT ON)
 set(ALPAKA_ACC_CPU_BT_OMP4_ENABLE_DEFAULT ON)
 
+set(ALPAKA_EMU_MEMCPY3D_DEFAULT OFF)
+
 # HIP and platform selection and warning about unsupported features
 option(ALPAKA_ACC_GPU_HIP_ENABLE "Enable the HIP back-end (all other back-ends must be disabled)" OFF)
 option(ALPAKA_ACC_GPU_HIP_ONLY_MODE "Only back-ends using HIP can be enabled in this mode." OFF) # HIP only runs without other back-ends
@@ -36,7 +39,7 @@ endif()
 if(ALPAKA_ACC_GPU_HIP_ENABLE AND ALPAKA_HIP_PLATFORM MATCHES "clang")
     message(WARNING
         "The HIP back-end is currently experimental."
-        "Alpaka HIP backend compiled with clang does not support callback functions."
+        "alpaka HIP backend compiled with clang does not support callback functions."
         )
 endif()
 
@@ -68,6 +71,7 @@ endif()
 
 if(ALPAKA_ACC_GPU_HIP_ENABLE)
     set(ALPAKA_ACC_CPU_B_SEQ_T_FIBERS_ENABLE_DEFAULT OFF)
+    set(ALPAKA_EMU_MEMCPY3D_DEFAULT ON)
 endif()
 
 if(ALPAKA_ACC_GPU_CUDA_ONLY_MODE AND NOT ALPAKA_ACC_GPU_CUDA_ENABLE)
@@ -86,6 +90,8 @@ option(ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE "Enable the TBB CPU grid block back-end
 option(ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE "Enable the OpenMP 2.0 CPU grid block back-end" ${ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE_DEFAULT})
 option(ALPAKA_ACC_CPU_B_SEQ_T_OMP2_ENABLE "Enable the OpenMP 2.0 CPU block thread back-end" ${ALPAKA_ACC_CPU_B_SEQ_T_OMP2_ENABLE_DEFAULT})
 option(ALPAKA_ACC_CPU_BT_OMP4_ENABLE "Enable the OpenMP 4.0 CPU block and block thread back-end" ${ALPAKA_ACC_CPU_BT_OMP4_ENABLE_DEFAULT})
+
+option(ALPAKA_EMU_MEMCPY3D "Emulate internal used hip/cuda-Memcpy3D(async) with a kernel" ${ALPAKA_EMU_MEMCPY3D_DEFAULT})
 
 if((ALPAKA_ACC_GPU_CUDA_ONLY_MODE OR ALPAKA_ACC_GPU_HIP_ONLY_MODE)
    AND
@@ -130,6 +136,9 @@ if(NOT TARGET alpaka)
 
     add_library(alpaka::alpaka ALIAS alpaka)
 endif()
+
+option(ALPAKA_DEBUG_OFFLOAD_ASSUME_HOST "Allow host-only contructs like assert in offload code in debug mode." ON)
+set(ALPAKA_BLOCK_SHARED_DYN_MEMBER_ALLOC_KIB "30" CACHE STRING "Kibibytes (1024B) of memory to allocate for block shared memory for backends requiring static allocation (includes CPU_B_OMP2_T_SEQ, CPU_B_TBB_T_SEQ, CPU_B_SEQ_T_SEQ)")
 
 #-------------------------------------------------------------------------------
 # Debug output of common variables.
@@ -571,11 +580,11 @@ endif()
 if(ALPAKA_ACC_GPU_HIP_ENABLE)
 
     if(NOT DEFINED ALPAKA_HIP_VERSION)
-        set(ALPAKA_HIP_VERSION 3.1)
+        set(ALPAKA_HIP_VERSION 3.3)
     endif()
 
-    if(ALPAKA_HIP_VERSION VERSION_LESS 3.1)
-        message(WARNING "HIP < 3.1 is not supported!")
+    if(ALPAKA_HIP_VERSION VERSION_LESS 3.3)
+        message(WARNING "HIP < 3.3 is not supported!")
         set(_ALPAKA_FOUND FALSE)
     else()
         # must set this for HIP package (note that you also need certain env vars)
@@ -780,7 +789,15 @@ if(ALPAKA_ACC_GPU_HIP_ENABLE)
     message(STATUS ALPAKA_ACC_GPU_HIP_ENABLED)
 endif()
 
+if(ALPAKA_EMU_MEMCPY3D)
+    target_compile_definitions(alpaka INTERFACE "ALPAKA_EMU_MEMCPY3D_ENABLED")
+endif()
+
 target_compile_definitions(alpaka INTERFACE "ALPAKA_DEBUG=${ALPAKA_DEBUG}")
+if(ALPAKA_DEBUG_OFFLOAD_ASSUME_HOST)
+   target_compile_definitions(alpaka INTERFACE "ALPAKA_DEBUG_OFFLOAD_ASSUME_HOST")
+endif()
+target_compile_definitions(alpaka INTERFACE "ALPAKA_BLOCK_SHARED_DYN_MEMBER_ALLOC_KIB=${ALPAKA_BLOCK_SHARED_DYN_MEMBER_ALLOC_KIB}")
 
 if(ALPAKA_CI)
     target_compile_definitions(alpaka INTERFACE "ALPAKA_CI")
@@ -871,5 +888,10 @@ if((ALPAKA_ACC_GPU_CUDA_ENABLE OR ALPAKA_ACC_GPU_HIP_ENABLE) AND ALPAKA_CUDA_COM
                  PROPERTY INTERFACE_COMPILE_OPTIONS)
     string(REPLACE ";" " " _ALPAKA_COMPILE_OPTIONS_STRING "${_ALPAKA_COMPILE_OPTIONS_PUBLIC}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_ALPAKA_COMPILE_OPTIONS_STRING}")
+
+    # Append CMAKE_CXX_FLAGS_[Release|Debug|RelWithDebInfo] to CMAKE_CXX_FLAGS
+    # because FindCUDA only propagates the latter to nvcc.
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" build_config)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${build_config}}")
 endif()
 
