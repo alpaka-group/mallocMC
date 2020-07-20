@@ -27,12 +27,7 @@
 
 #include <alpaka/alpaka.hpp>
 #include <catch2/catch.hpp>
-#include <mallocMC/AlignmentPolicies.hpp>
-#include <mallocMC/CreationPolicies.hpp>
-#include <mallocMC/DistributionPolicies.hpp>
-#include <mallocMC/OOMPolicies.hpp>
-#include <mallocMC/ReservePoolPolicies.hpp>
-#include <mallocMC/mallocMC_hostclass.hpp>
+#include <mallocMC/mallocMC.hpp>
 
 using Idx = std::size_t;
 
@@ -85,7 +80,7 @@ void test1D()
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 16;
-    static_assert(N <= mallocMC::MaxThreadsPerBlock::value, "");
+    static_assert(N <= mallocMC::maxThreadsPerBlock, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
@@ -170,7 +165,7 @@ void test2D()
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 8;
-    static_assert(N * N <= mallocMC::MaxThreadsPerBlock::value, "");
+    static_assert(N * N <= mallocMC::maxThreadsPerBlock, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 
@@ -270,7 +265,7 @@ void test3D()
     auto queue = alpaka::queue::Queue<Acc, alpaka::queue::Blocking>{dev};
 
     constexpr auto N = 4;
-    static_assert(N * N * N <= mallocMC::MaxThreadsPerBlock::value, "");
+    static_assert(N * N * N <= mallocMC::maxThreadsPerBlock, "");
 
     ScatterAllocator scatterAlloc(dev, queue, 1024U * 1024U); // 1 MiB
 

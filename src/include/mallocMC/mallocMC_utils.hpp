@@ -170,16 +170,11 @@ namespace mallocMC
         return (a + b - 1) / b;
     }
 
-    /** the maximal number threads per block
+    /** the maximal number threads per block, valid for sm_2.X - sm_7.5
      *
      * https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
      */
-    struct MaxThreadsPerBlock
-    {
-        // valid for sm_2.X - sm_7.5
-        // TODO alpaka
-        static constexpr uint32_t value = 1024;
-    };
+    constexpr uint32_t maxThreadsPerBlock = 1024;
 
     /** warp id within a cuda block
      *
