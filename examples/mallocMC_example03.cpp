@@ -69,7 +69,7 @@ using ScatterAllocator = mallocMC::Allocator<
     mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
-ALPAKA_STATIC_ACC_MEM_GLOBAL int * arA;
+ALPAKA_STATIC_ACC_MEM_GLOBAL int * arA = nullptr;
 
 struct ExampleKernel
 {
@@ -78,15 +78,22 @@ struct ExampleKernel
         ScatterAllocator::AllocatorHandle allocHandle) const
     {
         const auto id
-            = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0];
+            = static_cast<uint32_t>(alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0]);
         if(id == 0)
             arA = (int *)allocHandle.malloc(acc, sizeof(int) * 32);
-
-        const auto slots = allocHandle.getAvailableSlots(acc, 1);
+        // wait the the malloc from thread zero is not changing the result for some threads
         alpaka::block::sync::syncBlockThreads(acc);
-        arA[id] = id;
-        printf("id: %zu array: %d slots %u\n", id, arA[id], slots);
+        const auto slots = allocHandle.getAvailableSlots(acc, 1);
+        if(arA != nullptr)
+        {
+            arA[id] = id;
+            printf("id: %u array: %d slots %u\n", id, arA[id], slots);
+        }
+        else
+            printf("error: device size allocation failed");
 
+        // wait that all thread read from `arA`
+        alpaka::block::sync::syncBlockThreads(acc);
         if(id == 0)
             allocHandle.free(acc, arA);
     }
