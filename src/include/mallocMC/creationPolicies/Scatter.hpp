@@ -1339,6 +1339,9 @@ namespace mallocMC
                 warpResults[wId] = 0;
                 activePerWarp[wId] = 0;
 
+                // wait that all shared memory is initialized
+                alpaka::block::sync::syncBlockThreads(acc);
+
                 // the active threads obtain an id from 0 to activeThreads-1
                 if(slotSize == 0)
                     return 0;
@@ -1354,12 +1357,13 @@ namespace mallocMC
                     alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(
                         acc, &warpResults[wId], temp);
 
-#if(MALLOCMC_DEVICE_COMPILE)
-                __threadfence_block();
-#else
+                alpaka::block::sync::syncBlockThreads(acc);
+#if(!MALLOCMC_DEVICE_COMPILE)
+                // alpaka is not providing memory fence methods for CPU, for GPU the block sync will be a thread fence too
                 std::atomic_thread_fence(
                     std::memory_order::memory_order_seq_cst);
 #endif
+
 
                 return warpResults[wId];
             }
