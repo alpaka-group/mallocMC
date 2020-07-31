@@ -39,10 +39,12 @@
 #include <intrin.h>
 #endif
 
+#include <atomic>
 #include <cstdint>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 /* HIP-clang is doing something wrong and uses the host path of the code when __HIP_DEVICE_COMPILE__
  * only is used to detect the device compile path.
@@ -234,5 +236,57 @@ namespace mallocMC
         }
         return count;
 #endif
+    }
+
+    // Threadfence implementations will maybe moved later into alpaka
+    template<typename T_Acc, typename T_Sfinae = void>
+    struct ThreadFence
+    {
+        // CPU only implementation
+        static void device()
+        {
+            std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
+        }
+
+        static void block()
+        {
+            std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
+        }
+    };
+
+    template<typename T_Acc>
+    struct ThreadFence<
+        T_Acc,
+        typename std::enable_if<alpaka::concepts::ImplementsConcept<
+            alpaka::acc::ConceptUniformCudaHip,
+            T_Acc>::value>::type>
+    {
+        static ALPAKA_FN_ACC void device()
+        {
+#if MALLOCMC_DEVICE_COMPILE
+            __threadfence();
+#endif
+        }
+
+        static ALPAKA_FN_ACC void block()
+        {
+#if MALLOCMC_DEVICE_COMPILE
+            __threadfence_block();
+#endif
+        }
+    };
+
+    ALPAKA_NO_HOST_ACC_WARNING
+    template<typename T_Acc>
+    ALPAKA_FN_ACC void threadfenceDevice(T_Acc const & acc)
+    {
+        ThreadFence<T_Acc>::device();
+    }
+
+    ALPAKA_NO_HOST_ACC_WARNING
+    template<typename T_Acc>
+    ALPAKA_FN_ACC void threadfenceBlock(T_Acc const & acc)
+    {
+        ThreadFence<T_Acc>::block();
     }
 } // namespace mallocMC
