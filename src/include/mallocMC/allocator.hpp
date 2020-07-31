@@ -153,7 +153,12 @@ namespace mallocMC
          */
         template<typename AlpakaDevice, typename AlpakaQueue>
         ALPAKA_FN_HOST void
-        alloc(AlpakaDevice & dev, AlpakaQueue & queue, size_t size)
+        /* `volatile size_t size` is required to break clang optimizations which
+         * results into runtime errors. Observed in PIConGPU if size is known at
+         * compile time. The volatile workaround has no negative effects on the
+         * register usage in CUDA.
+         */
+        alloc(AlpakaDevice & dev, AlpakaQueue & queue, volatile size_t size)
         {
             void * pool = reservePolicy.setMemPool(dev, size);
             std::tie(pool, size) = AlignmentPolicy::alignPool(pool, size);
