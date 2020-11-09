@@ -71,10 +71,8 @@ void run()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                auto * ptr = allocHandle.malloc(acc, sizeof(int) * 1000);
+            [] ALPAKA_FN_ACC(const Acc& acc, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                auto* ptr = allocHandle.malloc(acc, sizeof(int) * 1000);
                 allocHandle.free(acc, ptr);
             },
             scatterAlloc.getAllocatorHandle()));
