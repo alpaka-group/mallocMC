@@ -864,10 +864,6 @@ namespace mallocMC
              */
             template<typename AlpakaAcc>
             ALPAKA_FN_ACC
-#if(BOOST_COMP_CLANG && BOOST_LANG_HIP)
-            // The clang HIP compiler is producing runtime errors if this method is inlined.
-            __noinline__
-#endif
             auto create(const AlpakaAcc & acc, uint32 bytes)
                 -> void *
             {
