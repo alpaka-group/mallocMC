@@ -33,8 +33,8 @@
 
 using Dim = alpaka::dim::DimInt<1>;
 using Idx = std::size_t;
-//using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
-//using Acc = alpaka::acc::AccCpuOmp2Threads<Dim, Idx>;
+// using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+// using Acc = alpaka::acc::AccCpuOmp2Threads<Dim, Idx>;
 using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
 // configurate the CreationPolicy "Scatter"

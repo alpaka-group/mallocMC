@@ -58,7 +58,7 @@ struct AlignmentConfig
     static constexpr auto dataAlignment = 16;
 };
 
-ALPAKA_STATIC_ACC_MEM_GLOBAL int ** deviceArray;
+ALPAKA_STATIC_ACC_MEM_GLOBAL int** deviceArray;
 
 template<template<typename, typename> typename AccTemplate>
 void test1D()
@@ -69,11 +69,11 @@ void test1D()
     using ScatterAllocator = mallocMC::Allocator<
         Acc,
         mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
-        //mallocMC::CreationPolicies::OldMalloc,
+        // mallocMC::CreationPolicies::OldMalloc,
         mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
         mallocMC::OOMPolicies::ReturnNull,
         mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
-        //mallocMC::ReservePoolPolicies::CudaSetLimits,
+        // mallocMC::ReservePoolPolicies::CudaSetLimits,
         mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
 
     const auto dev = alpaka::pltf::getDevByIdx<Acc>(0);
@@ -89,12 +89,8 @@ void test1D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                int N,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                deviceArray
-                    = (int **)allocHandle.malloc(acc, sizeof(int *) * N * N);
+            [] ALPAKA_FN_ACC(const Acc& acc, int N, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                deviceArray = (int**) allocHandle.malloc(acc, sizeof(int*) * N * N);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
@@ -104,32 +100,24 @@ void test1D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{N}, Idx{N}, Idx{1}},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                const auto i
-                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(
-                        acc)[0];
-                deviceArray[i] = (int *)allocHandle.malloc(acc, sizeof(int));
+            [] ALPAKA_FN_ACC(const Acc& acc, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                const auto i = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0];
+                deviceArray[i] = (int*) allocHandle.malloc(acc, sizeof(int));
             },
             scatterAlloc.getAllocatorHandle()));
 
     const auto slots = scatterAlloc.getAvailableSlots(dev, queue, sizeof(int));
     const auto heapInfo = scatterAlloc.getHeapLocations().at(0);
-    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName()
-              << " slots: " << slots << " heap size: " << heapInfo.size << '\n';
+    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName() << " slots: " << slots
+              << " heap size: " << heapInfo.size << '\n';
 
     // free N * N allocations from N block of N threads for ints
     alpaka::queue::enqueue(
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{N}, Idx{N}, Idx{1}},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                const auto i
-                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(
-                        acc)[0];
+            [] ALPAKA_FN_ACC(const Acc& acc, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                const auto i = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0];
                 allocHandle.free(acc, deviceArray[i]);
             },
             scatterAlloc.getAllocatorHandle()));
@@ -139,9 +127,7 @@ void test1D()
         queue,
         alpaka::kernel::createTaskKernel<Acc>(
             alpaka::workdiv::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
+            [] ALPAKA_FN_ACC(const Acc& acc, typename ScatterAllocator::AllocatorHandle allocHandle) {
                 allocHandle.free(acc, deviceArray);
             },
             scatterAlloc.getAllocatorHandle()));
@@ -177,12 +163,8 @@ void test2D()
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                int N,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                deviceArray = (int **)allocHandle.malloc(
-                    acc, sizeof(int *) * N * N * N * N);
+            [] ALPAKA_FN_ACC(const Acc& acc, int N, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                deviceArray = (int**) allocHandle.malloc(acc, sizeof(int*) * N * N * N * N);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
@@ -195,22 +177,17 @@ void test2D()
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                int N,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                const auto idx
-                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
-                deviceArray[idx[0] * N * N + idx[1]]
-                    = (int *)allocHandle.malloc(acc, sizeof(int));
+            [] ALPAKA_FN_ACC(const Acc& acc, int N, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                const auto idx = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
+                deviceArray[idx[0] * N * N + idx[1]] = (int*) allocHandle.malloc(acc, sizeof(int));
             },
             N,
             scatterAlloc.getAllocatorHandle()));
 
     const auto slots = scatterAlloc.getAvailableSlots(dev, queue, sizeof(int));
     const auto heapInfo = scatterAlloc.getHeapLocations().at(0);
-    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName()
-              << " slots: " << slots << " heap size: " << heapInfo.size << '\n';
+    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName() << " slots: " << slots
+              << " heap size: " << heapInfo.size << '\n';
 
     // free N*N * N*N allocations from N*N block of N*N threads for ints
     alpaka::queue::enqueue(
@@ -220,12 +197,8 @@ void test2D()
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                int N,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                const auto idx
-                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
+            [] ALPAKA_FN_ACC(const Acc& acc, int N, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                const auto idx = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
                 allocHandle.free(acc, deviceArray[idx[0] * N * N + idx[1]]);
             },
             N,
@@ -239,9 +212,7 @@ void test2D()
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
+            [] ALPAKA_FN_ACC(const Acc& acc, typename ScatterAllocator::AllocatorHandle allocHandle) {
                 allocHandle.free(acc, deviceArray);
             },
             scatterAlloc.getAllocatorHandle()));
@@ -277,12 +248,8 @@ void test3D()
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                int N,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                deviceArray = (int **)allocHandle.malloc(
-                    acc, sizeof(int *) * N * N * N * N * N * N);
+            [] ALPAKA_FN_ACC(const Acc& acc, int N, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                deviceArray = (int**) allocHandle.malloc(acc, sizeof(int*) * N * N * N * N * N * N);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
@@ -296,22 +263,18 @@ void test3D()
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                int N,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                const auto idx
-                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
+            [] ALPAKA_FN_ACC(const Acc& acc, int N, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                const auto idx = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
                 deviceArray[idx[0] * N * N * N * N + idx[1] * N * N + idx[0]]
-                    = (int *)allocHandle.malloc(acc, sizeof(int));
+                    = (int*) allocHandle.malloc(acc, sizeof(int));
             },
             N,
             scatterAlloc.getAllocatorHandle()));
 
     const auto slots = scatterAlloc.getAvailableSlots(dev, queue, sizeof(int));
     const auto heapInfo = scatterAlloc.getHeapLocations().at(0);
-    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName()
-              << " slots: " << slots << " heap size: " << heapInfo.size << '\n';
+    std::cout << alpaka::acc::traits::GetAccName<Acc>::getAccName() << " slots: " << slots
+              << " heap size: " << heapInfo.size << '\n';
 
     // free N*N*N * N*N*N allocations from N*N*N blocks of N*N*N threads for
     // ints
@@ -322,16 +285,9 @@ void test3D()
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(N),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                int N,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
-                const auto idx
-                    = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
-                allocHandle.free(
-                    acc,
-                    deviceArray
-                        [idx[0] * N * N * N * N + idx[1] * N * N + idx[0]]);
+            [] ALPAKA_FN_ACC(const Acc& acc, int N, typename ScatterAllocator::AllocatorHandle allocHandle) {
+                const auto idx = alpaka::idx::getIdx<alpaka::Grid, alpaka::Threads>(acc);
+                allocHandle.free(acc, deviceArray[idx[0] * N * N * N * N + idx[1] * N * N + idx[0]]);
             },
             N,
             scatterAlloc.getAllocatorHandle()));
@@ -344,9 +300,7 @@ void test3D()
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1),
                 alpaka::vec::Vec<Dim, Idx>::all(1)},
-            [] ALPAKA_FN_ACC(
-                const Acc & acc,
-                typename ScatterAllocator::AllocatorHandle allocHandle) {
+            [] ALPAKA_FN_ACC(const Acc& acc, typename ScatterAllocator::AllocatorHandle allocHandle) {
                 allocHandle.free(acc, deviceArray);
             },
             scatterAlloc.getAllocatorHandle()));
