@@ -946,9 +946,9 @@ namespace mallocMC
                                                 "or AlignmentPolicy.");
                 }
                 auto initKernel
-                    = [] ALPAKA_FN_ACC(const AlpakaAcc& acc, T_DeviceAllocator* heap, void* heapmem, size_t memsize) {
-                          heap->pool = heapmem;
-                          heap->initDeviceFunction(acc, heapmem, memsize);
+                    = [] ALPAKA_FN_ACC(const AlpakaAcc& m_acc, T_DeviceAllocator* m_heap, void* m_heapmem, size_t m_memsize) {
+                          m_heap->pool = m_heapmem;
+                          m_heap->initDeviceFunction(m_acc, m_heapmem, m_memsize);
                       };
                 using Dim = typename alpaka::traits::DimType<AlpakaAcc>::type;
                 using Idx = typename alpaka::traits::IdxType<AlpakaAcc>::type;
