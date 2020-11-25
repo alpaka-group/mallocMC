@@ -187,9 +187,9 @@ namespace mallocMC
     template<typename AlpakaAcc>
     ALPAKA_FN_ACC inline auto warpid_withinblock(const AlpakaAcc& acc) -> std::uint32_t
     {
-        const auto localId = alpaka::idx::mapIdx<1>(
-            alpaka::idx::getIdx<alpaka::Block, alpaka::Threads>(acc),
-            alpaka::workdiv::getWorkDiv<alpaka::Block, alpaka::Threads>(acc))[0];
+        const auto localId = alpaka::mapIdx<1>(
+            alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc),
+            alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc))[0];
         return localId / warpSize;
     }
 
@@ -255,7 +255,7 @@ namespace mallocMC
     struct ThreadFence<
         T_Acc,
         typename std::enable_if<
-            alpaka::concepts::ImplementsConcept<alpaka::acc::ConceptUniformCudaHip, T_Acc>::value>::type>
+            alpaka::concepts::ImplementsConcept<alpaka::ConceptUniformCudaHip, T_Acc>::value>::type>
     {
         static ALPAKA_FN_ACC void device()
         {
