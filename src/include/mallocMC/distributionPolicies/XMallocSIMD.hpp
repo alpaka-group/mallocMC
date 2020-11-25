@@ -124,7 +124,7 @@ namespace mallocMC
 
                 // init with initial counter
                 auto& warp_sizecounter
-                    = alpaka::block::shared::st::allocVar<std::uint32_t[maxThreadsPerBlock / warpSize], __COUNTER__>(
+                    = alpaka::declareSharedVar<std::uint32_t[maxThreadsPerBlock / warpSize], __COUNTER__>(
                         acc);
                 warp_sizecounter[warpid] = 16;
 
@@ -140,7 +140,7 @@ namespace mallocMC
                 if(coalescible && threadcount > 1)
                 {
                     myoffset
-                        = alpaka::atomic::atomicOp<alpaka::atomic::op::Add>(acc, &warp_sizecounter[warpid], bytes);
+                        = alpaka::atomicOp<alpaka::AtomicAdd>(acc, &warp_sizecounter[warpid], bytes);
                     can_use_coalescing = true;
                 }
 
@@ -155,7 +155,7 @@ namespace mallocMC
             ALPAKA_FN_ACC auto distribute(const AlpakaAcc& acc, void* allocatedMem) -> void*
             {
                 auto& warp_res
-                    = alpaka::block::shared::st::allocVar<char * [maxThreadsPerBlock / warpSize], __COUNTER__>(acc);
+                    = alpaka::declareSharedVar<char * [maxThreadsPerBlock / warpSize], __COUNTER__>(acc);
 
                 char* myalloc = (char*) allocatedMem;
                 if(req_size && can_use_coalescing)

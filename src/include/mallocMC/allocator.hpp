@@ -124,7 +124,7 @@ namespace mallocMC
     private:
         ReservePoolPolicy reservePolicy;
         using DevAllocatorStorageBufferType
-            = alpaka::mem::buf::Buf<alpaka::dev::Dev<AlpakaAcc>, DevAllocator, alpaka::dim::DimInt<1>, int>;
+            = alpaka::Buf<alpaka::Dev<AlpakaAcc>, DevAllocator, alpaka::DimInt<1>, int>;
         std::unique_ptr<DevAllocatorStorageBufferType>
             devAllocatorBuffer; // FIXME(bgruber): replace by std::optional<>
         HeapInfo heapInfos;
@@ -146,11 +146,11 @@ namespace mallocMC
             std::tie(pool, size) = AlignmentPolicy::alignPool(pool, size);
 
             devAllocatorBuffer
-                = std::make_unique<DevAllocatorStorageBufferType>(alpaka::mem::buf::alloc<DevAllocator, int>(dev, 1));
+                = std::make_unique<DevAllocatorStorageBufferType>(alpaka::allocBuf<DevAllocator, int>(dev, 1));
             CreationPolicy::template initHeap<AlpakaAcc>(
                 dev,
                 queue,
-                alpaka::mem::view::getPtrNative(*devAllocatorBuffer),
+                alpaka::getPtrNative(*devAllocatorBuffer),
                 pool,
                 size);
 
@@ -202,7 +202,7 @@ namespace mallocMC
         ALPAKA_FN_HOST
         auto getAllocatorHandle() -> AllocatorHandle
         {
-            return AllocatorHandle{alpaka::mem::view::getPtrNative(*devAllocatorBuffer)};
+            return AllocatorHandle{alpaka::getPtrNative(*devAllocatorBuffer)};
         }
 
         ALPAKA_FN_HOST
