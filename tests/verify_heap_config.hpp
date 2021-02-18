@@ -28,15 +28,14 @@
 
 #pragma once
 
-// basic files for mallocMC
-#include <mallocMC/mallocMC_hostclass.hpp>
+#include <alpaka/alpaka.hpp>
+#include <mallocMC/mallocMC.hpp>
 
-// Load all available policies for mallocMC
-#include <mallocMC/AlignmentPolicies.hpp>
-#include <mallocMC/CreationPolicies.hpp>
-#include <mallocMC/DistributionPolicies.hpp>
-#include <mallocMC/OOMPolicies.hpp>
-#include <mallocMC/ReservePoolPolicies.hpp>
+using Dim = alpaka::dim::DimInt<1>;
+using Idx = std::size_t;
+//using Acc = alpaka::acc::AccCpuThreads<Dim, Idx>;
+//using Acc = alpaka::acc::AccCpuOmp2Threads<Dim, Idx>;
+using Acc = alpaka::acc::AccGpuCudaRt<Dim, Idx>;
 
 // configurate the CreationPolicy "Scatter"
 struct ScatterConfig
@@ -71,8 +70,9 @@ struct AlignmentConfig
 // Define a new allocator and call it ScatterAllocator
 // which resembles the behaviour of ScatterAlloc
 using ScatterAllocator = mallocMC::Allocator<
+    Acc,
     mallocMC::CreationPolicies::Scatter<ScatterConfig, ScatterHashParams>,
     mallocMC::DistributionPolicies::XMallocSIMD<DistributionConfig>,
     mallocMC::OOMPolicies::ReturnNull,
-    mallocMC::ReservePoolPolicies::SimpleCudaMalloc,
+    mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
     mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;

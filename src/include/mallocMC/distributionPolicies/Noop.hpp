@@ -27,6 +27,12 @@
 
 #pragma once
 
+#include "Noop.hpp"
+
+#include <alpaka/core/Common.hpp>
+#include <cstdint>
+#include <string>
+
 namespace mallocMC
 {
     namespace DistributionPolicies
@@ -37,7 +43,35 @@ namespace mallocMC
          * This DistributionPolicy will not perform any distribution, but only
          * return its input (identity function)
          */
-        class Noop;
+        class Noop
+        {
+            using uint32 = std::uint32_t;
+
+        public:
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC Noop(const AlpakaAcc & /*acc*/)
+            {}
+
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto
+            collect(const AlpakaAcc & /*acc*/, uint32 bytes) const -> uint32
+            {
+                return bytes;
+            }
+
+            template<typename AlpakaAcc>
+            ALPAKA_FN_ACC auto
+            distribute(const AlpakaAcc & /*acc*/, void * allocatedMem) const
+                -> void *
+            {
+                return allocatedMem;
+            }
+
+            static auto classname() -> std::string
+            {
+                return "Noop";
+            }
+        };
 
     } // namespace DistributionPolicies
 } // namespace mallocMC
