@@ -150,11 +150,7 @@ auto main() -> int
         const auto workDiv = alpaka::WorkDivMembers<Dim, Idx>{Idx{grid}, Idx{block}, Idx{1}};
         alpaka::enqueue(
             queue,
-            alpaka::createTaskKernel<Acc>(
-                workDiv,
-                addArrays,
-                length,
-                alpaka::getPtrNative(sumsBufferAcc)));
+            alpaka::createTaskKernel<Acc>(workDiv, addArrays, length, alpaka::getPtrNative(sumsBufferAcc)));
 
         const auto hostDev = alpaka::getDevByIdx<alpaka::DevCpu>(0);
         auto sumsBufferHost = alpaka::allocBuf<int, Idx>(hostDev, Idx{block * grid});
@@ -185,9 +181,7 @@ auto main() -> int
             allocHandle.free(acc, arC[id]);
         };
         const auto workDiv = alpaka::WorkDivMembers<Dim, Idx>{Idx{grid}, Idx{block}, Idx{1}};
-        alpaka::enqueue(
-            queue,
-            alpaka::createTaskKernel<Acc>(workDiv, freeArrays, scatterAlloc.getAllocatorHandle()));
+        alpaka::enqueue(queue, alpaka::createTaskKernel<Acc>(workDiv, freeArrays, scatterAlloc.getAllocatorHandle()));
     }
 
     {
