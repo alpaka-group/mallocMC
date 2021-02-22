@@ -672,10 +672,7 @@ auto run_heap_verification(
             const auto workDiv = alpaka::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{1}, Idx{1}};
             alpaka::enqueue(
                 queue,
-                alpaka::createTaskKernel<Acc>(
-                    workDiv,
-                    DamageElement{},
-                    alpaka::getPtrNative(d_testData)));
+                alpaka::createTaskKernel<Acc>(workDiv, DamageElement{}, alpaka::getPtrNative(d_testData)));
         }
         dout() << "done\n";
 

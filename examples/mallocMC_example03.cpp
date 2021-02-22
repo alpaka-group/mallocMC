@@ -104,9 +104,7 @@ auto main() -> int
     ScatterAllocator scatterAlloc(dev, queue, 1U * 1024U * 1024U * 1024U); // 1GB for device-side malloc
 
     const auto workDiv = alpaka::WorkDivMembers<Dim, Idx>{Idx{1}, Idx{32}, Idx{1}};
-    alpaka::enqueue(
-        queue,
-        alpaka::createTaskKernel<Acc>(workDiv, ExampleKernel{}, scatterAlloc.getAllocatorHandle()));
+    alpaka::enqueue(queue, alpaka::createTaskKernel<Acc>(workDiv, ExampleKernel{}, scatterAlloc.getAllocatorHandle()));
 
     std::cout << "Slots from Host: " << scatterAlloc.getAvailableSlots(dev, queue, 1) << '\n';
 
