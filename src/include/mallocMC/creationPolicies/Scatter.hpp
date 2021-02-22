@@ -36,6 +36,7 @@
 #include "../mallocMC_utils.hpp"
 #include "Scatter.hpp"
 
+#include <algorithm>
 #include <alpaka/alpaka.hpp>
 #include <atomic>
 #include <cassert>
@@ -929,7 +930,11 @@ namespace mallocMC
                 using VecType = alpaka::Vec<Dim, Idx>;
 
                 auto threadsPerBlock = VecType::ones();
-                threadsPerBlock[Dim::value - 1] = 256u;
+
+                auto const devProps = alpaka::getAccDevProps<AlpakaAcc>(dev);
+
+                threadsPerBlock[Dim::value - 1]
+                    = std::min(static_cast<size_t>(256u), static_cast<size_t>(devProps.m_blockThreadCountMax));
 
                 const auto workDiv = alpaka::WorkDivMembers<Dim, Idx>{
                     VecType::ones(),
@@ -1106,7 +1111,11 @@ namespace mallocMC
                 auto numBlocks = VecType::ones();
                 numBlocks[Dim::value - 1] = 64u;
                 auto threadsPerBlock = VecType::ones();
-                threadsPerBlock[Dim::value - 1] = 256u;
+
+                auto const devProps = alpaka::getAccDevProps<AlpakaAcc>(dev);
+
+                threadsPerBlock[Dim::value - 1]
+                    = std::min(static_cast<size_t>(256u), static_cast<size_t>(devProps.m_blockThreadCountMax));
 
                 const auto workDiv = alpaka::WorkDivMembers<Dim, Idx>{
                     numBlocks,
