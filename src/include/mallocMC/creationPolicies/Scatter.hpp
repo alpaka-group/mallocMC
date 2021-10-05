@@ -1016,8 +1016,6 @@ namespace mallocMC
                     for(uint32 currentpage = gid; currentpage < _numpages; currentpage += stride)
                     {
                         const uint32 maxchunksize = alpaka::math::min(acc, +pagesize, wastefactor * (uint32) slotSize);
-                        const uint32 region = currentpage / regionsize;
-                        const uint32 regionfilllevel = _regions[region];
 
                         uint32 chunksize = _ptes[currentpage].chunksize;
                         if(chunksize >= slotSize && chunksize <= maxchunksize)
