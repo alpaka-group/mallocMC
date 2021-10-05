@@ -330,11 +330,14 @@ namespace mallocMC
                 uint32 chunksize) -> uint32
             {
                 if(fullsegments != 32)
-                    return alpaka::math::max(
-                               acc,
-                               0u,
-                               (int) pagesize - (int) fullsegments * segmentsize - (int) sizeof(uint32))
-                        / chunksize;
+                    return alpaka::math::min(
+                        acc,
+                        31,
+                        alpaka::math::max(
+                            acc,
+                            0,
+                            (int) pagesize - (int) fullsegments * segmentsize - (int) sizeof(uint32))
+                            / chunksize);
                 else
                     return 0;
             }
