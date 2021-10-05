@@ -151,12 +151,23 @@ namespace mallocMC
 #if _DEBUG || ANALYSEHEAP
         public:
 #endif
-            static constexpr uint32 minChunkSize1 = 0x10;
-            static constexpr uint32 HierarchyThreshold = (pagesize - 2 * sizeof(uint32)) / 33;
-            static constexpr uint32 minSegmentSize = 32 * minChunkSize1 + sizeof(uint32);
-            static constexpr uint32 tmp_maxOPM
-                = minChunkSize > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize - 1)) / minSegmentSize;
-            static constexpr uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
+            /* HierarchyThreshold defines the largest chunk size which can be stored in a segment with hierarchy.
+             * 32 chunks can be stored without an on page bitmask, therefore a hierarchy is only useful if we store at
+             * least 33 chunks. For 33 chunks we need two bitmasks, each 32bit.
+             */
+            static constexpr uint32 HierarchyThreshold = (pagesize - 2u * sizeof(uint32)) / 33u;
+            /* Calculate minimal chunk size which can fill a page, this avoids that small allocations
+             * fragment the heap and increases the possibility that a small allocation can reuse an
+             * existing chunk.
+             * Each page can have 32x32 chunks. To maintain 32 chunks we need 32 bitmask on the page (each 32bit)
+             */
+            static constexpr uint32 minChunkSize = (pagesize - 32u * sizeof(uint32)) / (32u * 32u);
+            static constexpr uint32 minSegmentSize = 32u * minChunkSize + sizeof(uint32);
+            // Number of possible on page masks without taking the limit of 32 masks into account.
+            static constexpr uint32 onPageMasks
+                = minChunkSize > HierarchyThreshold ? 0u : (pagesize + (minSegmentSize - 1u)) / minSegmentSize;
+            // The scatter malloc hierarchy design allows only 32 on page bit masks.
+            static constexpr uint32 maxOnPageMasks = std::min(32u, onPageMasks);
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGK
 #    define MALLOCMC_CP_SCATTER_HASHINGK (HashingProperties::hashingK)
@@ -474,12 +485,21 @@ namespace mallocMC
             template<typename AlpakaAcc>
             ALPAKA_FN_ACC auto allocChunked(const AlpakaAcc& acc, uint32 bytes) -> void*
             {
+                // use the minimal allocation size to increase the hit rate for small allocations.
+                const uint32 minAllocation = alpaka::math::max(acc, bytes, +minChunkSize);
                 const uint32 pagesperblock = _numpages / accessblocks;
-                const uint32 reloff = warpSize * bytes / pagesize;
-                const uint32 startpage = (bytes * hashingK + hashingDistMP * smid()
+                const uint32 reloff = warpSize * minAllocation / pagesize;
+                const uint32 startpage = (minAllocation * hashingK + hashingDistMP * smid()
                                           + (hashingDistWP + hashingDistWPRel * reloff) * warpid())
                     % pagesperblock;
-                const uint32 maxchunksize = alpaka::math::min(acc, +pagesize, wastefactor * bytes);
+                const uint32 maxchunksize = alpaka::math::min(
+                    acc,
+                    +pagesize,
+                    /* this clumping means that allocations of minChunkSize could have a waste exceeding the
+                     * wastefactor
+                     */
+                    alpaka::math::max(acc, wastefactor * bytes, +minChunkSize));
+
                 uint32 startblock = _firstfreeblock;
                 uint32 ptetry = startpage + startblock * pagesperblock;
                 uint32 checklevel = regionsize * 3 / 4;
@@ -505,16 +525,14 @@ namespace mallocMC
                                     else if(chunksize == 0)
                                     {
                                         // lets open up a new page
-                                        // it is already padded
-                                        const uint32 new_chunksize = alpaka::math::max(acc, bytes, +minChunkSize1);
                                         const uint32 beforechunksize = alpaka::atomicOp<alpaka::AtomicCas>(
                                             acc,
                                             (uint32*) &_ptes[ptetry].chunksize,
                                             0u,
-                                            new_chunksize);
+                                            minAllocation);
                                         if(beforechunksize == 0)
                                         {
-                                            void* res = tryUsePage(acc, ptetry, new_chunksize);
+                                            void* res = tryUsePage(acc, ptetry, minAllocation);
                                             if(res != 0)
                                                 return res;
                                         }
@@ -1052,7 +1070,7 @@ namespace mallocMC
                             chunksize = alpaka::math::max(
                                 acc,
                                 (uint32) slotSize,
-                                +minChunkSize1); // ensure minimum chunk size
+                                +minChunkSize); // ensure minimum chunk size
                             slotcount += countFreeChunksInPage(
                                 acc,
                                 currentpage,
