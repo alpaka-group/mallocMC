@@ -767,10 +767,13 @@ namespace mallocMC
             {
                 if(bytes == 0)
                     return 0;
-                // take care of padding
-                // bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1); //
-                // in alignment-policy
-                if(bytes < pagesize)
+                /* Take care of padding
+                 * bytes = (bytes + dataAlignment - 1) & ~(dataAlignment-1);
+                 * in alignment-policy.
+                 * bytes == pagesize must be handled by allocChunked() else maxchunksize calculation based
+                 * on the waste factor is colliding with the allocation schema in allocPageBased().
+                 */
+                if(bytes <= pagesize)
                     // chunck based
                     return allocChunked(acc, bytes);
                 else
