@@ -155,7 +155,7 @@ namespace mallocMC
             static constexpr uint32 HierarchyThreshold = (pagesize - 2 * sizeof(uint32)) / 33;
             static constexpr uint32 minSegmentSize = 32 * minChunkSize1 + sizeof(uint32);
             static constexpr uint32 tmp_maxOPM
-                = minChunkSize1 > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize - 1)) / minSegmentSize;
+                = minChunkSize > HierarchyThreshold ? 0 : (pagesize + (minSegmentSize - 1)) / minSegmentSize;
             static constexpr uint32 maxOnPageMasks = 32 > tmp_maxOPM ? tmp_maxOPM : 32;
 
 #ifndef MALLOCMC_CP_SCATTER_HASHINGK
@@ -413,9 +413,27 @@ namespace mallocMC
 
                 // increse the fill level
                 const uint32 filllevel = alpaka::atomicOp<alpaka::AtomicAdd>(acc, (uint32*) &(_ptes[page].count), 1u);
-                // recheck chunck size (it could be that the page got freed in
-                // the meanwhile...)
-                if(!resetfreedpages || _ptes[page].chunksize == chunksize)
+
+                // if resetfreedpages == false we do not need to re-check filllevel or chunksize
+                bool tryAllocMem = resetfreedpages ? false : true;
+
+                // if _ptes[page].count >= pagesize then page is currently freed by another thread
+                if(resetfreedpages && filllevel < pagesize)
+                {
+                    /* Recheck chunk size (it could be that the page got freed in he meanwhile...)
+                     * Use atomic to guarantee that no other thread deleted the page and reinitialized
+                     * it with another chunk size.
+                     */
+                    const uint32 current_chunksize = alpaka::atomicOp<alpaka::AtomicCas>(
+                        acc,
+                        (uint32*) &_ptes[page].chunksize,
+                        chunksize,
+                        chunksize);
+                    if(current_chunksize == chunksize)
+                        tryAllocMem = true;
+                }
+
+                if(tryAllocMem)
                 {
                     if(chunksize <= HierarchyThreshold)
                     {
@@ -446,7 +464,7 @@ namespace mallocMC
             /**
              * allocChunked tries to allocate the demanded number of bytes on
              * one of the pages
-             * @param bytes the number of bytes to allocate
+             * @param bytes the number of bytes to allocate, must be <=pagesize
              * @return pointer to a free chunk on a page, 0 if we were unable to
              * obtain a free chunk
              */
@@ -509,9 +527,10 @@ namespace mallocMC
                                 }
                                 // could not alloc in region, tell that
                                 if(regionfilllevel + 1 <= regionsize)
-                                    alpaka::atomicOp<alpaka::AtomicMax>(
+                                    alpaka::atomicOp<alpaka::AtomicCas>(
                                         acc,
                                         (uint32*) (_regions + region),
+                                        regionfilllevel,
                                         regionfilllevel + 1);
                             }
                             else
@@ -583,7 +602,7 @@ namespace mallocMC
                             // clean the bits for the hierarchy
                             _page[page].init();
                             // remove chunk information
-                            _ptes[page].chunksize = 0;
+                            alpaka::atomicOp<alpaka::AtomicCas>(acc, (uint32*) &_ptes[page].chunksize, chunksize, 0u);
 
                             threadfenceDevice(acc);
 
@@ -598,7 +617,7 @@ namespace mallocMC
                 if(oldfilllevel == pagesize / 2 / chunksize)
                 {
                     const uint32 region = page / regionsize;
-                    _regions[region] = 0;
+                    alpaka::atomicOp<alpaka::AtomicExch>(acc, (uint32*) (_regions + region), 0u);
                     const uint32 block = region * regionsize * accessblocks / _numpages;
                     if(warpid() + laneid() == 0)
                         alpaka::atomicOp<alpaka::AtomicMin>(acc, (uint32*) &_firstfreeblock, block);
