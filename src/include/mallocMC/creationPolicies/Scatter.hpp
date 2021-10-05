@@ -415,7 +415,7 @@ namespace mallocMC
                 const uint32 filllevel = alpaka::atomicOp<alpaka::AtomicAdd>(acc, (uint32*) &(_ptes[page].count), 1u);
 
                 // if resetfreedpages == false we do not need to re-check filllevel or chunksize
-                bool tryAllocMem = resetfreedpages ? false : true;
+                bool tryAllocMem = !resetfreedpages;
 
                 // if _ptes[page].count >= pagesize then page is currently freed by another thread
                 if(resetfreedpages && filllevel < pagesize)
