@@ -500,25 +500,39 @@ namespace mallocMC
                      */
                     alpaka::math::max(acc, wastefactor * bytes, +minChunkSize));
 
-                uint32 startblock = _firstfreeblock;
-                uint32 ptetry = startpage + startblock * pagesperblock;
+                const uint32 startblock = _firstfreeblock;
+                const uint32 random_start_page = startpage + startblock * pagesperblock;
+
                 uint32 checklevel = regionsize * 3 / 4;
+                /* Finding a free segment is using a two step approach.
+                 * In both cases each thread will start on a different region and page based on the hash function
+                 * result, this scatters the memory access and reduces access conflicts. Both steps will in the worst
+                 * case iterate over all heap access blocks and pages.
+                 * - step I search for a region which is only filled 3/4
+                 *   - if a free segment is found return
+                 * - step II goto any region independent of the fill level
+                 *   - if a free segment is found return
+                 */
                 for(uint32 finder = 0; finder < 2; ++finder)
                 {
-                    for(uint32 b = startblock; b < accessblocks; ++b)
+                    uint32 start_page = random_start_page;
+                    uint32 b = startblock;
+                    do
                     {
-                        while(ptetry < (b + 1) * pagesperblock)
+                        while(start_page < (b + 1) * pagesperblock)
                         {
-                            const uint32 region = ptetry / regionsize;
+                            const uint32 region = start_page / regionsize;
                             const uint32 regionfilllevel = _regions[region];
+                            const uint32 region_offset = region * regionsize;
                             if(regionfilllevel < checklevel)
                             {
-                                for(; ptetry < (region + 1) * regionsize; ++ptetry)
+                                uint32 selected_page = start_page;
+                                do
                                 {
-                                    const uint32 chunksize = _ptes[ptetry].chunksize;
+                                    const uint32 chunksize = _ptes[selected_page].chunksize;
                                     if(chunksize >= bytes && chunksize <= maxchunksize)
                                     {
-                                        void* res = tryUsePage(acc, ptetry, chunksize);
+                                        void* res = tryUsePage(acc, selected_page, chunksize);
                                         if(res != 0)
                                             return res;
                                     }
@@ -527,12 +541,12 @@ namespace mallocMC
                                         // lets open up a new page
                                         const uint32 beforechunksize = alpaka::atomicOp<alpaka::AtomicCas>(
                                             acc,
-                                            (uint32*) &_ptes[ptetry].chunksize,
+                                            (uint32*) &_ptes[selected_page].chunksize,
                                             0u,
                                             minAllocation);
                                         if(beforechunksize == 0)
                                         {
-                                            void* res = tryUsePage(acc, ptetry, minAllocation);
+                                            void* res = tryUsePage(acc, selected_page, minAllocation);
                                             if(res != 0)
                                                 return res;
                                         }
@@ -540,12 +554,13 @@ namespace mallocMC
                                         {
                                             // someone else aquired the page,
                                             // but we can also use it
-                                            void* res = tryUsePage(acc, ptetry, beforechunksize);
+                                            void* res = tryUsePage(acc, selected_page, beforechunksize);
                                             if(res != 0)
                                                 return res;
                                         }
                                     }
-                                }
+                                    selected_page = region_offset + ((selected_page + 1) % regionsize);
+                                } while(selected_page != start_page);
                                 // could not alloc in region, tell that
                                 if(regionfilllevel + 1 <= regionsize)
                                     alpaka::atomicOp<alpaka::AtomicCas>(
@@ -554,21 +569,18 @@ namespace mallocMC
                                         regionfilllevel,
                                         regionfilllevel + 1);
                             }
-                            else
-                                ptetry += regionsize;
-                            // ptetry = (region+1)*regionsize;
+                            start_page += regionsize;
                         }
                         // randomize the thread writing the info
-                        // if(warpid() + laneid() == 0)
-                        if(b > startblock)
+                        // Data races are not critical.
+                        if(b > _firstfreeblock)
                             _firstfreeblock = b;
-                    }
 
-                    // we are really full :/ so lets search every page for a
-                    // spot!
-                    startblock = 0;
+                        b = (b + 1) % accessblocks;
+                    } while(b != startblock);
+
+                    // we are really full :/ so lets search every page for a segment!
                     checklevel = regionsize + 1;
-                    ptetry = 0;
                 }
                 return 0;
             }
