@@ -1237,15 +1237,17 @@ namespace mallocMC
             {
                 std::stringstream ss;
                 ss << "Scatter[";
-                ss << pagesize << ",";
-                ss << accessblocks << ",";
-                ss << regionsize << ",";
-                ss << wastefactor << ",";
-                ss << resetfreedpages << ",";
-                ss << hashingK << ",";
-                ss << hashingDistMP << ",";
-                ss << hashingDistWP << ",";
-                ss << hashingDistWPRel << "]";
+                ss << "pagesize=" << pagesize << ",";
+                ss << "accessblocks=" << accessblocks << ",";
+                ss << "regionsize=" << regionsize << ",";
+                ss << "wastefactor=" << wastefactor << ",";
+                ss << "resetfreedpages=" << resetfreedpages << ",";
+                ss << "minChunkSize=" << minChunkSize << ",";
+                ss << "HierarchyThreshold=" << HierarchyThreshold << ",";
+                ss << "hashingK=" << hashingK << ",";
+                ss << "hashingDistMP=" << hashingDistMP << ",";
+                ss << "hashingDistWP=" << hashingDistWP << ",";
+                ss << "hashingDistWPRel=" << hashingDistWPRel << "]";
                 return ss.str();
             }
         };
