@@ -487,10 +487,11 @@ namespace mallocMC
             {
                 // use the minimal allocation size to increase the hit rate for small allocations.
                 const uint32 minAllocation = alpaka::math::max(acc, bytes, +minChunkSize);
-                const uint32 pagesperblock = _numpages / accessblocks;
+                const uint32 numpages = _numpages;
+                const uint32 pagesperblock = numpages / accessblocks;
                 const uint32 reloff = warpSize * minAllocation / pagesize;
-                const uint32 startpage = (minAllocation * hashingK + hashingDistMP * smid()
-                                          + (hashingDistWP + hashingDistWPRel * reloff) * warpid())
+                const uint32 start_page_in_block = (minAllocation * hashingK + hashingDistMP * smid()
+                                                    + (hashingDistWP + hashingDistWPRel * reloff) * warpid())
                     % pagesperblock;
                 const uint32 maxchunksize = alpaka::math::min(
                     acc,
@@ -500,8 +501,11 @@ namespace mallocMC
                      */
                     alpaka::math::max(acc, wastefactor * bytes, +minChunkSize));
 
-                const uint32 startblock = _firstfreeblock;
-                const uint32 random_start_page = startpage + startblock * pagesperblock;
+                /* global page index
+                 *   - different for each thread to reduce memory read/write conflicts
+                 *   - index calculated by the hash function
+                 */
+                const uint32 global_start_page = start_page_in_block + _firstfreeblock * pagesperblock;
 
                 uint32 checklevel = regionsize * 3 / 4;
                 /* Finding a free segment is using a two step approach.
@@ -515,74 +519,81 @@ namespace mallocMC
                  */
                 for(uint32 finder = 0; finder < 2; ++finder)
                 {
-                    uint32 start_page = random_start_page;
-                    uint32 b = startblock;
+                    uint32 global_page = global_start_page;
+                    /* Loop over all pages until we found a free one or arrived to global_start_page again
+                     * This and the following loop are done as do-while to potentially save registers by avoiding an
+                     * extra loop counter variable
+                     */
                     do
                     {
-                        while(start_page < (b + 1) * pagesperblock)
+                        const uint32 region = global_page / regionsize;
+                        const uint32 regionfilllevel = _regions[region];
+                        const uint32 region_offset = region * regionsize;
+                        if(regionfilllevel < checklevel)
                         {
-                            const uint32 region = start_page / regionsize;
-                            const uint32 regionfilllevel = _regions[region];
-                            const uint32 region_offset = region * regionsize;
-                            if(regionfilllevel < checklevel)
+                            uint32 page_in_region = global_page;
+                            // loop over pages within a region
+                            do
                             {
-                                uint32 selected_page = start_page;
-                                do
+                                const uint32 chunksize = _ptes[page_in_region].chunksize;
+                                if(chunksize >= bytes && chunksize <= maxchunksize)
                                 {
-                                    const uint32 chunksize = _ptes[selected_page].chunksize;
-                                    if(chunksize >= bytes && chunksize <= maxchunksize)
+                                    void* res = tryUsePage(acc, page_in_region, chunksize);
+                                    if(res != nullptr)
+                                        return res;
+                                }
+                                else if(chunksize == 0)
+                                {
+                                    // lets open up a new page
+                                    const uint32 beforechunksize = alpaka::atomicOp<alpaka::AtomicCas>(
+                                        acc,
+                                        (uint32*) &_ptes[page_in_region].chunksize,
+                                        0u,
+                                        minAllocation);
+                                    if(beforechunksize == 0)
                                     {
-                                        void* res = tryUsePage(acc, selected_page, chunksize);
-                                        if(res != 0)
+                                        void* res = tryUsePage(acc, page_in_region, minAllocation);
+                                        if(res != nullptr)
                                             return res;
                                     }
-                                    else if(chunksize == 0)
+                                    else if(beforechunksize >= bytes && beforechunksize <= maxchunksize)
                                     {
-                                        // lets open up a new page
-                                        const uint32 beforechunksize = alpaka::atomicOp<alpaka::AtomicCas>(
-                                            acc,
-                                            (uint32*) &_ptes[selected_page].chunksize,
-                                            0u,
-                                            minAllocation);
-                                        if(beforechunksize == 0)
-                                        {
-                                            void* res = tryUsePage(acc, selected_page, minAllocation);
-                                            if(res != 0)
-                                                return res;
-                                        }
-                                        else if(beforechunksize >= bytes && beforechunksize <= maxchunksize)
-                                        {
-                                            // someone else aquired the page,
-                                            // but we can also use it
-                                            void* res = tryUsePage(acc, selected_page, beforechunksize);
-                                            if(res != 0)
-                                                return res;
-                                        }
+                                        // someone else aquired the page,
+                                        // but we can also use it
+                                        void* res = tryUsePage(acc, page_in_region, beforechunksize);
+                                        if(res != nullptr)
+                                            return res;
                                     }
-                                    selected_page = region_offset + ((selected_page + 1) % regionsize);
-                                } while(selected_page != start_page);
-                                // could not alloc in region, tell that
-                                if(regionfilllevel + 1 <= regionsize)
-                                    alpaka::atomicOp<alpaka::AtomicCas>(
-                                        acc,
-                                        (uint32*) (_regions + region),
-                                        regionfilllevel,
-                                        regionfilllevel + 1);
-                            }
-                            start_page += regionsize;
-                        }
-                        // randomize the thread writing the info
-                        // Data races are not critical.
-                        if(b > _firstfreeblock)
-                            _firstfreeblock = b;
+                                }
+                                page_in_region = region_offset + ((page_in_region + 1) % regionsize);
+                            } while(page_in_region != global_page);
 
-                        b = (b + 1) % accessblocks;
-                    } while(b != startblock);
+                            // could not alloc in region, tell that
+                            if(regionfilllevel + 1 <= regionsize)
+                                alpaka::atomicOp<alpaka::AtomicCas>(
+                                    acc,
+                                    (uint32*) (_regions + region),
+                                    regionfilllevel,
+                                    regionfilllevel + 1);
+                        }
+                        // goto next region
+                        global_page = (global_page + regionsize) % numpages;
+                        // check if we jumped into the next access block
+                        if(global_page % pagesperblock == 0u)
+                        {
+                            const uint32 access_block_id = global_page / pagesperblock;
+                            // randomize the thread writing the info
+                            // Data races are not critical.
+                            if(access_block_id > _firstfreeblock)
+                                _firstfreeblock = access_block_id;
+                        }
+
+                    } while(global_page != global_start_page);
 
                     // we are really full :/ so lets search every page for a segment!
                     checklevel = regionsize + 1;
                 }
-                return 0;
+                return nullptr;
             }
 
             /**
