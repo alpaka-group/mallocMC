@@ -54,10 +54,24 @@ namespace mallocMC
         {
             struct DefaultScatterConfig
             {
+                //! Size in byte of a page.
                 static constexpr auto pagesize = 4096;
-                static constexpr auto accessblocks = 8;
+                /** Size in byte of an access block.
+                 *
+                 * Scatter alloc will keep allocations within an access block to reduce the translation lookaside
+                 * buffer (tlb) pressure. accessblocksize can be used to optimize for the tlb of a device.
+                 */
+                static constexpr auto accessblocksize = 2u * 1024u * 1024u * 1024u;
+                //! Number of pages per region.
                 static constexpr auto regionsize = 16;
+                //! Factor used to calculate maximal allowed wast depending on the byte.
                 static constexpr auto wastefactor = 2;
+                /** Defines if a fully freed pages chunk size should be reset.
+                 *
+                 * true = Chunk size of a page will be reset if free.
+                 * false = A page will keep the chunk size selected during the first page usage over
+                 *         the full application runtime.
+                 */
                 static constexpr auto resetfreedpages = false;
             };
 
@@ -120,10 +134,10 @@ namespace mallocMC
 #endif
             static constexpr uint32 pagesize = MALLOCMC_CP_SCATTER_PAGESIZE;
 
-#ifndef MALLOCMC_CP_SCATTER_ACCESSBLOCKS
-#    define MALLOCMC_CP_SCATTER_ACCESSBLOCKS (HeapProperties::accessblocks)
+#ifndef MALLOCMC_CP_SCATTER_ACCESSBLOCKSIZE
+#    define MALLOCMC_CP_SCATTER_ACCESSBLOCKSIZE (HeapProperties::accessblocksize)
 #endif
-            static constexpr uint32 accessblocks = MALLOCMC_CP_SCATTER_ACCESSBLOCKS;
+            static constexpr size_t accessblocksize = MALLOCMC_CP_SCATTER_ACCESSBLOCKSIZE;
 
 #ifndef MALLOCMC_CP_SCATTER_REGIONSIZE
 #    define MALLOCMC_CP_SCATTER_REGIONSIZE (HeapProperties::regionsize)
@@ -142,7 +156,7 @@ namespace mallocMC
 
         public:
             static constexpr uint32 _pagesize = pagesize;
-            static constexpr uint32 _accessblocks = accessblocks;
+            static constexpr size_t _accessblocksize = accessblocksize;
             static constexpr uint32 _regionsize = regionsize;
             static constexpr uint32 _wastefactor = wastefactor;
             static constexpr bool _resetfreedpages = resetfreedpages;
@@ -238,8 +252,9 @@ namespace mallocMC
             volatile PTE* _ptes;
             volatile uint32* _regions;
             Page* _page;
-            uint32 _numpages;
             size_t _memsize;
+            uint32 _numpages;
+            uint32 _accessblocks;
             uint32 _pagebasedMutex;
             volatile uint32 _firstFreePageBased;
             volatile uint32 _firstfreeblock;
@@ -488,7 +503,7 @@ namespace mallocMC
                 // use the minimal allocation size to increase the hit rate for small allocations.
                 const uint32 minAllocation = alpaka::math::max(acc, bytes, +minChunkSize);
                 const uint32 numpages = _numpages;
-                const uint32 pagesperblock = numpages / accessblocks;
+                const uint32 pagesperblock = numpages / _accessblocks;
                 const uint32 reloff = warpSize * minAllocation / pagesize;
                 const uint32 start_page_in_block = (minAllocation * hashingK + hashingDistMP * smid()
                                                     + (hashingDistWP + hashingDistWPRel * reloff) * warpid())
@@ -662,7 +677,7 @@ namespace mallocMC
                 {
                     const uint32 region = page / regionsize;
                     alpaka::atomicOp<alpaka::AtomicExch>(acc, (uint32*) (_regions + region), 0u);
-                    const uint32 block = region * regionsize * accessblocks / _numpages;
+                    const uint32 block = region * regionsize * _accessblocks / _numpages;
                     if(warpid() + laneid() == 0)
                         alpaka::atomicOp<alpaka::AtomicMin>(acc, (uint32*) &_firstfreeblock, block);
                 }
@@ -950,6 +965,7 @@ namespace mallocMC
                 {
                     _memsize = memsize;
                     _numpages = numpages;
+                    _accessblocks = (static_cast<size_t>(numpages) * pagesize) / accessblocksize;
                     _ptes = (volatile PTE*) ptes;
                     _page = page;
                     _regions = regions;
@@ -1261,7 +1277,7 @@ namespace mallocMC
                 std::stringstream ss;
                 ss << "Scatter[";
                 ss << "pagesize=" << pagesize << ",";
-                ss << "accessblocks=" << accessblocks << ",";
+                ss << "accessblocksize=" << accessblocksize << ",";
                 ss << "regionsize=" << regionsize << ",";
                 ss << "wastefactor=" << wastefactor << ",";
                 ss << "resetfreedpages=" << resetfreedpages << ",";
