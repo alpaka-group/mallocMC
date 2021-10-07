@@ -275,14 +275,17 @@ namespace mallocMC
              * returns its offset. if there are no unset bits to the left
              * then it wraps around
              * @param bitfield the bitfield to be searched for
-             * @param spot the spot from which to search to the left
+             * @param spot the spot from which to search to the left, range [0,spots)
              * @param spots number of bits that can be used
              * @return next free spot in the bitfield
              */
             static ALPAKA_FN_ACC inline auto nextspot(uint32 bitfield, uint32 spot, uint32 spots) -> uint32
             {
+                const uint32 low_part = (spot + 1) == sizeof(uint32) * CHAR_BIT ? 0u : (bitfield >> (spot + 1));
+                const uint32 high_part = (bitfield << (spots - (spot + 1)));
+                const uint32 selection_mask = spots == sizeof(uint32) * CHAR_BIT ? ~0 : ((1 << spots) - 1);
                 // wrap around the bitfields from the current spot to the left
-                bitfield = ((bitfield >> (spot + 1)) | (bitfield << (spots - (spot + 1)))) & ((1 << spots) - 1);
+                bitfield = (high_part | low_part) & selection_mask;
                 // compute the step from the current spot in the bitfield
                 const uint32 step = ffs(~bitfield);
                 // and return the new spot
