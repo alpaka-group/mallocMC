@@ -175,7 +175,11 @@ namespace mallocMC
              * existing chunk.
              * Each page can have 32x32 chunks. To maintain 32 chunks we need 32 bitmask on the page (each 32bit)
              */
-            static constexpr uint32 minChunkSize = (pagesize - 32u * sizeof(uint32)) / (32u * 32u);
+            static constexpr uint32 minChunkSizeUnaligned = (pagesize - 32u * sizeof(uint32)) / (32u * 32u);
+            // Set minChunkSize to largest multiple of minChunkSizeAlignment that is <= minChunkSizeUnaligned
+            static constexpr uint32 minChunkSizeAlignment = 16u;
+            static constexpr uint32 minChunkSize
+                = (minChunkSizeUnaligned / minChunkSizeAlignment) * minChunkSizeAlignment;
             static constexpr uint32 minSegmentSize = 32u * minChunkSize + sizeof(uint32);
             // Number of possible on page masks without taking the limit of 32 masks into account.
             static constexpr uint32 onPageMasks
