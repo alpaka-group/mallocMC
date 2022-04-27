@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz
+/* Copyright 2022 Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -20,22 +20,18 @@ namespace alpaka
     {
     };
 
-    //-----------------------------------------------------------------------------
     //! The block synchronization traits.
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The block synchronization operation trait.
         template<typename TBlockSync, typename TSfinae = void>
         struct SyncBlockThreads;
 
-        //#############################################################################
         //! The block synchronization and predicate operation trait.
         template<typename TOp, typename TBlockSync, typename TSfinae = void>
         struct SyncBlockThreadsPredicate;
-    } // namespace traits
+    } // namespace trait
 
-    //-----------------------------------------------------------------------------
     //! Synchronizes all threads within the current block (independently for all blocks).
     //!
     //! \tparam TBlockSync The block synchronization implementation type.
@@ -45,10 +41,9 @@ namespace alpaka
     ALPAKA_FN_ACC auto syncBlockThreads(TBlockSync const& blockSync) -> void
     {
         using ImplementationBase = concepts::ImplementationBase<ConceptBlockSync, TBlockSync>;
-        traits::SyncBlockThreads<ImplementationBase>::syncBlockThreads(blockSync);
+        trait::SyncBlockThreads<ImplementationBase>::syncBlockThreads(blockSync);
     }
 
-    //#############################################################################
     //! The counting function object.
     struct BlockCount
     {
@@ -64,7 +59,6 @@ namespace alpaka
             return currentResult + static_cast<T>(value != static_cast<T>(0));
         }
     };
-    //#############################################################################
     //! The logical and function object.
     struct BlockAnd
     {
@@ -80,7 +74,6 @@ namespace alpaka
             return static_cast<T>(currentResult && (value != static_cast<T>(0)));
         }
     };
-    //#############################################################################
     //! The logical or function object.
     struct BlockOr
     {
@@ -97,7 +90,6 @@ namespace alpaka
         }
     };
 
-    //-----------------------------------------------------------------------------
     //! Synchronizes all threads within the current block (independently for all blocks),
     //! evaluates the predicate for all threads and returns the combination of all the results
     //! computed via TOp.
@@ -111,7 +103,7 @@ namespace alpaka
     ALPAKA_FN_ACC auto syncBlockThreadsPredicate(TBlockSync const& blockSync, int predicate) -> int
     {
         using ImplementationBase = concepts::ImplementationBase<ConceptBlockSync, TBlockSync>;
-        return traits::SyncBlockThreadsPredicate<TOp, ImplementationBase>::syncBlockThreadsPredicate(
+        return trait::SyncBlockThreadsPredicate<TOp, ImplementationBase>::syncBlockThreadsPredicate(
             blockSync,
             predicate);
     }

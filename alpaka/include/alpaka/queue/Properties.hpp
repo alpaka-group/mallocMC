@@ -1,4 +1,4 @@
-/* Copyright 2019 Rene Widera
+/* Copyright 2020 Rene Widera, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -11,15 +11,12 @@
 
 namespace alpaka
 {
-    //-----------------------------------------------------------------------------
     //! Properties to define queue behavior
     namespace property
     {
-        //#############################################################################
         //! The caller is waiting until the enqueued task is finished
         struct Blocking;
 
-        //#############################################################################
         //! The caller is NOT waiting until the enqueued task is finished
         struct NonBlocking;
     } // namespace property

@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, Matthias Werner, René Widera
+/* Copyright 2022 Benjamin Worpitz, Matthias Werner, René Widera, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -17,7 +17,6 @@
 
 namespace alpaka
 {
-    //#############################################################################
     //! The CPU threads accelerator atomic ops.
     //
     //  Atomics can be used in the grids, blocks and threads hierarchy levels.
@@ -30,46 +29,31 @@ namespace alpaka
     {
     public:
         template<typename TAtomic, typename TOp, typename T, typename THierarchy, typename TSfinae>
-        friend struct traits::AtomicOp;
+        friend struct trait::AtomicOp;
 
-        static constexpr size_t nextPowerOf2(size_t const value, size_t const bit = 0u)
+        static constexpr auto nextPowerOf2(size_t const value, size_t const bit = 0u) -> size_t
         {
             return value <= (static_cast<size_t>(1u) << bit) ? (static_cast<size_t>(1u) << bit)
                                                              : nextPowerOf2(value, bit + 1u);
         }
 
-        //-----------------------------------------------------------------------------
         //! get a hash value of the pointer
         //
         // This is no perfect hash, there will be collisions if the size of pointer type
         // is not a power of two.
         template<typename TPtr>
-        static size_t hash(TPtr const* const ptr)
+        static auto hash(TPtr const* const ptr) -> size_t
         {
-            size_t const ptrAddr = reinterpret_cast<size_t>(ptr);
+            auto const ptrAddr = reinterpret_cast<size_t>(ptr);
             // using power of two for the next division will increase the performance
             constexpr size_t typeSizePowerOf2 = nextPowerOf2(sizeof(TPtr));
             // division removes the stride between indices
             return (ptrAddr / typeSizePowerOf2);
         }
 
-        //-----------------------------------------------------------------------------
-        AtomicStdLibLock() = default;
-        //-----------------------------------------------------------------------------
-        AtomicStdLibLock(AtomicStdLibLock const&) = delete;
-        //-----------------------------------------------------------------------------
-        AtomicStdLibLock(AtomicStdLibLock&&) = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(AtomicStdLibLock const&) -> AtomicStdLibLock& = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(AtomicStdLibLock&&) -> AtomicStdLibLock& = delete;
-        //-----------------------------------------------------------------------------
-        /*virtual*/ ~AtomicStdLibLock() = default;
-
         template<typename TPtr>
-        std::mutex& getMutex(TPtr const* const ptr) const
+        auto getMutex(TPtr const* const ptr) const -> std::mutex&
         {
-            //-----------------------------------------------------------------------------
             //! get the size of the hash table
             //
             // The size is at least 1 or THashTableSize rounded up to the next power of 2
@@ -91,14 +75,12 @@ namespace alpaka
         }
     };
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The CPU threads accelerator atomic operation.
         template<typename TOp, typename T, typename THierarchy, size_t THashTableSize>
         struct AtomicOp<TOp, AtomicStdLibLock<THashTableSize>, T, THierarchy>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto atomicOp(
                 AtomicStdLibLock<THashTableSize> const& atomic,
                 T* const addr,
@@ -107,7 +89,6 @@ namespace alpaka
                 std::lock_guard<std::mutex> lock(atomic.getMutex(addr));
                 return TOp()(addr, value);
             }
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto atomicOp(
                 AtomicStdLibLock<THashTableSize> const& atomic,
                 T* const addr,
@@ -118,5 +99,5 @@ namespace alpaka
                 return TOp()(addr, compare, value);
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka

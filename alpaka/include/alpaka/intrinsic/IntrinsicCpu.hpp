@@ -1,4 +1,4 @@
-/* Copyright 2020 Sergei Bastrakov
+/* Copyright 2022 Sergei Bastrakov, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -21,32 +21,16 @@
 
 namespace alpaka
 {
-    //#############################################################################
     //! The CPU intrinsic.
     class IntrinsicCpu : public concepts::Implements<ConceptIntrinsic, IntrinsicCpu>
     {
-    public:
-        //-----------------------------------------------------------------------------
-        IntrinsicCpu() = default;
-        //-----------------------------------------------------------------------------
-        IntrinsicCpu(IntrinsicCpu const&) = delete;
-        //-----------------------------------------------------------------------------
-        IntrinsicCpu(IntrinsicCpu&&) = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(IntrinsicCpu const&) -> IntrinsicCpu& = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(IntrinsicCpu&&) -> IntrinsicCpu& = delete;
-        //-----------------------------------------------------------------------------
-        ~IntrinsicCpu() = default;
     };
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         template<>
         struct Popcount<IntrinsicCpu>
         {
-            //-----------------------------------------------------------------------------
             static auto popcount(IntrinsicCpu const& /*intrinsic*/, std::uint32_t value) -> std::int32_t
             {
 #if BOOST_COMP_GNUC || BOOST_COMP_CLANG || BOOST_COMP_INTEL
@@ -59,7 +43,6 @@ namespace alpaka
 #endif
             }
 
-            //-----------------------------------------------------------------------------
             static auto popcount(IntrinsicCpu const& /*intrinsic*/, std::uint64_t value) -> std::int32_t
             {
 #if BOOST_COMP_GNUC || BOOST_COMP_CLANG || BOOST_COMP_INTEL
@@ -73,11 +56,9 @@ namespace alpaka
             }
         };
 
-        //#############################################################################
         template<>
         struct Ffs<IntrinsicCpu>
         {
-            //-----------------------------------------------------------------------------
             static auto ffs(IntrinsicCpu const& /*intrinsic*/, std::int32_t value) -> std::int32_t
             {
 #if BOOST_COMP_GNUC || BOOST_COMP_CLANG || BOOST_COMP_INTEL
@@ -95,7 +76,6 @@ namespace alpaka
 #endif
             }
 
-            //-----------------------------------------------------------------------------
             static auto ffs(IntrinsicCpu const& /*intrinsic*/, std::int64_t value) -> std::int32_t
             {
 #if BOOST_COMP_GNUC || BOOST_COMP_CLANG || BOOST_COMP_INTEL
@@ -113,5 +93,5 @@ namespace alpaka
 #endif
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka

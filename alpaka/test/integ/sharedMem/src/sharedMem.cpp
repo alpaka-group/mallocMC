@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz, Matthias Werner, René Widera
+/* Copyright 2022 Axel Huebl, Benjamin Worpitz, Matthias Werner, René Widera, Jan Stephan, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -18,14 +18,12 @@
 #include <typeinfo>
 #include <vector>
 
-//#############################################################################
 //! A kernel using atomicOp, syncBlockThreads, getDynSharedMem, getIdx, getWorkDiv and global memory to compute a
 //! (useless) result. \tparam TnumUselessWork The number of useless calculations done in each kernel execution.
 template<typename TnumUselessWork, typename Val>
 class SharedMemKernel
 {
 public:
-    //-----------------------------------------------------------------------------
     ALPAKA_NO_HOST_ACC_WARNING
     template<typename TAcc>
     ALPAKA_FN_ACC auto operator()(TAcc const& acc, Val* const puiBlockRetVals) const -> void
@@ -89,30 +87,24 @@ public:
     }
 };
 
-namespace alpaka
+namespace alpaka::trait
 {
-    namespace traits
+    //! The trait for getting the size of the block shared dynamic memory for a kernel.
+    template<typename TnumUselessWork, typename Val, typename TAcc>
+    struct BlockSharedMemDynSizeBytes<SharedMemKernel<TnumUselessWork, Val>, TAcc>
     {
-        //#############################################################################
-        //! The trait for getting the size of the block shared dynamic memory for a kernel.
-        template<typename TnumUselessWork, typename Val, typename TAcc>
-        struct BlockSharedMemDynSizeBytes<SharedMemKernel<TnumUselessWork, Val>, TAcc>
+        //! \return The size of the shared memory allocated for a block.
+        template<typename TVec, typename... TArgs>
+        ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
+            SharedMemKernel<TnumUselessWork, Val> const& /* sharedMemKernel */,
+            TVec const& blockThreadExtent,
+            TVec const& threadElemExtent,
+            TArgs&&...) -> std::size_t
         {
-            //-----------------------------------------------------------------------------
-            //! \return The size of the shared memory allocated for a block.
-            template<typename TVec, typename... TArgs>
-            ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
-                SharedMemKernel<TnumUselessWork, Val> const& sharedMemKernel,
-                TVec const& blockThreadExtent,
-                TVec const& threadElemExtent,
-                TArgs&&...) -> std::size_t
-            {
-                alpaka::ignore_unused(sharedMemKernel);
-                return static_cast<std::size_t>(blockThreadExtent.prod() * threadElemExtent.prod()) * sizeof(Val);
-            }
-        };
-    } // namespace traits
-} // namespace alpaka
+            return static_cast<std::size_t>(blockThreadExtent.prod() * threadElemExtent.prod()) * sizeof(Val);
+        }
+    };
+} // namespace alpaka::trait
 
 using TestAccs = alpaka::test::EnabledAccs<alpaka::DimInt<1u>, std::uint32_t>;
 
@@ -136,7 +128,7 @@ TEMPLATE_LIST_TEST_CASE("sharedMem", "[sharedMem]", TestAccs)
     SharedMemKernel<TnumUselessWork, Val> kernel;
 
     // Select a device to execute on.
-    auto const devAcc(alpaka::getDevByIdx<PltfAcc>(0u));
+    auto const devAcc = alpaka::getDevByIdx<PltfAcc>(0u);
 
     // Get a queue on this device.
     QueueAcc queue(devAcc);
@@ -161,11 +153,11 @@ TEMPLATE_LIST_TEST_CASE("sharedMem", "[sharedMem]", TestAccs)
 
     // Allocate accelerator buffers and copy.
     Idx const resultElemCount(gridBlocksCount);
-    auto blockRetValsAcc(alpaka::allocBuf<Val, Idx>(devAcc, resultElemCount));
+    auto blockRetValsAcc = alpaka::allocBuf<Val, Idx>(devAcc, resultElemCount);
     alpaka::memcpy(queue, blockRetValsAcc, blockRetVals, resultElemCount);
 
     // Create the kernel execution task.
-    auto const taskKernel(alpaka::createTaskKernel<Acc>(workDiv, kernel, alpaka::getPtrNative(blockRetValsAcc)));
+    auto const taskKernel = alpaka::createTaskKernel<Acc>(workDiv, kernel, alpaka::getPtrNative(blockRetValsAcc));
 
     // Profile the kernel execution.
     std::cout << "Execution time: " << alpaka::test::integ::measureTaskRunTimeMs(queue, taskKernel) << " ms"

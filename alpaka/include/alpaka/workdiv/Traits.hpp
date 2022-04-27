@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz
+/* Copyright 2022 Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -24,34 +24,29 @@ namespace alpaka
     {
     };
 
-    //-----------------------------------------------------------------------------
-    //! The work division traits.
-    namespace traits
+    //! The work division trait.
+    namespace trait
     {
-        //#############################################################################
         //! The work div trait.
         template<typename TWorkDiv, typename TOrigin, typename TUnit, typename TSfinae = void>
         struct GetWorkDiv;
-    } // namespace traits
+    } // namespace trait
 
-    //-----------------------------------------------------------------------------
     //! Get the extent requested.
     ALPAKA_NO_HOST_ACC_WARNING
     template<typename TOrigin, typename TUnit, typename TWorkDiv>
     ALPAKA_FN_HOST_ACC auto getWorkDiv(TWorkDiv const& workDiv) -> Vec<Dim<TWorkDiv>, Idx<TWorkDiv>>
     {
         using ImplementationBase = concepts::ImplementationBase<ConceptWorkDiv, TWorkDiv>;
-        return traits::GetWorkDiv<ImplementationBase, TOrigin, TUnit>::getWorkDiv(workDiv);
+        return trait::GetWorkDiv<ImplementationBase, TOrigin, TUnit>::getWorkDiv(workDiv);
     }
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The work div grid thread extent trait specialization.
         template<typename TWorkDiv>
         struct GetWorkDiv<TWorkDiv, origin::Grid, unit::Threads>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC static auto getWorkDiv(TWorkDiv const& workDiv)
             {
@@ -59,12 +54,10 @@ namespace alpaka
                     * alpaka::getWorkDiv<origin::Block, unit::Threads>(workDiv);
             }
         };
-        //#############################################################################
         //! The work div grid element extent trait specialization.
         template<typename TWorkDiv>
         struct GetWorkDiv<TWorkDiv, origin::Grid, unit::Elems>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC static auto getWorkDiv(TWorkDiv const& workDiv)
             {
@@ -72,12 +65,10 @@ namespace alpaka
                     * alpaka::getWorkDiv<origin::Thread, unit::Elems>(workDiv);
             }
         };
-        //#############################################################################
         //! The work div block element extent trait specialization.
         template<typename TWorkDiv>
         struct GetWorkDiv<TWorkDiv, origin::Block, unit::Elems>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_HOST_ACC static auto getWorkDiv(TWorkDiv const& workDiv)
             {
@@ -85,5 +76,5 @@ namespace alpaka
                     * alpaka::getWorkDiv<origin::Thread, unit::Elems>(workDiv);
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka

@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz
+/* Copyright 2020 Axel Huebl, Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -15,7 +15,6 @@
 #include <tuple>
 #include <type_traits>
 
-//-----------------------------------------------------------------------------
 TEST_CASE("cartesianProduct", "[meta]")
 {
     using TestDims = std::tuple<alpaka::DimInt<1u>, alpaka::DimInt<2u>, alpaka::DimInt<3u>>;
@@ -33,6 +32,6 @@ TEST_CASE("cartesianProduct", "[meta]")
         std::tuple<alpaka::DimInt<3u>, std::int64_t>>;
 
     static_assert(
-        std::is_same<CartesianProductReference, CartesianProductResult>::value,
+        std::is_same_v<CartesianProductReference, CartesianProductResult>,
         "alpaka::meta::CartesianProduct failed!");
 }

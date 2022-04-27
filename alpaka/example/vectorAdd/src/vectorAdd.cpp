@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, Matthias Werner
+/* Copyright 2020 Benjamin Worpitz, Matthias Werner, Bernhard Manfred Gruber
  *
  * This file exemplifies usage of alpaka.
  *
@@ -23,12 +23,10 @@
 #include <random>
 #include <typeinfo>
 
-//#############################################################################
 //! A vector addition kernel.
 class VectorAddKernel
 {
 public:
-    //-----------------------------------------------------------------------------
     //! The kernel entry point.
     //!
     //! \tparam TAcc The accelerator environment to be executed on.
@@ -157,21 +155,21 @@ auto main() -> int
     BufAcc bufAccC(alpaka::allocBuf<Data, Idx>(devAcc, extent));
 
     // Copy Host -> Acc
-    alpaka::memcpy(queue, bufAccA, bufHostA, extent);
-    alpaka::memcpy(queue, bufAccB, bufHostB, extent);
-    alpaka::memcpy(queue, bufAccC, bufHostC, extent);
+    alpaka::memcpy(queue, bufAccA, bufHostA);
+    alpaka::memcpy(queue, bufAccB, bufHostB);
+    alpaka::memcpy(queue, bufAccC, bufHostC);
 
     // Instantiate the kernel function object
     VectorAddKernel kernel;
 
     // Create the kernel execution task.
-    auto const taskKernel(alpaka::createTaskKernel<Acc>(
+    auto const taskKernel = alpaka::createTaskKernel<Acc>(
         workDiv,
         kernel,
         alpaka::getPtrNative(bufAccA),
         alpaka::getPtrNative(bufAccB),
         alpaka::getPtrNative(bufAccC),
-        numElements));
+        numElements);
 
     // Enqueue the kernel execution task
     {
@@ -186,7 +184,7 @@ auto main() -> int
     // Copy back the result
     {
         auto beginT = std::chrono::high_resolution_clock::now();
-        alpaka::memcpy(queue, bufHostC, bufAccC, extent);
+        alpaka::memcpy(queue, bufHostC, bufAccC);
         alpaka::wait(queue);
         const auto endT = std::chrono::high_resolution_clock::now();
         std::cout << "Time for HtoD copy: " << std::chrono::duration<double>(endT - beginT).count() << 's'

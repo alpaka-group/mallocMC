@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, Matthias Werner, René Widera
+/* Copyright 2022 Benjamin Worpitz, Matthias Werner, René Widera, Andrea Bocci, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -10,12 +10,6 @@
 #pragma once
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
-
-#    include <alpaka/core/BoostPredef.hpp>
-
-#    if !BOOST_LANG_HIP
-#        error If ALPAKA_ACC_GPU_HIP_ENABLED is set, the compiler has to support HIP!
-#    endif
 
 // Base classes.
 #    include <alpaka/acc/AccGpuUniformCudaHipRt.hpp>
@@ -36,7 +30,6 @@ namespace alpaka
     template<typename TAcc, typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
     class TaskKernelGpuUniformCudaHipRt;
 
-    //#############################################################################
     //! The GPU HIP accelerator.
     //!
     //! This accelerator allows parallel kernel execution on devices supporting HIP
@@ -50,28 +43,14 @@ namespace alpaka
             "Index type is not supported, consider using int or a larger type.");
 
     public:
-        //-----------------------------------------------------------------------------
-        __device__ AccGpuHipRt(Vec<TDim, TIdx> const& threadElemExtent)
+        ALPAKA_FN_HOST_ACC AccGpuHipRt(Vec<TDim, TIdx> const& threadElemExtent)
             : AccGpuUniformCudaHipRt<TDim, TIdx>(threadElemExtent)
         {
         }
-
-    public:
-        //-----------------------------------------------------------------------------
-        __device__ AccGpuHipRt(AccGpuHipRt const&) = delete;
-        //-----------------------------------------------------------------------------
-        __device__ AccGpuHipRt(AccGpuHipRt&&) = delete;
-        //-----------------------------------------------------------------------------
-        __device__ auto operator=(AccGpuHipRt const&) -> AccGpuHipRt& = delete;
-        //-----------------------------------------------------------------------------
-        __device__ auto operator=(AccGpuHipRt&&) -> AccGpuHipRt& = delete;
-        //-----------------------------------------------------------------------------
-        ~AccGpuHipRt() = default;
     };
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The GPU HIP accelerator accelerator type trait specialization.
         template<typename TDim, typename TIdx>
         struct AccType<AccGpuHipRt<TDim, TIdx>>
@@ -79,24 +58,20 @@ namespace alpaka
             using type = AccGpuHipRt<TDim, TIdx>;
         };
 
-        //#############################################################################
         //! The GPU Hip accelerator name trait specialization.
         template<typename TDim, typename TIdx>
         struct GetAccName<AccGpuHipRt<TDim, TIdx>>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto getAccName() -> std::string
             {
                 return "AccGpuHipRt<" + std::to_string(TDim::value) + "," + typeid(TIdx).name() + ">";
             }
         };
 
-        //#############################################################################
         //! The GPU HIP accelerator execution task type trait specialization.
         template<typename TDim, typename TIdx, typename TWorkDiv, typename TKernelFnObj, typename... TArgs>
         struct CreateTaskKernel<AccGpuHipRt<TDim, TIdx>, TWorkDiv, TKernelFnObj, TArgs...>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto createTaskKernel(
                 TWorkDiv const& workDiv,
                 TKernelFnObj const& kernelFnObj,
@@ -108,7 +83,7 @@ namespace alpaka
                     std::forward<TArgs>(args)...);
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka
 
 #endif

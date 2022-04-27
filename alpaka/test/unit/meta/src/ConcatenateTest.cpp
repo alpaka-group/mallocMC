@@ -15,7 +15,6 @@
 #include <tuple>
 #include <type_traits>
 
-//-----------------------------------------------------------------------------
 TEST_CASE("concatenate", "[meta]")
 {
     using TestTuple1 = std::tuple<float, int, std::tuple<double, unsigned long>>;
@@ -26,5 +25,5 @@ TEST_CASE("concatenate", "[meta]")
 
     using ConcatenateReference = std::tuple<float, int, std::tuple<double, unsigned long>, bool, std::string>;
 
-    static_assert(std::is_same<ConcatenateReference, ConcatenateResult>::value, "alpaka::meta::Concatenate failed!");
+    static_assert(std::is_same_v<ConcatenateReference, ConcatenateResult>, "alpaka::meta::Concatenate failed!");
 }

@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, Rene Widera
+/* Copyright 2022 Benjamin Worpitz, Rene Widera, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -15,9 +15,8 @@
 
 namespace alpaka
 {
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The CPU device thread wait specialization.
         //!
         //! Blocks until the device has completed all preceding requested tasks.
@@ -25,7 +24,6 @@ namespace alpaka
         template<>
         struct CurrentThreadWaitFor<DevCpu>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto currentThreadWaitFor(DevCpu const& dev) -> void
             {
                 ALPAKA_DEBUG_FULL_LOG_SCOPE;
@@ -33,5 +31,5 @@ namespace alpaka
                 generic::currentThreadWaitForDevice(dev);
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka

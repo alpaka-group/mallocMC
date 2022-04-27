@@ -14,7 +14,6 @@
 #include <tuple>
 #include <type_traits>
 
-//-----------------------------------------------------------------------------
 TEST_CASE("filter", "[meta]")
 {
     using FilterInput = std::tuple<int, float, long>;
@@ -23,5 +22,5 @@ TEST_CASE("filter", "[meta]")
 
     using FilterReference = std::tuple<int, long>;
 
-    static_assert(std::is_same<FilterReference, FilterResult>::value, "alpaka::meta::Filter failed!");
+    static_assert(std::is_same_v<FilterReference, FilterResult>, "alpaka::meta::Filter failed!");
 }

@@ -8,11 +8,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-if((NOT ALPAKA_ACC_GPU_CUDA_ENABLE AND NOT ALPAKA_ACC_GPU_HIP_ENABLE
-   AND NOT ALPAKA_ACC_ANY_BT_OMP5_ENABLE AND NOT ALPAKA_ACC_ANY_BT_OACC_ENABLE) OR
-   (ALPAKA_ACC_GPU_CUDA_ENABLE AND ALPAKA_CUDA_NVCC_SEPARABLE_COMPILATION AND ALPAKA_CUDA_COMPILER MATCHES "nvcc"))
+if((NOT alpaka_ACC_GPU_CUDA_ENABLE AND NOT alpaka_ACC_GPU_HIP_ENABLE
+   AND NOT alpaka_ACC_ANY_BT_OMP5_ENABLE AND NOT alpaka_ACC_ANY_BT_OACC_ENABLE) OR
+   (alpaka_ACC_GPU_CUDA_ENABLE AND CMAKE_CUDA_SEPARABLE_COMPILATION))
 
-    set(_TARGET_NAME "separableCompilation")
+    set(_TARGET_NAME "separableCompilationTest")
 
     append_recursive_files_add_to_src_group("src/" "src/" "cpp" _FILES_SOURCE)
     append_recursive_files_add_to_src_group("include/" "include/" "hpp" _FILES_HEADER)
@@ -30,6 +30,6 @@ if((NOT ALPAKA_ACC_GPU_CUDA_ENABLE AND NOT ALPAKA_ACC_GPU_HIP_ENABLE
 
     set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "test/integ")
 
-    add_test(NAME ${_TARGET_NAME} COMMAND ${_TARGET_NAME} ${_ALPAKA_TEST_OPTIONS})
+    add_test(NAME ${_TARGET_NAME} COMMAND ${_TARGET_NAME} ${_alpaka_TEST_OPTIONS})
 
 endif()

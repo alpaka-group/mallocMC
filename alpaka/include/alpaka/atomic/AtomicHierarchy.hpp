@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, René Widera
+/* Copyright 2020 Benjamin Worpitz, René Widera, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -17,7 +17,6 @@
 
 namespace alpaka
 {
-    //#############################################################################
     //! build a single class to inherit from different atomic implementations
     //
     //  This implementation inherit from all three hierarchies.

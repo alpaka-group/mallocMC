@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, Jonas Schenke, Matthias Werner
+/* Copyright 2020 Benjamin Worpitz, Jonas Schenke, Matthias Werner, Bernhard Manfred Gruber
  *
  * This file exemplifies usage of alpaka.
  *
@@ -44,7 +44,6 @@ using QueueProperty = alpaka::Blocking;
 using QueueAcc = alpaka::Queue<Acc, QueueProperty>;
 using MaxBlockSize = Accelerator::MaxBlockSize;
 
-//-----------------------------------------------------------------------------
 //! Reduces the numbers 1 to n.
 //!
 //! \tparam T The data type.
@@ -59,20 +58,20 @@ using MaxBlockSize = Accelerator::MaxBlockSize;
 //!
 //! Returns true if the reduction was correct and false otherwise.
 template<typename T, typename DevHost, typename DevAcc, typename TFunc>
-T reduce(
+auto reduce(
     DevHost devHost,
     DevAcc devAcc,
     QueueAcc queue,
     uint64_t n,
     alpaka::Buf<DevHost, T, Dim, Idx> hostMemory,
-    TFunc func)
+    TFunc func) -> T
 {
     static constexpr uint64_t blockSize = getMaxBlockSize<Accelerator, 256>();
 
     // calculate optimal block size (8 times the MP count proved to be
     // relatively near to peak performance in benchmarks)
-    uint32_t blockCount = static_cast<uint32_t>(alpaka::getAccDevProps<Acc>(devAcc).m_multiProcessorCount * 8);
-    uint32_t maxBlockCount = static_cast<uint32_t>((((n + 1) / 2) - 1) / blockSize + 1); // ceil(ceil(n/2.0)/blockSize)
+    auto blockCount = static_cast<uint32_t>(alpaka::getAccDevProps<Acc>(devAcc).m_multiProcessorCount * 8);
+    auto maxBlockCount = static_cast<uint32_t>((((n + 1) / 2) - 1) / blockSize + 1); // ceil(ceil(n/2.0)/blockSize)
 
     if(blockCount > maxBlockCount)
         blockCount = maxBlockCount;
@@ -91,22 +90,22 @@ T reduce(
     WorkDiv workDiv2{static_cast<Extent>(1), static_cast<Extent>(blockSize), static_cast<Extent>(1)};
 
     // create main reduction kernel execution task
-    auto const taskKernelReduceMain(alpaka::createTaskKernel<Acc>(
+    auto const taskKernelReduceMain = alpaka::createTaskKernel<Acc>(
         workDiv1,
         kernel1,
         alpaka::getPtrNative(sourceDeviceMemory),
         alpaka::getPtrNative(destinationDeviceMemory),
         n,
-        func));
+        func);
 
     // create last block reduction kernel execution task
-    auto const taskKernelReduceLastBlock(alpaka::createTaskKernel<Acc>(
+    auto const taskKernelReduceLastBlock = alpaka::createTaskKernel<Acc>(
         workDiv2,
         kernel2,
         alpaka::getPtrNative(destinationDeviceMemory),
         alpaka::getPtrNative(destinationDeviceMemory),
         blockCount,
-        func));
+        func);
 
     // enqueue both kernel execution tasks
     alpaka::enqueue(queue, taskKernelReduceMain);
@@ -114,15 +113,14 @@ T reduce(
 
     //  download result from GPU
     T resultGpuHost;
-    auto resultGpuDevice
-        = alpaka::ViewPlainPtr<DevHost, T, Dim, Idx>(&resultGpuHost, devHost, static_cast<Extent>(blockSize));
+    auto resultGpuDevice = alpaka::createView(devHost, &resultGpuHost, static_cast<Extent>(blockSize));
 
     alpaka::memcpy(queue, resultGpuDevice, destinationDeviceMemory, 1);
 
     return resultGpuHost;
 }
 
-int main()
+auto main() -> int
 {
     // select device and problem size
     const int dev = 0;
@@ -138,7 +136,7 @@ int main()
     // calculate optimal block size (8 times the MP count proved to be
     // relatively near to peak performance in benchmarks)
     uint32_t blockCount = static_cast<uint32_t>(alpaka::getAccDevProps<Acc>(devAcc).m_multiProcessorCount * 8);
-    uint32_t maxBlockCount = static_cast<uint32_t>((((n + 1) / 2) - 1) / blockSize + 1); // ceil(ceil(n/2.0)/blockSize)
+    auto maxBlockCount = static_cast<uint32_t>((((n + 1) / 2) - 1) / blockSize + 1); // ceil(ceil(n/2.0)/blockSize)
 
     if(blockCount > maxBlockCount)
         blockCount = maxBlockCount;

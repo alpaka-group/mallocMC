@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, René Widera
+/* Copyright 2022 Benjamin Worpitz, René Widera, Jan Stephan, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -26,7 +26,6 @@
 #    include <alpaka/core/Fibers.hpp>
 #    include <alpaka/dev/DevCpu.hpp>
 #    include <alpaka/kernel/Traits.hpp>
-#    include <alpaka/meta/ApplyTuple.hpp>
 #    include <alpaka/meta/NdLoop.hpp>
 #    include <alpaka/workdiv/WorkDivMembers.hpp>
 
@@ -41,24 +40,20 @@
 
 namespace alpaka
 {
-    //#############################################################################
     //! The CPU fibers accelerator execution task.
     template<typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
     class TaskKernelCpuFibers final : public WorkDivMembers<TDim, TIdx>
     {
     private:
-        //#############################################################################
         //! The type given to the ConcurrentExecPool for yielding the current fiber.
         struct FiberPoolYield
         {
-            //-----------------------------------------------------------------------------
             //! Yields the current fiber.
             ALPAKA_FN_HOST static auto yield() -> void
             {
                 boost::this_fiber::yield();
             }
         };
-        //#############################################################################
         // Yielding is not faster for fibers. Therefore we use condition variables.
         // It is better to wake them up when the conditions are fulfilled because this does not cost as much as for
         // real threads.
@@ -73,7 +68,6 @@ namespace alpaka
             false>; // If the threads should yield.
 
     public:
-        //-----------------------------------------------------------------------------
         template<typename TWorkDiv>
         ALPAKA_FN_HOST TaskKernelCpuFibers(TWorkDiv&& workDiv, TKernelFnObj const& kernelFnObj, TArgs&&... args)
             : WorkDivMembers<TDim, TIdx>(std::forward<TWorkDiv>(workDiv))
@@ -84,37 +78,27 @@ namespace alpaka
                 Dim<std::decay_t<TWorkDiv>>::value == TDim::value,
                 "The work division and the execution task have to be of the same dimensionality!");
         }
-        //-----------------------------------------------------------------------------
-        TaskKernelCpuFibers(TaskKernelCpuFibers const&) = default;
-        //-----------------------------------------------------------------------------
-        TaskKernelCpuFibers(TaskKernelCpuFibers&&) = default;
-        //-----------------------------------------------------------------------------
-        auto operator=(TaskKernelCpuFibers const&) -> TaskKernelCpuFibers& = default;
-        //-----------------------------------------------------------------------------
-        auto operator=(TaskKernelCpuFibers&&) -> TaskKernelCpuFibers& = default;
-        //-----------------------------------------------------------------------------
-        ~TaskKernelCpuFibers() = default;
 
-        //-----------------------------------------------------------------------------
         //! Executes the kernel function object.
         ALPAKA_FN_HOST auto operator()() const -> void
         {
             ALPAKA_DEBUG_MINIMAL_LOG_SCOPE;
 
-            auto const gridBlockExtent(getWorkDiv<Grid, Blocks>(*this));
-            auto const blockThreadExtent(getWorkDiv<Block, Threads>(*this));
-            auto const threadElemExtent(getWorkDiv<Thread, Elems>(*this));
+            auto const gridBlockExtent = getWorkDiv<Grid, Blocks>(*this);
+            auto const blockThreadExtent = getWorkDiv<Block, Threads>(*this);
+            auto const threadElemExtent = getWorkDiv<Thread, Elems>(*this);
 
             // Get the size of the block shared dynamic memory.
-            auto const blockSharedMemDynSizeBytes(meta::apply(
-                [&](ALPAKA_DECAY_T(TArgs) const&... args) {
+            auto const blockSharedMemDynSizeBytes = std::apply(
+                [&](ALPAKA_DECAY_T(TArgs) const&... args)
+                {
                     return getBlockSharedMemDynSizeBytes<AccCpuFibers<TDim, TIdx>>(
                         m_kernelFnObj,
                         blockThreadExtent,
                         threadElemExtent,
                         args...);
                 },
-                m_args));
+                m_args);
 
 #    if ALPAKA_DEBUG >= ALPAKA_DEBUG_FULL
             std::cout << __func__ << " blockSharedMemDynSizeBytes: " << blockSharedMemDynSizeBytes << " B"
@@ -133,8 +117,9 @@ namespace alpaka
             auto const blockThreadCount(blockThreadExtent.prod());
             FiberPool fiberPool(blockThreadCount);
 
-            auto const boundGridBlockExecHost(meta::apply(
-                [this, &acc, &blockThreadExtent, &fiberPool](ALPAKA_DECAY_T(TArgs) const&... args) {
+            auto const boundGridBlockExecHost = std::apply(
+                [this, &acc, &blockThreadExtent, &fiberPool](ALPAKA_DECAY_T(TArgs) const&... args)
+                {
                     // Bind the kernel and its arguments to the grid block function.
                     return std::bind(
                         &TaskKernelCpuFibers::gridBlockExecHost,
@@ -145,14 +130,13 @@ namespace alpaka
                         std::ref(m_kernelFnObj),
                         std::ref(args)...);
                 },
-                m_args));
+                m_args);
 
             // Execute the blocks serially.
             meta::ndLoopIncIdx(gridBlockExtent, boundGridBlockExecHost);
         }
 
     private:
-        //-----------------------------------------------------------------------------
         //! The function executed for each grid block.
         ALPAKA_FN_HOST static auto gridBlockExecHost(
             AccCpuFibers<TDim, TIdx>& acc,
@@ -181,9 +165,9 @@ namespace alpaka
             meta::ndLoopIncIdx(blockThreadExtent, boundBlockThreadExecHost);
 
             // Wait for the completion of the block thread kernels.
-            std::for_each(futuresInBlock.begin(), futuresInBlock.end(), [](boost::fibers::future<void>& t) {
+            for(auto& t : futuresInBlock)
                 t.wait();
-            });
+
             // Clean up.
             futuresInBlock.clear();
 
@@ -192,7 +176,6 @@ namespace alpaka
             // After a block has been processed, the shared memory has to be deleted.
             freeSharedVars(acc);
         }
-        //-----------------------------------------------------------------------------
         //! The function executed for each block thread.
         ALPAKA_FN_HOST static auto blockThreadExecHost(
             AccCpuFibers<TDim, TIdx>& acc,
@@ -211,8 +194,8 @@ namespace alpaka
             // Bind the arguments to the accelerator block thread execution function.
             // The blockThreadIdx is required to be copied in because the variable will get changed for the next
             // iteration/thread.
-            auto boundBlockThreadExecAcc(
-                [&, blockThreadIdx]() { blockThreadFiberFn(acc, blockThreadIdx, kernelFnObj, args...); });
+            auto boundBlockThreadExecAcc([&, blockThreadIdx]()
+                                         { blockThreadFiberFn(acc, blockThreadIdx, kernelFnObj, args...); });
             // Add the bound function to the block thread pool.
 // Workaround: Clang can not support this when natively compiling device code. See ConcurrentExecPool.hpp.
 #    if !(BOOST_COMP_CLANG_CUDA && BOOST_ARCH_PTX)
@@ -221,7 +204,6 @@ namespace alpaka
             (void) boundBlockThreadExecAcc;
 #    endif
         }
-        //-----------------------------------------------------------------------------
         //! The fiber entry point.
         ALPAKA_FN_HOST static auto blockThreadFiberFn(
             AccCpuFibers<TDim, TIdx>& acc,
@@ -257,9 +239,8 @@ namespace alpaka
         std::tuple<std::decay_t<TArgs>...> m_args;
     };
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The CPU fibers execution task accelerator type trait specialization.
         template<typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
         struct AccType<TaskKernelCpuFibers<TDim, TIdx, TKernelFnObj, TArgs...>>
@@ -267,7 +248,6 @@ namespace alpaka
             using type = AccCpuFibers<TDim, TIdx>;
         };
 
-        //#############################################################################
         //! The CPU fibers execution task device type trait specialization.
         template<typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
         struct DevType<TaskKernelCpuFibers<TDim, TIdx, TKernelFnObj, TArgs...>>
@@ -275,7 +255,6 @@ namespace alpaka
             using type = DevCpu;
         };
 
-        //#############################################################################
         //! The CPU fibers execution task dimension getter trait specialization.
         template<typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
         struct DimType<TaskKernelCpuFibers<TDim, TIdx, TKernelFnObj, TArgs...>>
@@ -283,7 +262,6 @@ namespace alpaka
             using type = TDim;
         };
 
-        //#############################################################################
         //! The CPU fibers execution task platform type trait specialization.
         template<typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
         struct PltfType<TaskKernelCpuFibers<TDim, TIdx, TKernelFnObj, TArgs...>>
@@ -291,14 +269,13 @@ namespace alpaka
             using type = PltfCpu;
         };
 
-        //#############################################################################
         //! The CPU fibers execution task idx type trait specialization.
         template<typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
         struct IdxType<TaskKernelCpuFibers<TDim, TIdx, TKernelFnObj, TArgs...>>
         {
             using type = TIdx;
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka
 
 #endif

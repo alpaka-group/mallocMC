@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Benjamin Worpitz, Erik Zenker, Sergei Bastrakov
+/* Copyright 2022 Benjamin Worpitz, Erik Zenker, Sergei Bastrakov, Jan Stephan
  *
  * This file exemplifies usage of alpaka.
  *
@@ -25,17 +25,15 @@
 // and OpenMP runtime supporting at least 3.0. Disable it for other cases.
 #if defined _OPENMP && _OPENMP >= 200805 && ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLED
 
-//#############################################################################
 //! OpenMP schedule demonstration kernel
 //!
 //! Prints distribution of alpaka thread indices between OpenMP threads.
 //! Its operator() is reused in other kernels of this example.
-//! Sets no schedule explicitly, so the default is used, controlled by the OMP_SCHEDULE environment variable.
+//! Sets no schedule explicitly, so no schedule() clause is used.
 struct OpenMPScheduleDefaultKernel
 {
-    //-----------------------------------------------------------------------------
     template<typename TAcc>
-    ALPAKA_FN_ACC auto operator()(TAcc const& acc) const -> void
+    ALPAKA_FN_HOST auto operator()(TAcc const& acc) const -> void
     {
         // For simplicity assume 1d index space throughout this example
         using Idx = alpaka::Idx<TAcc>;
@@ -49,18 +47,21 @@ struct OpenMPScheduleDefaultKernel
     }
 };
 
-//#############################################################################
 //! Kernel that sets the schedule via a static member.
 //! We inherit OpenMPScheduleDefaultKernel just to reuse its operator().
 struct OpenMPScheduleMemberKernel : public OpenMPScheduleDefaultKernel
 {
-    //! Static member to set OpenMP schedule to be used by the AccCpuOmp2Blocks accelerator.
-    //! This member is only checked for when the OmpSchedule trait is not specialized for this kernel type.
-    //! Note that constexpr is not required, however otherwise there has to be an external definition.
-    static constexpr auto ompSchedule = alpaka::omp::Schedule{alpaka::omp::Schedule::Static, 1};
+    //! These two members are only checked for when the OmpSchedule trait is not specialized for this kernel type.
+
+    //! OpenMP schedule kind to be used by the AccCpuOmp2Blocks accelerator,
+    //! has to be static and constexpr.
+    static constexpr auto ompScheduleKind = alpaka::omp::Schedule::Static;
+
+    //! Member to set OpenMP chunk size, can be non-static and non-constexpr.
+    //! Defining kind as member and not defining chunk will result in default chunk size for the kind.
+    static constexpr int ompScheduleChunkSize = 1;
 };
 
-//#############################################################################
 //! Kernel that sets the schedule via trait specialization.
 //! We inherit OpenMPScheduleDefaultKernel just to reuse its operator().
 //! The schedule trait specialization is given underneath this struct.
@@ -69,37 +70,27 @@ struct OpenMPScheduleTraitKernel : public OpenMPScheduleDefaultKernel
 {
 };
 
-namespace alpaka
+namespace alpaka::trait
 {
-    namespace traits
+    //! Schedule trait specialization for OpenMPScheduleTraitKernel.
+    //! This is the most general way to define a schedule.
+    //! In case neither the trait nor the member are provided, there will be no schedule() clause.
+    template<typename TAcc>
+    struct OmpSchedule<OpenMPScheduleTraitKernel, TAcc>
     {
-        //! Schedule trait specialization for OpenMPScheduleTraitKernel.
-        //! This is the most general way to define a schedule.
-        //! In case neither the trait nor the member are provided, alpaka does not set any runtime schedule and the
-        //! schedule used is defined by omp_set_schedule() called on the user side, or otherwise by the OMP_SCHEDULE
-        //! environment variable.
-        template<typename TAcc>
-        struct OmpSchedule<OpenMPScheduleTraitKernel, TAcc>
+        template<typename TDim, typename... TArgs>
+        ALPAKA_FN_HOST static auto getOmpSchedule(
+            OpenMPScheduleTraitKernel const& /* kernelFnObj */,
+            Vec<TDim, Idx<TAcc>> const& /* blockThreadExtent */,
+            Vec<TDim, Idx<TAcc>> const& /* threadElemExtent */,
+            TArgs const&... /* args */) -> alpaka::omp::Schedule
         {
-            template<typename TDim, typename... TArgs>
-            ALPAKA_FN_HOST static auto getOmpSchedule(
-                OpenMPScheduleTraitKernel const& kernelFnObj,
-                Vec<TDim, Idx<TAcc>> const& blockThreadExtent,
-                Vec<TDim, Idx<TAcc>> const& threadElemExtent,
-                TArgs const&... args) -> alpaka::omp::Schedule
-            {
-                // Determine schedule at runtime for the given kernel and run parameters.
-                // For this particular example kernel, TArgs is an empty pack and can be removed.
-                alpaka::ignore_unused(kernelFnObj);
-                alpaka::ignore_unused(blockThreadExtent);
-                alpaka::ignore_unused(threadElemExtent);
-                alpaka::ignore_unused(args...);
-
-                return alpaka::omp::Schedule{alpaka::omp::Schedule::Dynamic, 2};
-            }
-        };
-    } // namespace traits
-} // namespace alpaka
+            // Determine schedule at runtime for the given kernel and run parameters.
+            // For this particular example kernel, TArgs is an empty pack and can be removed.
+            return alpaka::omp::Schedule{alpaka::omp::Schedule::Dynamic, 2};
+        }
+    };
+} // namespace alpaka::trait
 
 auto main() -> int
 {
@@ -136,7 +127,6 @@ auto main() -> int
         alpaka::GridBlockExtentSubDivRestrictions::Unrestricted);
 
     // Run the kernel setting no schedule explicitly.
-    // In this case the schedule is controlled by the OMP_SCHEDULE environment variable.
     std::cout << "OpenMPScheduleDefaultKernel setting no schedule explicitly:\n";
     alpaka::exec<Acc>(queue, workDiv, OpenMPScheduleDefaultKernel{});
     alpaka::wait(queue);

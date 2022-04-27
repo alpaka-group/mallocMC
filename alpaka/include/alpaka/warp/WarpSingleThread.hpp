@@ -1,4 +1,4 @@
-/* Copyright 2020 Sergei Bastrakov
+/* Copyright 2022 Sergei Bastrakov, David M. Rogers, Bernhard Manfred Gruber
  *
  * This file is part of Alpaka.
  *
@@ -13,85 +13,80 @@
 
 #include <cstdint>
 
-namespace alpaka
+namespace alpaka::warp
 {
-    namespace warp
+    //! The single-threaded warp to emulate it on CPUs.
+    class WarpSingleThread : public concepts::Implements<ConceptWarp, WarpSingleThread>
     {
-        //#############################################################################
-        //! The single-threaded warp to emulate it on CPUs.
-        class WarpSingleThread : public concepts::Implements<ConceptWarp, WarpSingleThread>
+    };
+
+    namespace trait
+    {
+        template<>
+        struct GetSize<WarpSingleThread>
         {
-        public:
-            //-----------------------------------------------------------------------------
-            WarpSingleThread() = default;
-            //-----------------------------------------------------------------------------
-            WarpSingleThread(WarpSingleThread const&) = delete;
-            //-----------------------------------------------------------------------------
-            WarpSingleThread(WarpSingleThread&&) = delete;
-            //-----------------------------------------------------------------------------
-            auto operator=(WarpSingleThread const&) -> WarpSingleThread& = delete;
-            //-----------------------------------------------------------------------------
-            auto operator=(WarpSingleThread&&) -> WarpSingleThread& = delete;
-            //-----------------------------------------------------------------------------
-            ~WarpSingleThread() = default;
+            static auto getSize(warp::WarpSingleThread const& /*warp*/)
+            {
+                return 1;
+            }
         };
 
-        namespace traits
+        template<>
+        struct Activemask<WarpSingleThread>
         {
-            //#############################################################################
-            template<>
-            struct GetSize<WarpSingleThread>
+            static auto activemask(warp::WarpSingleThread const& /*warp*/)
             {
-                //-----------------------------------------------------------------------------
-                static auto getSize(warp::WarpSingleThread const& /*warp*/)
-                {
-                    return 1;
-                }
-            };
+                return 1u;
+            }
+        };
 
-            //#############################################################################
-            template<>
-            struct Activemask<WarpSingleThread>
+        template<>
+        struct All<WarpSingleThread>
+        {
+            static auto all(warp::WarpSingleThread const& /*warp*/, std::int32_t predicate)
             {
-                //-----------------------------------------------------------------------------
-                static auto activemask(warp::WarpSingleThread const& /*warp*/)
-                {
-                    return 1u;
-                }
-            };
+                return predicate;
+            }
+        };
 
-            //#############################################################################
-            template<>
-            struct All<WarpSingleThread>
+        template<>
+        struct Any<WarpSingleThread>
+        {
+            static auto any(warp::WarpSingleThread const& /*warp*/, std::int32_t predicate)
             {
-                //-----------------------------------------------------------------------------
-                static auto all(warp::WarpSingleThread const& /*warp*/, std::int32_t predicate)
-                {
-                    return predicate;
-                }
-            };
+                return predicate;
+            }
+        };
 
-            //#############################################################################
-            template<>
-            struct Any<WarpSingleThread>
+        template<>
+        struct Ballot<WarpSingleThread>
+        {
+            static auto ballot(warp::WarpSingleThread const& /*warp*/, std::int32_t predicate)
             {
-                //-----------------------------------------------------------------------------
-                static auto any(warp::WarpSingleThread const& /*warp*/, std::int32_t predicate)
-                {
-                    return predicate;
-                }
-            };
+                return predicate ? 1u : 0u;
+            }
+        };
 
-            //#############################################################################
-            template<>
-            struct Ballot<WarpSingleThread>
+        template<>
+        struct Shfl<WarpSingleThread>
+        {
+            static auto shfl(
+                warp::WarpSingleThread const& /*warp*/,
+                std::int32_t val,
+                std::int32_t /*srcLane*/,
+                std::int32_t /*width*/)
             {
-                //-----------------------------------------------------------------------------
-                static auto ballot(warp::WarpSingleThread const& /*warp*/, std::int32_t predicate)
-                {
-                    return predicate ? 1u : 0u;
-                }
-            };
-        } // namespace traits
-    } // namespace warp
-} // namespace alpaka
+                return val;
+            }
+
+            static auto shfl(
+                warp::WarpSingleThread const& /*warp*/,
+                float val,
+                std::int32_t /*srcLane*/,
+                std::int32_t /*width*/)
+            {
+                return val;
+            }
+        };
+    } // namespace trait
+} // namespace alpaka::warp

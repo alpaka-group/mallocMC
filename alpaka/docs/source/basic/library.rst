@@ -4,7 +4,7 @@ Library Interface
 As described in the chapter about the :doc:`Abstraction </basic/abstraction>`, the general design of the library is very similar to *CUDA* and *OpenCL* but extends both by some points, while not requiring any language extensions.
 General interface design as well as interface implementation decisions differentiating *alpaka* from those libraries are described in the Rationale section.
 It uses C++ because it is one of the most performant languages available on nearly all systems.
-Furthermore, C++14 allows to describe the concepts in a very abstract way that is not possible with many other languages.
+Furthermore, C++17 allows to describe the concepts in a very abstract way that is not possible with many other languages.
 The *alpaka* library extensively makes use of advanced functional C++ template meta-programming techniques.
 The Implementation Details section discusses the C++ library and the way it provides extensibility and optimizability.
 
@@ -107,6 +107,32 @@ The kernel function object is shared across all threads in all blocks.
 Due to the block execution order being undefined, there is no safe and consistent way of altering state that is stored inside of the function object.
 Therefore, the ``operator()`` of the kernel function object has to be ``const`` and is not allowed to modify any of the object members.
 
+Kernels can also be defined via lambda expressions.
+
+.. code-block:: cpp
+
+   auto kernel = [] ALPAKA_FN_ACC (auto const & acc /* , ... */) -> void {
+	// ...
+   }
+
+.. attention::
+   The Nvidia ``nvcc`` does not support generic lambdas which are marked with `__device__`, which is what `ALPAKA_FN_ACC` expands to (among others) when the CUDA backend is active.
+   Therefore, a workaround is required. The type of the ``acc`` must be defined outside the lambda.
+
+   .. code-block:: cpp
+
+      int main() {
+          // ...
+	  using Acc = alpaka::ExampleDefaultAcc<Dim, Idx>;
+
+	  auto kernel = [] ALPAKA_FN_ACC (Acc const & acc /* , ... */) -> void {
+	      // ...
+	  }
+	  // ...
+      }
+
+   However, the kernel is no longer completely generic and cannot be used with different accelerators.
+   If this is required, the kernel must be defined as a function object.
 
 Index and Work Division
 ```````````````````````
@@ -115,6 +141,69 @@ The ``alpaka::getWorkDiv`` and the ``alpaka::getIdx`` functions both return a ve
 They are parametrized by the origin of the calculation as well as the unit in which the values are calculated.
 For example, ``alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc)`` returns a vector with the extents of the grid in units of threads.
 
+Memory fences
+`````````````
+
+**Note**: Memory fences should not be mistaken for synchronization functions between threads. They solely enforce the
+ordering of certain memory instructions (see below) and restrict how other threads can observe this order. If you need
+to rely on the results of memory operations being visible to other threads you must use ``alpaka::syncBlockThreads`` or
+atomic functions instead.
+
+The ``alpaka::mem_fence`` function can be used inside an alpaka kernel to issue a memory fence instruction. This
+guarantees the following **for the local thread**  and regardless of global or shared memory:
+
+  * All loads that occur before the fence will happen before all loads occuring after the fence, i.e. no *LoadLoad*
+    reordering.
+  * All stores that occur before the fence will happen before all stores occuring after the fence, i.e. no *StoreStore*
+    reordering.
+  * The order of stores will be visible to other threads inside the scope (but not necessarily their results).
+
+**Note**: ``alpaka::mem_fence`` does not guarantee that there will be no *LoadStore* reordering. Depending on the
+back-end, loads occurring before the fence may still be reordered with stores occurring after the fence.
+
+Memory fences can be issued on the block level (``alpaka::memory_scope::Block``), grid level
+(``alpaka::memory_scope::Grid``) and the device level (``alpaka::memory_scope::Device``).
+Depending on the memory scope, the *StoreStore* order will be visible to other threads in the same block, in the same grid
+(_i.e._ within the same kernel launch), or on the whole device (_i.e._ across concurrent kernel launches).
+
+Some accelerators (like GPUs) follow weaker cache coherency rules than x86 CPUs. In order to avoid storing to (or loading
+from) a cache or register it is necessary to prefix all observed buffers with `ALPAKA_DEVICE_VOLATILE`. This enforces
+that all loads / stores access the actual global / shared memory location.
+
+Example:
+
+.. code-block:: cpp
+
+    /* Initial values:
+     * vars[0] = 1
+     * vars[1] = 2
+     */
+    template<typename TAcc>
+    ALPAKA_FN_ACC auto operator()(TAcc const& acc, bool* success, ALPAKA_DEVICE_VOLATILE int* vars) const -> void
+    {
+        auto const idx = alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0u];
+
+        // Global thread 0 is producer
+        if(idx == 0)
+        {
+            vars[0] = 10;
+            alpaka::mem_fence(acc, alpaka::memory_scope::Device{});
+            vars[1] = 20;
+        }
+
+        auto const b = vars[1];
+        alpaka::mem_fence(acc, alpaka::memory_scope::Device{});
+        auto const a = vars[0];
+
+        /* Possible results at this point:
+         * a == 1 && b == 2
+         * a == 10 && b == 2
+         * a == 10 && b == 20
+         *
+         * but NOT:
+         * a == 1 && b == 20
+         */
+    }
 
 Memory Management
 `````````````````
@@ -123,6 +212,39 @@ The memory allocation function of the *alpaka* library (``alpaka::allocBuf<TElem
 It does not return raw pointers but reference counted memory buffer objects that remove the necessity for manual freeing and the possibility of memory leaks.
 Additionally the memory buffer objects know their extents, their pitches as well as the device they reside on.
 This allows buffers that possibly reside on different devices with different pitches to be copied only by providing the buffer objects as well as the extents of the region to copy (``alpaka::memcpy(bufDevA, bufDevB, copyExtents``).
+
+Accessors
+`````````
+
+An accessor is an interface to access the data stored by a buffer or, more generally, a view.
+Accessors take care of the multidimensionality of their underlying buffers when indexed, including pitched allocations.
+It is created via one of the following calls:
+
+.. code-block:: cpp
+
+   auto accessor = alpaka::experimental::access(buffer);      // read/write
+   auto accessor = alpaka::experimental::readAccess(buffer);  // read
+   auto accessor = alpaka::experimental::writeAccess(buffer); // write
+
+Accessors have many template parameters and users are advised to use the ``BufferAccessor`` convenience alias to get the type of an accessor for a buffer of a given accelerator.
+Example kernel with 3D accessor:
+
+.. code-block:: c++
+
+   struct Kernel {
+      template<typename Acc>
+      ALPAKA_FN_ACC void operator()(Acc const & acc,
+         alpaka::experimental::BufferAccessor<Acc, float, 3, alpaka::experimental::WriteAccess> data) const {
+         ...
+         for(Idx z = 0; z < data.extents[0];  ++z)
+             for(Idx y = 0; y < data.extents[1]; ++y)
+                 for(Idx x = 0; x < data.extents[2];  ++x)
+                     data(z, y, x) = 42.0f;
+      }
+   };
+   ...
+   alpaka::exec<Acc>(queue, workDiv, kernel, alpaka::experimental::writeAccess(buffer));
+
 
 Kernel Execution
 ````````````````

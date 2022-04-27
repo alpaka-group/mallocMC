@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz, Matthias Werner
+/* Copyright 2020 Axel Huebl, Benjamin Worpitz, Matthias Werner, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -23,19 +23,15 @@ namespace alpaka
 #    pragma clang diagnostic ignored "-Wweak-vtables"
 #endif
 
-    //#############################################################################
     //! The CPU queue interface
     template<typename TDev>
     class IGenericThreadsQueue
     {
     public:
-        //-----------------------------------------------------------------------------
         //! enqueue the event
         virtual void enqueue(EventGenericThreads<TDev>&) = 0;
-        //-----------------------------------------------------------------------------
         //! waiting for the event
         virtual void wait(EventGenericThreads<TDev> const&) = 0;
-        //-----------------------------------------------------------------------------
         virtual ~IGenericThreadsQueue() = default;
     };
 #if BOOST_COMP_CLANG

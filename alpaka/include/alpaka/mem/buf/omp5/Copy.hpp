@@ -1,4 +1,5 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz, Erik Zenker, Matthias Werner
+/* Copyright 2022 Axel Huebl, Benjamin Worpitz, Erik Zenker, Matthias Werner, Andrea Bocci, Jan Stephan, Bernhard
+ * Manfred Gruber, Antonio Di Pilato
  *
  * This file is part of Alpaka.
  *
@@ -33,30 +34,28 @@ namespace alpaka
 {
     namespace detail
     {
-        //#############################################################################
         //! The Omp5 memory copy trait.
         template<typename TDim, typename TViewDst, typename TViewSrc, typename TExtent>
         struct TaskCopyOmp5
         {
-            static_assert(!std::is_const<TViewDst>::value, "The destination view can not be const!");
+            static_assert(!std::is_const_v<TViewDst>, "The destination view can not be const!");
 
             static_assert(
                 Dim<TViewSrc>::value == TDim::value,
                 "The source view is required to have dimensionality TDim!");
             static_assert(
                 Dim<TViewDst>::value == Dim<TViewSrc>::value,
-                "The source and the destination view are required to have the same dimensionality!");
+                "The source and the destination views are required to have the same dimensionality!");
             static_assert(
                 Dim<TViewDst>::value == Dim<TExtent>::value,
                 "The views and the extent are required to have the same dimensionality!");
             // TODO: Maybe check for Idx of TViewDst and TViewSrc to have greater or equal range than TExtent.
             static_assert(
-                std::is_same<Elem<TViewDst>, typename std::remove_const<Elem<TViewSrc>>::type>::value,
-                "The source and the destination view are required to have the same element type!");
+                std::is_same_v<Elem<TViewDst>, typename std::remove_const<Elem<TViewSrc>>::type>,
+                "The source and the destination views are required to have the same element type!");
 
             using Idx = alpaka::Idx<TExtent>;
 
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST TaskCopyOmp5(
                 TViewDst& viewDst,
                 TViewSrc const& viewSrc,
@@ -65,15 +64,15 @@ namespace alpaka
                 int const& iSrcDevice)
                 : m_iDstDevice(iDstDevice)
                 , m_iSrcDevice(iSrcDevice)
-                , m_extent(castVec<size_t>(extent::getExtentVec(extent)))
+                , m_extent(castVec<size_t>(getExtentVec(extent)))
                 , m_dstPitchBytes(castVec<size_t>(getPitchBytesVec(viewDst)))
                 , m_srcPitchBytes(castVec<size_t>(getPitchBytesVec(viewSrc)))
                 , m_dstMemNative(reinterpret_cast<void*>(getPtrNative(viewDst)))
                 , m_srcMemNative(reinterpret_cast<void const*>(getPtrNative(viewSrc)))
             {
 #    if ALPAKA_DEBUG >= ALPAKA_DEBUG_FULL
-                const auto dstExtent(castVec<size_t>(extent::getExtentVec(viewDst)));
-                const auto srcExtent(castVec<size_t>(extent::getExtentVec(viewSrc)));
+                const auto dstExtent(castVec<size_t>(getExtentVec(viewDst)));
+                const auto srcExtent(castVec<size_t>(getExtentVec(viewSrc)));
                 for(auto i = static_cast<decltype(TDim::value)>(0u); i < TDim::value; ++i)
                 {
                     ALPAKA_ASSERT(m_extent[i] <= dstExtent[i]);
@@ -85,7 +84,6 @@ namespace alpaka
             }
 
 #    if ALPAKA_DEBUG >= ALPAKA_DEBUG_FULL
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST auto printDebug() const -> void
             {
                 std::cout << __func__ << " ddev: " << m_iDstDevice << " ew: " << m_extent
@@ -101,7 +99,6 @@ namespace alpaka
             void* m_dstMemNative;
             void const* m_srcMemNative;
 
-            //-----------------------------------------------------------------------------
             //! Executes the kernel function object.
             ALPAKA_FN_HOST auto operator()() const -> void
             {
@@ -150,24 +147,84 @@ namespace alpaka
             }
         };
 
-        //#############################################################################
-        //! The Omp5 memory copy trait.
+        //! The scalar Omp5 memory copy trait.
         template<typename TViewDst, typename TViewSrc, typename TExtent>
-        struct TaskCopyOmp5<DimInt<1>, TViewDst, TViewSrc, TExtent>
+        struct TaskCopyOmp5<DimInt<0u>, TViewDst, TViewSrc, TExtent>
         {
-            static_assert(!std::is_const<TViewDst>::value, "The destination view can not be const!");
+            static_assert(!std::is_const_v<TViewDst>, "The destination view can not be const!");
 
-            static_assert(Dim<TViewSrc>::value == 1, "The source view is required to have dimensionality 1!");
-            static_assert(Dim<TViewDst>::value == 1, "The source view is required to have dimensionality 1!");
-            static_assert(Dim<TExtent>::value == 1, "The extent is required to have dimensionality 1!");
+            static_assert(Dim<TViewSrc>::value == 0u, "The source view is required to have dimensionality 0!");
+            static_assert(Dim<TViewDst>::value == 0u, "The destination view is required to have dimensionality 0!");
+            static_assert(Dim<TExtent>::value == 0u, "The extent is required to have dimensionality 0!");
             // TODO: Maybe check for Idx of TViewDst and TViewSrc to have greater or equal range than TExtent.
             static_assert(
-                std::is_same<Elem<TViewDst>, typename std::remove_const<Elem<TViewSrc>>::type>::value,
+                std::is_same_v<Elem<TViewDst>, typename std::remove_const<Elem<TViewSrc>>::type>,
                 "The source and the destination view are required to have the same element type!");
 
             using Idx = alpaka::Idx<TExtent>;
 
-            //-----------------------------------------------------------------------------
+            ALPAKA_FN_HOST TaskCopyOmp5(
+                TViewDst& viewDst,
+                TViewSrc const& viewSrc,
+                TExtent const& /* extent */,
+                int const& iDstDevice,
+                int const& iSrcDevice)
+                : m_iDstDevice(iDstDevice)
+                , m_iSrcDevice(iSrcDevice)
+                , m_dstMemNative(reinterpret_cast<void*>(getPtrNative(viewDst)))
+                , m_srcMemNative(reinterpret_cast<void const*>(getPtrNative(viewSrc)))
+            {
+            }
+
+#    if ALPAKA_DEBUG >= ALPAKA_DEBUG_FULL
+            ALPAKA_FN_HOST auto printDebug() const -> void
+            {
+                std::cout << __func__ << " ddev: " << m_iDstDevice << " ew: " << Idx(1u)
+                          << " ewb: " << static_cast<Idx>(sizeof(Elem<TViewDst>)) << " dw: " << Idx(1u)
+                          << " dptr: " << m_dstMemNative << " sdev: " << m_iSrcDevice << " sw: " << Idx(1u)
+                          << " sptr: " << m_srcMemNative << std::endl;
+            }
+#    endif
+            int m_iDstDevice;
+            int m_iSrcDevice;
+            void* m_dstMemNative;
+            void const* m_srcMemNative;
+
+            //! Executes the kernel function object.
+            ALPAKA_FN_HOST auto operator()() const -> void
+            {
+                ALPAKA_DEBUG_FULL_LOG_SCOPE;
+
+#    if ALPAKA_DEBUG >= ALPAKA_DEBUG_FULL
+                printDebug();
+#    endif
+                ALPAKA_OMP5_CHECK(omp_target_memcpy(
+                    m_dstMemNative,
+                    const_cast<void*>(m_srcMemNative),
+                    sizeof(Elem<TViewDst>),
+                    0,
+                    0,
+                    m_iDstDevice,
+                    m_iSrcDevice));
+            }
+        };
+
+        //! The 1D Omp5 memory copy trait.
+        template<typename TViewDst, typename TViewSrc, typename TExtent>
+        struct TaskCopyOmp5<DimInt<1u>, TViewDst, TViewSrc, TExtent>
+        {
+            static_assert(!std::is_const_v<TViewDst>, "The destination view can not be const!");
+
+            static_assert(Dim<TViewSrc>::value == 1u, "The source view is required to have dimensionality 1!");
+            static_assert(Dim<TViewDst>::value == 1u, "The destination view is required to have dimensionality 1!");
+            static_assert(Dim<TExtent>::value == 1u, "The extent is required to have dimensionality 1!");
+            // TODO: Maybe check for Idx of TViewDst and TViewSrc to have greater or equal range than TExtent.
+            static_assert(
+                std::is_same_v<Elem<TViewDst>, typename std::remove_const<Elem<TViewSrc>>::type>,
+                "The source and the destination view are required to have the same element type!");
+
+            using Idx = alpaka::Idx<TExtent>;
+
             ALPAKA_FN_HOST TaskCopyOmp5(
                 TViewDst& viewDst,
                 TViewSrc const& viewSrc,
@@ -176,14 +233,12 @@ namespace alpaka
                 int const& iSrcDevice)
                 : m_iDstDevice(iDstDevice)
                 , m_iSrcDevice(iSrcDevice)
-                ,
 #    if ALPAKA_DEBUG >= ALPAKA_DEBUG_FULL
-                m_extentWidth(extent::getWidth(extent))
-                , m_dstWidth(static_cast<Idx>(extent::getWidth(viewDst)))
-                , m_srcWidth(static_cast<Idx>(extent::getWidth(viewSrc)))
-                ,
+                , m_extentWidth(getWidth(extent))
+                , m_dstWidth(static_cast<Idx>(getWidth(viewDst)))
+                , m_srcWidth(static_cast<Idx>(getWidth(viewSrc)))
 #    endif
-                m_extentWidthBytes(extent::getWidth(extent) * static_cast<Idx>(sizeof(Elem<TViewDst>)))
+                , m_extentWidthBytes(getWidth(extent) * static_cast<Idx>(sizeof(Elem<TViewDst>)))
                 , m_dstMemNative(reinterpret_cast<void*>(getPtrNative(viewDst)))
                 , m_srcMemNative(reinterpret_cast<void const*>(getPtrNative(viewSrc)))
             {
@@ -194,7 +249,6 @@ namespace alpaka
             }
 
 #    if ALPAKA_DEBUG >= ALPAKA_DEBUG_FULL
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST auto printDebug() const -> void
             {
                 std::cout << __func__ << " ddev: " << m_iDstDevice << " ew: " << m_extentWidth
@@ -214,7 +268,6 @@ namespace alpaka
             void* m_dstMemNative;
             void const* m_srcMemNative;
 
-            //-----------------------------------------------------------------------------
             //! Executes the kernel function object.
             ALPAKA_FN_HOST auto operator()() const -> void
             {
@@ -240,18 +293,15 @@ namespace alpaka
         };
     } // namespace detail
 
-    //-----------------------------------------------------------------------------
     // Trait specializations for CreateTaskMemcpy.
-    namespace traits
+    namespace trait
     {
         namespace detail
         {
-            //#############################################################################
             //! The Omp5 memory copy task creation trait detail.
             template<typename TDim, typename TDevDst, typename TDevSrc>
             struct CreateTaskCopyImpl
             {
-                //-----------------------------------------------------------------------------
                 template<typename TExtent, typename TViewSrc, typename TViewDst>
                 ALPAKA_FN_HOST static auto createTaskMemcpy(
                     TViewDst& viewDst,
@@ -272,12 +322,10 @@ namespace alpaka
             };
         } // namespace detail
 
-        //#############################################################################
         //! The CPU to Omp5 memory copy trait specialization.
         template<typename TDim>
         struct CreateTaskMemcpy<TDim, DevOmp5, DevCpu>
         {
-            //-----------------------------------------------------------------------------
             template<typename TExtent, typename TViewSrc, typename TViewDst>
             ALPAKA_FN_HOST static auto createTaskMemcpy(
                 TViewDst& viewDst,
@@ -290,17 +338,15 @@ namespace alpaka
                     viewDst,
                     viewSrc,
                     extent,
-                    getDev(viewDst).m_spDevOmp5Impl->iDevice(),
+                    getDev(viewDst).getNativeHandle(),
                     omp_get_initial_device());
             }
         };
 
-        //#############################################################################
         //! The Omp5 to CPU memory copy trait specialization.
         template<typename TDim>
         struct CreateTaskMemcpy<TDim, DevCpu, DevOmp5>
         {
-            //-----------------------------------------------------------------------------
             template<typename TExtent, typename TViewSrc, typename TViewDst>
             ALPAKA_FN_HOST static auto createTaskMemcpy(
                 TViewDst& viewDst,
@@ -314,16 +360,14 @@ namespace alpaka
                     viewSrc,
                     extent,
                     omp_get_initial_device(),
-                    getDev(viewSrc).m_spDevOmp5Impl->iDevice());
+                    getDev(viewSrc).getNativeHandle());
             }
         };
 
-        //#############################################################################
         //! The Omp5 to Omp5 memory copy trait specialization.
         template<typename TDim>
         struct CreateTaskMemcpy<TDim, DevOmp5, DevOmp5>
         {
-            //-----------------------------------------------------------------------------
             template<typename TExtent, typename TViewSrc, typename TViewDst>
             ALPAKA_FN_HOST static auto createTaskMemcpy(
                 TViewDst& viewDst,
@@ -336,11 +380,11 @@ namespace alpaka
                     viewDst,
                     viewSrc,
                     extent,
-                    getDev(viewDst).m_spDevOmp5Impl->iDevice(),
-                    getDev(viewSrc).m_spDevOmp5Impl->iDevice());
+                    getDev(viewDst).getNativeHandle(),
+                    getDev(viewSrc).getNativeHandle());
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka
 
 #endif

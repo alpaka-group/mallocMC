@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz
+/* Copyright 2020 Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -17,7 +17,6 @@
 
 namespace alpaka
 {
-    //#############################################################################
     //! The acceleration properties on a device.
     //
     // \TODO:
@@ -28,7 +27,6 @@ namespace alpaka
         static_assert(
             sizeof(TIdx) >= sizeof(int),
             "Index type is not supported, consider using int or a larger type.");
-        //-----------------------------------------------------------------------------
         ALPAKA_FN_HOST AccDevProps(
             TIdx const& multiProcessorCount,
             Vec<TDim, TIdx> const& gridBlockExtentMax,
