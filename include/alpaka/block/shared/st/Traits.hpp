@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, Erik Zenker, Matthias Werner, René Widera
+/* Copyright 2022 Benjamin Worpitz, Erik Zenker, Matthias Werner, René Widera, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -20,21 +20,17 @@ namespace alpaka
     {
     };
 
-    //-----------------------------------------------------------------------------
-    //! The block shared static memory operation traits.
-    namespace traits
+    //! The block shared static memory operation trait.
+    namespace trait
     {
-        //#############################################################################
         //! The block shared static memory variable allocation operation trait.
         template<typename T, std::size_t TuniqueId, typename TBlockSharedMemSt, typename TSfinae = void>
         struct DeclareSharedVar;
-        //#############################################################################
         //! The block shared static memory free operation trait.
         template<typename TBlockSharedMemSt, typename TSfinae = void>
         struct FreeSharedVars;
-    } // namespace traits
+    } // namespace trait
 
-    //-----------------------------------------------------------------------------
     //! Declare a block shared variable.
     //!
     //! The variable is uninitialized and not default constructed!
@@ -51,10 +47,9 @@ namespace alpaka
     ALPAKA_FN_ACC auto declareSharedVar(TBlockSharedMemSt const& blockSharedMemSt) -> T&
     {
         using ImplementationBase = concepts::ImplementationBase<ConceptBlockSharedSt, TBlockSharedMemSt>;
-        return traits::DeclareSharedVar<T, TuniqueId, ImplementationBase>::declareVar(blockSharedMemSt);
+        return trait::DeclareSharedVar<T, TuniqueId, ImplementationBase>::declareVar(blockSharedMemSt);
     }
 
-    //-----------------------------------------------------------------------------
     //! Frees all memory used by block shared variables.
     //!
     //! \tparam TBlockSharedMemSt The block shared allocator implementation type.
@@ -64,6 +59,6 @@ namespace alpaka
     ALPAKA_FN_ACC auto freeSharedVars(TBlockSharedMemSt& blockSharedMemSt) -> void
     {
         using ImplementationBase = concepts::ImplementationBase<ConceptBlockSharedSt, TBlockSharedMemSt>;
-        traits::FreeSharedVars<ImplementationBase>::freeVars(blockSharedMemSt);
+        trait::FreeSharedVars<ImplementationBase>::freeVars(blockSharedMemSt);
     }
 } // namespace alpaka

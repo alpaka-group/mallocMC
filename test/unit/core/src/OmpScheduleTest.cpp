@@ -1,4 +1,4 @@
-/* Copyright 2020 Sergei Bastrakov
+/* Copyright 2022 Sergei Bastrakov, Jan Stephan
  *
  * This file is part of alpaka.
  *
@@ -8,55 +8,44 @@
  */
 
 #include <alpaka/core/OmpSchedule.hpp>
-#include <alpaka/core/Unused.hpp>
 
 #include <catch2/catch.hpp>
 
-//-----------------------------------------------------------------------------
+#include <tuple>
+
 TEST_CASE("ompScheduleDefaultConstructor", "[core]")
 {
-    auto const schedule = alpaka::omp::Schedule{};
-    alpaka::ignore_unused(schedule);
+    std::ignore = alpaka::omp::Schedule{};
 }
 
-//-----------------------------------------------------------------------------
 TEST_CASE("ompScheduleConstructor", "[core]")
 {
-    auto const staticSchedule = alpaka::omp::Schedule{alpaka::omp::Schedule::Static, 5};
-    alpaka::ignore_unused(staticSchedule);
-
-    auto const guidedSchedule = alpaka::omp::Schedule{alpaka::omp::Schedule::Guided};
-    alpaka::ignore_unused(guidedSchedule);
+    std::ignore = alpaka::omp::Schedule{alpaka::omp::Schedule::Static, 5};
+    std::ignore = alpaka::omp::Schedule{alpaka::omp::Schedule::Guided};
 }
 
-//-----------------------------------------------------------------------------
 TEST_CASE("ompScheduleConstexprConstructor", "[core]")
 {
-    constexpr auto schedule = alpaka::omp::Schedule{alpaka::omp::Schedule::Dynamic};
-    alpaka::ignore_unused(schedule);
+    std::ignore = alpaka::omp::Schedule{alpaka::omp::Schedule::Dynamic};
 }
 
-//-----------------------------------------------------------------------------
 TEST_CASE("ompGetSchedule", "[core]")
 {
-    auto const schedule = alpaka::omp::getSchedule();
-    alpaka::ignore_unused(schedule);
+    std::ignore = alpaka::omp::getSchedule();
 }
 
-//-----------------------------------------------------------------------------
 TEST_CASE("ompSetSchedule", "[core]")
 {
     auto const expectedSchedule = alpaka::omp::Schedule{alpaka::omp::Schedule::Dynamic, 3};
     alpaka::omp::setSchedule(expectedSchedule);
     // The check makes sense only when this feature is supported
-#if defined _OPENMP && _OPENMP >= 200805 && ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLED
+#if defined _OPENMP && _OPENMP >= 200805 && defined ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLED
     auto const actualSchedule = alpaka::omp::getSchedule();
     REQUIRE(expectedSchedule.kind == actualSchedule.kind);
     REQUIRE(expectedSchedule.chunkSize == actualSchedule.chunkSize);
 #endif
 }
 
-//-----------------------------------------------------------------------------
 TEST_CASE("ompSetNoSchedule", "[core]")
 {
     auto const expectedSchedule = alpaka::omp::Schedule{alpaka::omp::Schedule::Guided, 2};
@@ -64,7 +53,7 @@ TEST_CASE("ompSetNoSchedule", "[core]")
     auto const noSchedule = alpaka::omp::Schedule{alpaka::omp::Schedule::NoSchedule};
     alpaka::omp::setSchedule(noSchedule);
     // The check makes sense only when this feature is supported
-#if defined _OPENMP && _OPENMP >= 200805 && ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLED
+#if defined _OPENMP && _OPENMP >= 200805 && defined ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLED
     auto const actualSchedule = alpaka::omp::getSchedule();
     REQUIRE(expectedSchedule.kind == actualSchedule.kind);
     REQUIRE(expectedSchedule.chunkSize == actualSchedule.chunkSize);

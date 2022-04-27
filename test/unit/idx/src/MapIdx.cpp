@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz, Matthias Werner, René Widera
+/* Copyright 2020 Axel Huebl, Benjamin Worpitz, Matthias Werner, René Widera, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -15,20 +15,19 @@
 
 #include <catch2/catch.hpp>
 
-//-----------------------------------------------------------------------------
 TEMPLATE_LIST_TEST_CASE("mapIdx", "[idx]", alpaka::test::TestDims)
 {
     using Dim = TestType;
     using Idx = std::size_t;
     using Vec = alpaka::Vec<Dim, Idx>;
 
-    auto const extentNd(
-        alpaka::createVecFromIndexedFn<Dim, alpaka::test::CreateVecWithIdx<Idx>::template ForExtentBuf>());
-    auto const idxNd(extentNd - Vec::all(4u));
+    auto const extentNd
+        = alpaka::createVecFromIndexedFn<Dim, alpaka::test::CreateVecWithIdx<Idx>::template ForExtentBuf>();
+    auto const idxNd = extentNd - Vec::all(4u);
 
-    auto const idx1d(alpaka::mapIdx<1u>(idxNd, extentNd));
+    auto const idx1d = alpaka::mapIdx<1u>(idxNd, extentNd);
 
-    auto const idxNdResult(alpaka::mapIdx<Dim::value>(idx1d, extentNd));
+    auto const idxNdResult = alpaka::mapIdx<Dim::value>(idx1d, extentNd);
 
     REQUIRE(idxNd == idxNdResult);
 }

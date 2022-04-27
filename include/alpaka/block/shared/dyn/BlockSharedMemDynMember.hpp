@@ -1,4 +1,4 @@
-/* Copyright 2020 Jeffrey Kelling
+/* Copyright 2022 Jeffrey Kelling, Jan Stephan, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <alpaka/block/shared/dyn/BlockSharedDynMemberAllocKiB.hpp>
 #include <alpaka/block/shared/dyn/Traits.hpp>
 #include <alpaka/core/Assert.hpp>
 #include <alpaka/core/Vectorize.hpp>
@@ -17,15 +18,10 @@
 #include <cstdint>
 #include <type_traits>
 
-#ifndef ALPAKA_BLOCK_SHARED_DYN_MEMBER_ALLOC_KIB
-#    define ALPAKA_BLOCK_SHARED_DYN_MEMBER_ALLOC_KIB 30
-#endif
-
 namespace alpaka
 {
     namespace detail
     {
-        //#############################################################################
         //! "namespace" for static constexpr members that should be in BlockSharedMemDynMember
         //! but cannot be because having a static const member breaks GCC 10
         //! OpenMP target and OpenACC: type not mappable.
@@ -41,49 +37,35 @@ namespace alpaka
 #    pragma warning(push)
 #    pragma warning(disable : 4324) // warning C4324: structure was padded due to alignment specifier
 #endif
-    //#############################################################################
     //! Dynamic block shared memory provider using fixed-size
     //! member array to allocate memory on the stack or in shared
     //! memory.
-    template<std::size_t TStaticAllocKiB = ALPAKA_BLOCK_SHARED_DYN_MEMBER_ALLOC_KIB>
+    template<std::size_t TStaticAllocKiB = BlockSharedDynMemberAllocKiB>
     class alignas(core::vectorization::defaultAlignment) BlockSharedMemDynMember
         : public concepts::Implements<ConceptBlockSharedDyn, BlockSharedMemDynMember<TStaticAllocKiB>>
     {
     public:
-        //-----------------------------------------------------------------------------
         BlockSharedMemDynMember(std::size_t sizeBytes) : m_dynPitch(getPitch(sizeBytes))
         {
-#if(defined ALPAKA_DEBUG_OFFLOAD_ASSUME_HOST) && (!defined NDEBUG)
-            ALPAKA_ASSERT(static_cast<std::uint32_t>(sizeBytes) <= staticAllocBytes());
-#endif
+            ALPAKA_ASSERT_OFFLOAD(static_cast<std::uint32_t>(sizeBytes) <= staticAllocBytes());
         }
-        //-----------------------------------------------------------------------------
-        BlockSharedMemDynMember(BlockSharedMemDynMember const&) = delete;
-        //-----------------------------------------------------------------------------
-        BlockSharedMemDynMember(BlockSharedMemDynMember&&) = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(BlockSharedMemDynMember const&) -> BlockSharedMemDynMember& = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(BlockSharedMemDynMember&&) -> BlockSharedMemDynMember& = delete;
-        //-----------------------------------------------------------------------------
-        /*virtual*/ ~BlockSharedMemDynMember() = default;
 
-        uint8_t* dynMemBegin() const
+        auto dynMemBegin() const -> uint8_t*
         {
-            return m_mem.data();
+            return std::data(m_mem);
         }
 
         /*! \return the pointer to the begin of data after the portion allocated as dynamical shared memory.
          */
-        uint8_t* staticMemBegin() const
+        auto staticMemBegin() const -> uint8_t*
         {
-            return m_mem.data() + m_dynPitch;
+            return std::data(m_mem) + m_dynPitch;
         }
 
         /*! \return the remaining capacity for static block shared memory,
                     returns a 32-bit type for register efficiency on GPUs
             */
-        std::uint32_t staticMemCapacity() const
+        auto staticMemCapacity() const -> std::uint32_t
         {
             return staticAllocBytes() - m_dynPitch;
         }
@@ -91,13 +73,13 @@ namespace alpaka
         //! \return size of statically allocated memory available for both
         //!         dynamic and static shared memory. Value is of a 32-bit type
         //!         for register efficiency on GPUs
-        static constexpr std::uint32_t staticAllocBytes()
+        static constexpr auto staticAllocBytes() -> std::uint32_t
         {
             return detail::BlockSharedMemDynMemberStatic<TStaticAllocKiB>::staticAllocBytes;
         }
 
     private:
-        static std::uint32_t getPitch(std::size_t sizeBytes)
+        static auto getPitch(std::size_t sizeBytes) -> std::uint32_t
         {
             constexpr auto alignment = core::vectorization::defaultAlignment;
             return static_cast<std::uint32_t>((sizeBytes / alignment + (sizeBytes % alignment > 0u)) * alignment);
@@ -110,9 +92,8 @@ namespace alpaka
 #    pragma warning(pop)
 #endif
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         template<typename T, std::size_t TStaticAllocKiB>
         struct GetDynSharedMem<T, BlockSharedMemDynMember<TStaticAllocKiB>>
         {
@@ -121,7 +102,6 @@ namespace alpaka
 #    pragma GCC diagnostic ignored                                                                                    \
         "-Wcast-align" // "cast from 'unsigned char*' to 'unsigned int*' increases required alignment of target type"
 #endif
-            //-----------------------------------------------------------------------------
             static auto getMem(BlockSharedMemDynMember<TStaticAllocKiB> const& mem) -> T*
             {
                 static_assert(
@@ -134,5 +114,5 @@ namespace alpaka
 #    pragma GCC diagnostic pop
 #endif
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka

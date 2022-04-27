@@ -8,17 +8,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-set(_TARGET_NAME "math")
+set(_TARGET_NAME "mathTest")
 
 append_recursive_files_add_to_src_group("src/" "src/" "cpp" _FILES_SOURCE)
 append_recursive_files_add_to_src_group("src/" "src/" "hpp" _FILES_HEADER)
 
-if(ALPAKA_ACC_GPU_CUDA_ENABLE)
-    list(REMOVE_ITEM
-            CUDA_NVCC_FLAGS "--ftz=true" "--prec-div=false" "--prec-sqrt=false" "--fmad=true" "--use_fast_math" "-use_fast_math")
-
-endif()
-if(ALPAKA_ACC_GPU_HIP_ENABLE)
+if(alpaka_ACC_GPU_HIP_ENABLE)
     list(REMOVE_ITEM
             HIP_NVCC_FLAGS "--ftz=true" "--prec-div=false" "--prec-sqrt=false" "--fmad=true" "--use_fast_math" "-use_fast_math")
 endif()
@@ -43,4 +38,4 @@ set_target_properties(
 set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "test/unit")
 target_compile_definitions(${_TARGET_NAME} PRIVATE "-DTEST_UNIT_MATH")
 
-add_test(NAME ${_TARGET_NAME} COMMAND ${_TARGET_NAME} ${_ALPAKA_TEST_OPTIONS})
+add_test(NAME ${_TARGET_NAME} COMMAND ${_TARGET_NAME} ${_alpaka_TEST_OPTIONS})

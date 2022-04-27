@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz, René Widera
+/* Copyright 2022 Axel Huebl, Benjamin Worpitz, René Widera, Jan Stephan, Jeffrey Kelling, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -15,17 +15,27 @@
 #        error If ALPAKA_ACC_ANY_BT_OMP5_ENABLED is set, the compiler has to support OpenMP 4.0 or higher!
 #    endif
 
+// Kill printf in AMD GPU code because of missing compiler support
+#    ifdef __AMDGCN__
+#        include <cstdio> // the define breaks <cstdio> if it is included afterwards
+#        define printf(...)
+#    endif
+
 // Base classes.
 #    include <alpaka/atomic/AtomicHierarchy.hpp>
 #    include <alpaka/atomic/AtomicOmpBuiltIn.hpp>
+#    include <alpaka/block/shared/OffloadUseBuiltInSharedMem.hpp>
 #    include <alpaka/block/shared/dyn/BlockSharedMemDynMember.hpp>
+#    include <alpaka/block/shared/dyn/BlockSharedMemDynOmp5BuiltIn.hpp>
 #    include <alpaka/block/shared/st/BlockSharedMemStOmp5.hpp>
+#    include <alpaka/block/shared/st/BlockSharedMemStOmp5BuiltIn.hpp>
 #    include <alpaka/block/sync/BlockSyncBarrierOmp.hpp>
 #    include <alpaka/idx/bt/IdxBtOmp.hpp>
 #    include <alpaka/idx/gb/IdxGbLinear.hpp>
 #    include <alpaka/intrinsic/IntrinsicFallback.hpp>
 #    include <alpaka/math/MathStdLib.hpp>
-#    include <alpaka/rand/RandStdLib.hpp>
+#    include <alpaka/mem/fence/MemFenceOmp5.hpp>
+#    include <alpaka/rand/RandDefault.hpp>
 #    include <alpaka/time/TimeOmp.hpp>
 #    include <alpaka/warp/WarpSingleThread.hpp>
 #    include <alpaka/workdiv/WorkDivMembers.hpp>
@@ -40,10 +50,10 @@
 // Implementation details.
 #    include <alpaka/core/ClipCast.hpp>
 #    include <alpaka/core/Concepts.hpp>
-#    include <alpaka/core/Unused.hpp>
 #    include <alpaka/dev/DevOmp5.hpp>
 
 #    include <limits>
+#    include <type_traits>
 #    include <typeinfo>
 
 namespace alpaka
@@ -51,32 +61,75 @@ namespace alpaka
     template<typename TDim, typename TIdx, typename TKernelFnObj, typename... TArgs>
     class TaskKernelOmp5;
 
-    //#############################################################################
+    namespace detail
+    {
+        template<typename TBuiltinSharedMem = OffloadBuiltInSharedMemOff>
+        struct AccOmp5BlockSharedMem
+            : public BlockSharedMemDynMember<>
+            , public BlockSharedMemStOmp5
+        {
+            AccOmp5BlockSharedMem(std::size_t sizeBytes)
+                : BlockSharedMemDynMember<>(sizeBytes)
+                , BlockSharedMemStOmp5(staticMemBegin(), staticMemCapacity())
+
+            {
+            }
+        };
+
+#    if _OPENMP >= 201811
+        template<>
+        struct AccOmp5BlockSharedMem<OffloadBuiltInSharedMemFixed>
+            : public BlockSharedMemDynOmp5BuiltInFixed
+            , public BlockSharedMemStOmp5BuiltIn
+        {
+            AccOmp5BlockSharedMem(std::size_t sizeBytes)
+                : BlockSharedMemDynOmp5BuiltInFixed(sizeBytes)
+                , BlockSharedMemStOmp5BuiltIn()
+            {
+            }
+        };
+
+        template<>
+        struct AccOmp5BlockSharedMem<OffloadBuiltInSharedMemAlloc>
+            : public BlockSharedMemDynOmp5BuiltInOmpAlloc
+            , public BlockSharedMemStOmp5BuiltIn
+        {
+            AccOmp5BlockSharedMem(std::size_t sizeBytes)
+                : BlockSharedMemDynOmp5BuiltInOmpAlloc(sizeBytes)
+                , BlockSharedMemStOmp5BuiltIn()
+            {
+            }
+        };
+#    endif
+    } // namespace detail
+
     //! The CPU OpenMP 5.0 accelerator.
     //!
     //! This accelerator allows parallel kernel execution on an OpenMP target device.
-    template<
-        typename TDim,
-        typename TIdx>
-    class AccOmp5 final :
-        public WorkDivMembers<TDim, TIdx>,
-        public gb::IdxGbLinear<TDim, TIdx>,
-        public bt::IdxBtOmp<TDim, TIdx>,
-        public AtomicHierarchy<
-            AtomicOmpBuiltIn,   // grid atomics
-            AtomicOmpBuiltIn,    // block atomics
-            AtomicOmpBuiltIn     // thread atomics
-        >,
-        public math::MathStdLib,
-        public BlockSharedMemDynMember<>,
-        public BlockSharedMemStOmp5,
-        public BlockSyncBarrierOmp,
-        // cannot determine which intrinsics are safe to use (depends on target), using fallback
-        public IntrinsicFallback,
-        public rand::RandStdLib,
-        public TimeOmp,
-        public warp::WarpSingleThread,
-        public concepts::Implements<ConceptAcc, AccOmp5<TDim, TIdx>>
+    template<typename TDim, typename TIdx>
+    class AccOmp5 final
+        : public WorkDivMembers<TDim, TIdx>
+        , public gb::IdxGbLinear<TDim, TIdx>
+        , public bt::IdxBtOmp<TDim, TIdx>
+        , public AtomicHierarchy<
+              AtomicOmpBuiltIn, // grid atomics
+              AtomicOmpBuiltIn, // block atomics
+              AtomicOmpBuiltIn // thread atomics
+              >
+        , public math::MathStdLib
+#    if _OPENMP >= 201811
+        , public detail::AccOmp5BlockSharedMem<OffloadBuiltInSharedMem /*default value determined by CMake flag*/>
+#    else
+        , public detail::AccOmp5BlockSharedMem<OffloadBuiltInSharedMemOff>
+#    endif
+        , public BlockSyncBarrierOmp
+        , public IntrinsicFallback // cannot determine which intrinsics are safe to use (depends on target), using
+                                   // fallback
+        , public MemFenceOmp5
+        , public rand::RandDefault
+        , public TimeOmp
+        , public warp::WarpSingleThread
+        , public concepts::Implements<ConceptAcc, AccOmp5<TDim, TIdx>>
     {
         static_assert(
             sizeof(TIdx) >= sizeof(int),
@@ -88,7 +141,6 @@ namespace alpaka
         friend class ::alpaka::TaskKernelOmp5;
 
     private:
-        //-----------------------------------------------------------------------------
         AccOmp5(
             Vec<TDim, TIdx> const& gridBlockExtent,
             Vec<TDim, TIdx> const& blockThreadExtent,
@@ -104,48 +156,33 @@ namespace alpaka
                   AtomicOmpBuiltIn // atomics between threads
                   >()
             , math::MathStdLib()
-            , BlockSharedMemDynMember<>(blockSharedMemDynSizeBytes)
-            ,
-            //! \TODO can with some TMP determine the amount of statically alloced smem from the kernelFuncObj?
-            BlockSharedMemStOmp5(staticMemBegin(), staticMemCapacity())
+#    if _OPENMP >= 201811
+            , detail::AccOmp5BlockSharedMem<OffloadBuiltInSharedMem>(blockSharedMemDynSizeBytes)
+#    else
+            , detail::AccOmp5BlockSharedMem<OffloadBuiltInSharedMemOff>(blockSharedMemDynSizeBytes)
+#    endif
             , BlockSyncBarrierOmp()
-            , rand::RandStdLib()
+            , MemFenceOmp5()
+            , rand::RandDefault()
             , TimeOmp()
         {
         }
-
-    public:
-        //-----------------------------------------------------------------------------
-        AccOmp5(AccOmp5 const&) = delete;
-        //-----------------------------------------------------------------------------
-        AccOmp5(AccOmp5&&) = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(AccOmp5 const&) -> AccOmp5& = delete;
-        //-----------------------------------------------------------------------------
-        auto operator=(AccOmp5&&) -> AccOmp5& = delete;
-        //-----------------------------------------------------------------------------
-        /*virtual*/ ~AccOmp5() = default;
     };
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The OpenMP 5.0 accelerator accelerator type trait specialization.
         template<typename TDim, typename TIdx>
         struct AccType<AccOmp5<TDim, TIdx>>
         {
             using type = AccOmp5<TDim, TIdx>;
         };
-        //#############################################################################
         //! The OpenMP 5.0 accelerator device properties get trait specialization.
         template<typename TDim, typename TIdx>
         struct GetAccDevProps<AccOmp5<TDim, TIdx>>
         {
-            //-----------------------------------------------------------------------------
-            ALPAKA_FN_HOST static auto getAccDevProps(DevOmp5 const& dev) -> AccDevProps<TDim, TIdx>
+            ALPAKA_FN_HOST static auto getAccDevProps(DevOmp5 const& /* dev */) -> AccDevProps<TDim, TIdx>
             {
-                alpaka::ignore_unused(dev);
-
 #    if defined(ALPAKA_OFFLOAD_MAX_BLOCK_SIZE) && ALPAKA_OFFLOAD_MAX_BLOCK_SIZE > 0
                 auto const blockThreadCount = std::min(::omp_get_max_threads(), ALPAKA_OFFLOAD_MAX_BLOCK_SIZE);
 #    else
@@ -190,19 +227,16 @@ namespace alpaka
                         AccOmp5<TDim, TIdx>::staticAllocBytes()};
             }
         };
-        //#############################################################################
         //! The OpenMP 5.0 accelerator name trait specialization.
         template<typename TDim, typename TIdx>
         struct GetAccName<AccOmp5<TDim, TIdx>>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto getAccName() -> std::string
             {
                 return "AccOmp5<" + std::to_string(TDim::value) + "," + typeid(TIdx).name() + ">";
             }
         };
 
-        //#############################################################################
         //! The OpenMP 5.0 accelerator device type trait specialization.
         template<typename TDim, typename TIdx>
         struct DevType<AccOmp5<TDim, TIdx>>
@@ -210,7 +244,6 @@ namespace alpaka
             using type = DevOmp5;
         };
 
-        //#############################################################################
         //! The OpenMP 5.0 accelerator dimension getter trait specialization.
         template<typename TDim, typename TIdx>
         struct DimType<AccOmp5<TDim, TIdx>>
@@ -218,12 +251,10 @@ namespace alpaka
             using type = TDim;
         };
 
-        //#############################################################################
         //! The OpenMP 5.0 accelerator execution task type trait specialization.
         template<typename TDim, typename TIdx, typename TWorkDiv, typename TKernelFnObj, typename... TArgs>
         struct CreateTaskKernel<AccOmp5<TDim, TIdx>, TWorkDiv, TKernelFnObj, TArgs...>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto createTaskKernel(
                 TWorkDiv const& workDiv,
                 TKernelFnObj const& kernelFnObj,
@@ -236,7 +267,6 @@ namespace alpaka
             }
         };
 
-        //#############################################################################
         //! The OpenMP 5.0 execution task platform type trait specialization.
         template<typename TDim, typename TIdx>
         struct PltfType<AccOmp5<TDim, TIdx>>
@@ -244,14 +274,13 @@ namespace alpaka
             using type = PltfOmp5;
         };
 
-        //#############################################################################
         //! The OpenMP 5.0 accelerator idx type trait specialization.
         template<typename TDim, typename TIdx>
         struct IdxType<AccOmp5<TDim, TIdx>>
         {
             using type = TIdx;
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka
 
 #endif

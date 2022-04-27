@@ -122,10 +122,36 @@ Allocate a buffer in host memory
 
      prepareForAsyncCopy(bufHost);
 
-Get a raw pointer to a buffer initialization, etc.
+Create a view to host memory represented by a pointer
   .. code-block:: c++
 
-     DataType * raw = view::getPtrNative(bufHost);
+     using Dim = alpaka::DimInt<1u>;
+     Vec<Dim, Idx> extent = value;
+     DataType* date = new DataType[extent[0]];
+     auto hostView = createView(devHost, data, extent);
+
+Create a view to host std::vector
+   .. code-block:: c++
+
+     auto vec = std::vector<DataType>(42u);
+     auto hostView = createView(devHost, vec);
+
+Create a view to host std::array
+   .. code-block:: c++
+
+     std::vector<DataType, 2> array = {42u, 23};
+     auto hostView = createView(devHost, array);
+
+Get a raw pointer to a buffer or view initialization, etc.
+  .. code-block:: c++
+
+     DataType* raw = view::getPtrNative(bufHost);
+     DataType* rawViewPtr = view::getPtrNative(hostView);
+
+Get an accessor to a buffer and the accessor's type (experimental)
+  .. code-block:: c++
+
+     experimental::BufferAccessor<Acc, Elem, N, AccessTag> a = experimental::access(buffer);
 
 Allocate a buffer in device memory
   .. code-block:: c++
@@ -177,9 +203,7 @@ Instantiate a kernel and create a task that will run it (does not launch it yet)
   .. code-block:: c++
 
      Kernel kernel{argumentsForConstructor};
-     auto taskRunKernel = createTaskKernel<Acc>(workDiv,
-                                                        kernel,
-							parameters);
+     auto taskRunKernel = createTaskKernel<Acc>(workDiv, kernel, parameters);
 
 acc parameter of the kernel is provided automatically, does not need to be specified here
 
@@ -239,32 +263,39 @@ Allocate static shared memory variable
 Get dynamic shared memory pool, requires the kernel to specialize
   .. code-block:: c++
 
-     traits::BlockSharedMemDynSizeBytes
+     trait::BlockSharedMemDynSizeBytes
        Type * dynamicSharedMemoryPool = getDynSharedMem<Type>(acc);
 
 Synchronize threads of the same block
   .. code-block:: c++
 
-     block::sync::syncBlockThreads(acc);
+     syncBlockThreads(acc);
 
 Atomic operations
   .. code-block:: c++
 
-     auto result = atomicOp<Operation>(acc,
-                                       arguments,
-                                       OperationHierarchy{});
+     auto result = atomicOp<Operation>(acc, arguments);
 
-  Operation (all in `op`):
+  Operations:
      .. code-block:: c++
 
-	namespace op
-           Add, Sub, Min, Max, Exch, Inc, Dec, And, Or, Xor, Cas
+         AtomicAdd, AtomicSub, AtomicMin, AtomicMax, AtomicExch,
+         AtomicInc, AtomicDec, AtomicAnd, AtomicOr, AtomicXor, AtomicCas
 
-  OperationHierarchy (all in hierarchy):
-     .. code-block:: c++
+Memory fences on block-, grid- or device level (guarantees LoadLoad and StoreStore ordering)
+  .. code-block:: c++
 
-	namespace hierarchy
-	   Threads, Blocks, Grids
+     mem_fence(acc, memory_scope::Block{});
+     mem_fence(acc, memory_scope::Grid{});
+     mem_fence(acc, memory_scope::Device{});
+
+Warp-level operations
+  .. code-block:: c++
+
+     uint64_t result = warp::ballot(acc, idx == 1 || idx == 4);
+     assert( result == (1<<1) + (1<<4) );
+
+     int32_t valFromSrcLane = warp::shfl(val, srcLane);
 
 Math functions take acc as additional first argument
   .. code-block:: c++
@@ -277,5 +308,5 @@ Generate random numbers
   .. code-block:: c++
 
      auto distribution = rand::distribution::createNormalReal<double>(acc);
-     auto generator = rand::generator::createDefault(acc, seed, subsequence);
+     auto generator = rand::engine::createDefault(acc, seed, subsequence);
      auto number = distribution(generator);

@@ -1,4 +1,4 @@
-/* Copyright 2019 Jonas Schenke
+/* Copyright 2020 Jonas Schenke, Bernhard Manfred Gruber
  *
  * This file exemplifies usage of alpaka.
  *
@@ -27,19 +27,17 @@ using Idx = uint64_t;
 using Extent = uint64_t;
 using WorkDiv = alpaka::WorkDivMembers<Dim, Extent>;
 
-//-----------------------------------------------------------------------------
 //! Returns the supplied number or the maxumim number of threads per block for a
 //! specific accelerator.
 //!
 //! \tparam TAcc The accelerator object.
 //! \tparam TSize The desired size.
 template<typename TAcc, uint64_t TSize>
-static constexpr uint64_t getMaxBlockSize()
+static constexpr auto getMaxBlockSize() -> uint64_t
 {
     return (TAcc::MaxBlockSize::value > TSize) ? TSize : TAcc::MaxBlockSize::value;
 }
 
-//#############################################################################
 //! Get Trait via struct.
 //!
 //! \tparam T The data type.
@@ -56,7 +54,6 @@ struct GetIterator
 // Note: Boost Fibers, OpenMP 2 Threads and TBB Blocks accelerators aren't implented
 
 #ifdef ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLED
-//#############################################################################
 //! OpenMP 2 Blocks defines
 //!
 //! Defines Host, Device, etc. for the OpenMP 2 Blocks accelerator.
@@ -77,7 +74,6 @@ struct GetIterator<T, TBuf, alpaka::AccCpuOmp2Blocks<TArgs...>>
 
 #ifdef ALPAKA_ACC_ANY_BT_OMP5_ENABLED
 #    ifdef ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
-//#############################################################################
 //! OpenMP 5 defines
 //!
 //! Defines Host, Device, etc. for the OpenMP 5 accelerator.
@@ -103,7 +99,6 @@ struct GetIterator<T, TBuf, alpaka::AccOmp5<TArgs...>>
 #endif
 
 #ifdef ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
-//#############################################################################
 //! Serial CPU defines
 //!
 //! Defines Host, Device, etc. for the serial CPU accelerator.
@@ -122,7 +117,6 @@ struct GetIterator<T, TBuf, alpaka::AccCpuSerial<TArgs...>>
 #endif
 
 #ifdef ALPAKA_ACC_CPU_B_SEQ_T_THREADS_ENABLED
-//#############################################################################
 //! CPU Threads defines
 //!
 //! Defines Host, Device, etc. for the CPU Threads accelerator.
@@ -142,7 +136,6 @@ struct GetIterator<T, TBuf, alpaka::AccCpuThreads<TArgs...>>
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 #    ifdef ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
-//#############################################################################
 //! CUDA defines
 //!
 //! Defines Host, Device, etc. for the CUDA/HIP accelerator.

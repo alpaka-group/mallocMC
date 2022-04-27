@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 Benjamin Worpitz, Maximilian Knespel
+# Copyright 2015-2021 Benjamin Worpitz, Maximilian Knespel, Simeon Ehrig
 #
 # This file is part of alpaka.
 #
@@ -8,17 +8,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.15)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.18)
 
 #------------------------------------------------------------------------------
-# Calls CUDA_ADD_LIBRARY or ADD_LIBRARY depending on the enabled alpaka
-# accelerators.
 #
-# ALPAKA_ADD_LIBRARY( cuda_target file0 file1 ... [STATIC | SHARED | MODULE]
+# alpaka_ADD_LIBRARY( cuda_target file0 file1 ... [STATIC | SHARED | MODULE]
 #   [EXCLUDE_FROM_ALL] [OPTIONS <nvcc-flags> ... ] )
 #
-# In order to be compliant with both ADD_LIBRARY and CUDA_ADD_LIBRARY
-# the position of STATIC, SHARED, MODULE, EXCLUDE_FROM_ALL options don't matter.
+# The position of STATIC, SHARED, MODULE, EXCLUDE_FROM_ALL options don't matter.
 # This also means you won't be able to include files with those exact same
 # case-sensitive names.
 # After OPTIONS only nvcc compiler flags are allowed though. And for readiblity
@@ -26,10 +23,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.15)
 # code filenames!
 # OPTIONS and the arguments thereafter are ignored if not using CUDA, they
 # won't throw an error in that case.
-MACRO(ALPAKA_ADD_LIBRARY libraryName)
-    # CUDA_ADD_LIBRARY( cuda_target file0 file1 ...
-    #                   [STATIC | SHARED | MODULE]
-    #                   [EXCLUDE_FROM_ALL] [OPTIONS <nvcc-flags> ... ] )
+MACRO(alpaka_ADD_LIBRARY libraryName)
     # add_library( <name> [STATIC | SHARED | MODULE]
     #              [EXCLUDE_FROM_ALL]
     #              source1 [source2 ...] )
@@ -44,7 +38,7 @@ MACRO(ALPAKA_ADD_LIBRARY libraryName)
         # 1.) check for OPTIONS
         IF( argument STREQUAL "OPTIONS" )
             IF ( optionsEncountered )
-                MESSAGE( FATAL_ERROR "[ALPAKA_ADD_LIBRARY] OPTIONS subcommand specified more than one time. This is not allowed!" )
+                MESSAGE( FATAL_ERROR "[alpaka_ADD_LIBRARY] OPTIONS subcommand specified more than one time. This is not allowed!" )
             ELSE()
                 SET( optionsEncountered ON )
             ENDIF()
@@ -82,56 +76,24 @@ MACRO(ALPAKA_ADD_LIBRARY libraryName)
     #message( "sourceFileNames = ${sourceFileNames}" )
 
     # call add_library or cuda_add_library now
-    IF( ALPAKA_ACC_GPU_CUDA_ENABLE )
-        IF(ALPAKA_CUDA_COMPILER MATCHES "clang")
-            FOREACH( _file ${ARGN} )
-                IF( ( ${_file} MATCHES "\\.cpp$" ) OR
-                    ( ${_file} MATCHES "\\.cxx$" ) OR
-                    ( ${_file} MATCHES "\\.cu$" )
-                )
-                    SET_SOURCE_FILES_PROPERTIES( ${_file} PROPERTIES COMPILE_FLAGS "-x cuda" )
-                ENDIF()
-            ENDFOREACH()
-            ADD_LIBRARY(
-                ${libraryName}
-                ${sourceFileNames}
-                ${libraryType}
-                ${excludeFromAll}
-                ${optionArguments}
+    IF( alpaka_ACC_GPU_CUDA_ENABLE )
+        ENABLE_LANGUAGE(CUDA)
+        FOREACH( _file ${ARGN} )
+            IF( ( ${_file} MATCHES "\\.cpp$" ) OR
+                ( ${_file} MATCHES "\\.cxx$" ) OR
+                ( ${_file} MATCHES "\\.cu$" )
             )
-        ELSE()
-            FOREACH( _file ${ARGN} )
-                IF( ( ${_file} MATCHES "\\.cpp$" ) OR
-                    ( ${_file} MATCHES "\\.cxx$" )
-                )
-                    SET_SOURCE_FILES_PROPERTIES( ${_file} PROPERTIES CUDA_SOURCE_PROPERTY_FORMAT OBJ )
-                ENDIF()
-            ENDFOREACH()
-            SET(CUDA_LINK_LIBRARIES_KEYWORD "PUBLIC")
-            CUDA_ADD_LIBRARY(
-                ${libraryName}
-                ${sourceFileNames}
-                ${libraryType}
-                ${excludeFromAll}
-                ${optionArguments}
-            )
-        ENDIF()
-    ELSEIF( ALPAKA_ACC_GPU_HIP_ENABLE )
-            FOREACH( _file ${ARGN} )
-                IF( ( ${_file} MATCHES "\\.cpp$" ) OR
-                    ( ${_file} MATCHES "\\.cxx$" )
-                )
-                    SET_SOURCE_FILES_PROPERTIES( ${_file} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT OBJ )
-                ENDIF()
-            ENDFOREACH()
-            HIP_ADD_LIBRARY(
-                ${libraryName}
-                ${sourceFileNames}
-                ${libraryType}
-                ${excludeFromAll}
-                ${optionArguments}
-            )
+                SET_SOURCE_FILES_PROPERTIES(${_file} PROPERTIES LANGUAGE CUDA)
+            ENDIF()
+        ENDFOREACH()
 
+        ADD_LIBRARY(
+            ${libraryName}
+            ${libraryType}
+            ${excludeFromAll}
+            ${optionArguments}
+            ${sourceFileNames}
+            )
     ELSE()
         #message( "add_library( ${libraryName} ${libraryType} ${excludeFromAll} ${sourceFileNames} )" )
         ADD_LIBRARY(

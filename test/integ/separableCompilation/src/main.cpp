@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz
+/* Copyright 2020 Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -18,12 +18,10 @@
 #include <iostream>
 #include <typeinfo>
 
-//#############################################################################
 //! A vector addition kernel.
 class SqrtKernel
 {
 public:
-    //-----------------------------------------------------------------------------
     //! The kernel entry point.
     //!
     //! \tparam TAcc The accelerator environment to be executed on.
@@ -84,10 +82,10 @@ TEMPLATE_LIST_TEST_CASE("separableCompilation", "[separableCompilation]", TestAc
     SqrtKernel kernel;
 
     // Get the host device.
-    DevHost const devHost(alpaka::getDevByIdx<PltfHost>(0u));
+    DevHost const devHost = alpaka::getDevByIdx<PltfHost>(0u);
 
     // Select a device to execute on.
-    DevAcc const devAcc(alpaka::getDevByIdx<PltfAcc>(0));
+    DevAcc const devAcc = alpaka::getDevByIdx<PltfAcc>(0);
 
     // Get a queue on this device.
     QueueAcc queueAcc(devAcc);
@@ -125,24 +123,24 @@ TEMPLATE_LIST_TEST_CASE("separableCompilation", "[separableCompilation]", TestAc
     auto memBufAccC(alpaka::allocBuf<Val, Idx>(devAcc, extent));
 
     // Copy Host -> Acc.
-    alpaka::memcpy(queueAcc, memBufAccA, memBufHostA, extent);
-    alpaka::memcpy(queueAcc, memBufAccB, memBufHostB, extent);
+    alpaka::memcpy(queueAcc, memBufAccA, memBufHostA);
+    alpaka::memcpy(queueAcc, memBufAccB, memBufHostB);
 
     // Create the executor task.
-    auto const taskKernel(alpaka::createTaskKernel<Acc>(
+    auto const taskKernel = alpaka::createTaskKernel<Acc>(
         workDiv,
         kernel,
         alpaka::getPtrNative(memBufAccA),
         alpaka::getPtrNative(memBufAccB),
         alpaka::getPtrNative(memBufAccC),
-        numElements));
+        numElements);
 
     // Profile the kernel execution.
     std::cout << "Execution time: " << alpaka::test::integ::measureTaskRunTimeMs(queueAcc, taskKernel) << " ms"
               << std::endl;
 
     // Copy back the result.
-    alpaka::memcpy(queueAcc, memBufHostC, memBufAccC, extent);
+    alpaka::memcpy(queueAcc, memBufHostC, memBufAccC);
     alpaka::wait(queueAcc);
 
     bool resultCorrect(true);

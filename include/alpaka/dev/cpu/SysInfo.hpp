@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz, Daniel Vollmer, Erik Zenker, René Widera
+/* Copyright 2020 Benjamin Worpitz, Daniel Vollmer, Erik Zenker, René Widera, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -52,35 +52,31 @@ namespace alpaka
 #    if BOOST_COMP_GNUC || BOOST_COMP_CLANG || (!BOOST_COMP_MSVC_EMULATED && defined(__INTEL_COMPILER))               \
         || BOOST_COMP_PGI
 #        include <cpuid.h>
-            //-----------------------------------------------------------------------------
-            inline auto cpuid(std::uint32_t const level, std::uint32_t const subfunction, std::uint32_t ex[4]) -> void
+            inline auto cpuid(std::uint32_t level, std::uint32_t subfunction, std::uint32_t ex[4]) -> void
             {
                 __cpuid_count(level, subfunction, ex[0], ex[1], ex[2], ex[3]);
             }
 
 #    elif BOOST_COMP_MSVC || defined(BOOST_COMP_MSVC_EMULATED) || defined(__INTEL_COMPILER)
 #        include <intrin.h>
-            //-----------------------------------------------------------------------------
-            inline auto cpuid(std::uint32_t const level, std::uint32_t const subfunction, std::uint32_t ex[4]) -> void
+            inline auto cpuid(std::uint32_t level, std::uint32_t subfunction, std::uint32_t ex[4]) -> void
             {
                 __cpuidex(reinterpret_cast<int*>(ex), level, subfunction);
             }
 #    else
-            //-----------------------------------------------------------------------------
-            inline auto cpuid(std::uint32_t const level, std::uint32_t const subfunction, std::uint32_t ex[4]) -> void
+            inline auto cpuid(std::uint32_t, std::uint32_t, std::uint32_t ex[4]) -> void
             {
                 ex[0] = ex[2] = ex[3] = NO_CPUID;
                 ex[1] = UNKNOWN_COMPILER;
             }
 #    endif
 #else
-            inline auto cpuid(std::uint32_t const level, std::uint32_t const subfunction, std::uint32_t ex[4]) -> void
+            inline auto cpuid(std::uint32_t, std::uint32_t, std::uint32_t ex[4]) -> void
             {
                 ex[0] = ex[2] = ex[3] = NO_CPUID;
                 ex[1] = UNKNOWN_CPU;
             }
 #endif
-            //-----------------------------------------------------------------------------
             //! \return The name of the CPU the code is running on.
             inline auto getCpuName() -> std::string
             {
@@ -127,7 +123,6 @@ namespace alpaka
                 return std::string("unknown");
 #endif
             }
-            //-----------------------------------------------------------------------------
             //! \return The total number of bytes of global memory.
             //! Adapted from David Robert Nadeau:
             //! http://nadeausoftware.com/articles/2012/09/c_c_tip_how_get_physical_memory_size_system
@@ -200,7 +195,6 @@ namespace alpaka
 #    error "getTotalGlobalMemSizeBytes not implemented for this system!"
 #endif
             } // namespace detail
-            //-----------------------------------------------------------------------------
             //! \return The free number of bytes of global memory.
             //! \throws std::logic_error if not implemented on the system and std::runtime_error on other errors.
             inline auto getFreeGlobalMemSizeBytes() -> std::size_t
