@@ -1013,8 +1013,8 @@ namespace mallocMC
                     m_heap->pool = m_heapmem;
                     m_heap->initDeviceFunction(m_acc, m_heapmem, m_memsize);
                 };
-                using Dim = typename alpaka::traits::DimType<AlpakaAcc>::type;
-                using Idx = typename alpaka::traits::IdxType<AlpakaAcc>::type;
+                using Dim = typename alpaka::trait::DimType<AlpakaAcc>::type;
+                using Idx = typename alpaka::trait::IdxType<AlpakaAcc>::type;
                 using VecType = alpaka::Vec<Dim, Idx>;
 
                 auto threadsPerBlock = VecType::ones();
@@ -1194,8 +1194,8 @@ namespace mallocMC
                         alpaka::atomicOp<alpaka::AtomicAdd>(acc, slots, temp);
                 };
 
-                using Dim = typename alpaka::traits::DimType<AlpakaAcc>::type;
-                using Idx = typename alpaka::traits::IdxType<AlpakaAcc>::type;
+                using Dim = typename alpaka::trait::DimType<AlpakaAcc>::type;
+                using Idx = typename alpaka::trait::IdxType<AlpakaAcc>::type;
 
                 using VecType = alpaka::Vec<Dim, Idx>;
 
