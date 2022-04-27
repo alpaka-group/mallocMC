@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz
+/* Copyright 2020 Axel Huebl, Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -15,6 +15,7 @@
 
 #include <catch2/catch.hpp>
 
+#include <atomic>
 #include <future>
 #include <thread>
 
@@ -26,7 +27,28 @@ using TestQueues = alpaka::meta::Concatenate<
 #endif
     >;
 
-//-----------------------------------------------------------------------------
+//! Equivalent to CHECK but accounts for potential false negatives
+//!
+//! This is required when checking if an event or a queue is finished/empty.
+//! \warning This macro can be used on host only!
+//!
+//! \param count number of negative checks to be repeated
+//! \param msWait milli seconds to wait if cmd is returning false
+//! \param cmd command executed
+#define LOOPED_CHECK(count, msWait, cmd)                                                                              \
+    do                                                                                                                \
+    {                                                                                                                 \
+        bool ret = false;                                                                                             \
+        for(int i = 0; i < count; ++i)                                                                                \
+        {                                                                                                             \
+            ret = (cmd);                                                                                              \
+            if(ret)                                                                                                   \
+                break;                                                                                                \
+            std::this_thread::sleep_for(std::chrono::milliseconds(msWait));                                           \
+        }                                                                                                             \
+        CHECK(ret);                                                                                                   \
+    } while(0)
+
 TEMPLATE_LIST_TEST_CASE("queueIsInitiallyEmpty", "[queue]", TestQueues)
 {
     using DevQueue = TestType;
@@ -36,13 +58,10 @@ TEMPLATE_LIST_TEST_CASE("queueIsInitiallyEmpty", "[queue]", TestQueues)
     CHECK(alpaka::empty(f.m_queue));
 }
 
-#if !BOOST_COMP_HIP // HIP-clang is currently not supporting callbacks
-
-//-----------------------------------------------------------------------------
 TEMPLATE_LIST_TEST_CASE("queueCallbackIsWorking", "[queue]", TestQueues)
 {
 // Workaround: Clang can not support this when natively compiling device code. See ConcurrentExecPool.hpp.
-#    if !(BOOST_COMP_CLANG_CUDA && BOOST_ARCH_PTX)
+#if !(BOOST_COMP_CLANG_CUDA && BOOST_ARCH_PTX)
     using DevQueue = TestType;
     using Fixture = alpaka::test::QueueTestFixture<DevQueue>;
     Fixture f;
@@ -51,28 +70,29 @@ TEMPLATE_LIST_TEST_CASE("queueCallbackIsWorking", "[queue]", TestQueues)
 
     alpaka::enqueue(f.m_queue, [&]() { promise.set_value(true); });
 
-    CHECK(promise.get_future().get());
-#    endif
+    LOOPED_CHECK(30, 100, promise.get_future().get());
+#endif
 }
 
-//-----------------------------------------------------------------------------
 TEMPLATE_LIST_TEST_CASE("queueWaitShouldWork", "[queue]", TestQueues)
 {
     using DevQueue = TestType;
     using Fixture = alpaka::test::QueueTestFixture<DevQueue>;
     Fixture f;
 
-    bool CallbackFinished = false;
-    alpaka::enqueue(f.m_queue, [&CallbackFinished]() noexcept {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100u));
-        CallbackFinished = true;
-    });
+    std::atomic<bool> callbackFinished{false};
+    alpaka::enqueue(
+        f.m_queue,
+        [&callbackFinished]() noexcept
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100u));
+            callbackFinished = true;
+        });
 
     alpaka::wait(f.m_queue);
-    CHECK(CallbackFinished);
+    CHECK(callbackFinished.load() == true);
 }
 
-//-----------------------------------------------------------------------------
 TEMPLATE_LIST_TEST_CASE(
     "queueShouldNotBeEmptyWhenLastTaskIsStillExecutingAndIsEmptyAfterProcessingFinished",
     "[queue]",
@@ -82,12 +102,15 @@ TEMPLATE_LIST_TEST_CASE(
     using Fixture = alpaka::test::QueueTestFixture<DevQueue>;
     Fixture f;
 
-    bool CallbackFinished = false;
-    alpaka::enqueue(f.m_queue, [&f, &CallbackFinished]() noexcept {
-        CHECK(!alpaka::empty(f.m_queue));
-        std::this_thread::sleep_for(std::chrono::milliseconds(100u));
-        CallbackFinished = true;
-    });
+    std::atomic<bool> callbackFinished{false};
+    alpaka::enqueue(
+        f.m_queue,
+        [&f, &callbackFinished]() noexcept
+        {
+            LOOPED_CHECK(30, 100, !alpaka::empty(f.m_queue));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100u));
+            callbackFinished = true;
+        });
 
     // A non-blocking queue will always stay empty because the task has been executed immediately.
     if(!alpaka::test::IsBlockingQueue<typename Fixture::Queue>::value)
@@ -95,11 +118,10 @@ TEMPLATE_LIST_TEST_CASE(
         alpaka::wait(f.m_queue);
     }
 
-    CHECK(alpaka::empty(f.m_queue));
-    CHECK(CallbackFinished);
+    CHECK(callbackFinished.load() == true);
+    LOOPED_CHECK(30, 100, alpaka::empty(f.m_queue));
 }
 
-//-----------------------------------------------------------------------------
 TEMPLATE_LIST_TEST_CASE("queueShouldNotExecuteTasksInParallel", "[queue]", TestQueues)
 {
     using DevQueue = TestType;
@@ -112,23 +134,33 @@ TEMPLATE_LIST_TEST_CASE("queueShouldNotExecuteTasksInParallel", "[queue]", TestQ
     std::promise<void> secondTaskFinished;
     std::future<void> secondTaskFinishedFuture = secondTaskFinished.get_future();
 
-    std::thread thread1([&f, &taskIsExecuting, &firstTaskFinished]() {
-        alpaka::enqueue(f.m_queue, [&taskIsExecuting, &firstTaskFinished]() noexcept {
-            CHECK(!taskIsExecuting.exchange(true));
-            std::this_thread::sleep_for(std::chrono::milliseconds(100u));
-            CHECK(taskIsExecuting.exchange(false));
-            firstTaskFinished.set_value();
+    std::thread thread1(
+        [&f, &taskIsExecuting, &firstTaskFinished]()
+        {
+            alpaka::enqueue(
+                f.m_queue,
+                [&taskIsExecuting, &firstTaskFinished]() noexcept
+                {
+                    CHECK(!taskIsExecuting.exchange(true));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100u));
+                    CHECK(taskIsExecuting.exchange(false));
+                    firstTaskFinished.set_value();
+                });
         });
-    });
 
-    std::thread thread2([&f, &taskIsExecuting, &secondTaskFinished]() {
-        alpaka::enqueue(f.m_queue, [&taskIsExecuting, &secondTaskFinished]() noexcept {
-            CHECK(!taskIsExecuting.exchange(true));
-            std::this_thread::sleep_for(std::chrono::milliseconds(100u));
-            CHECK(taskIsExecuting.exchange(false));
-            secondTaskFinished.set_value();
+    std::thread thread2(
+        [&f, &taskIsExecuting, &secondTaskFinished]()
+        {
+            alpaka::enqueue(
+                f.m_queue,
+                [&taskIsExecuting, &secondTaskFinished]() noexcept
+                {
+                    CHECK(!taskIsExecuting.exchange(true));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100u));
+                    CHECK(taskIsExecuting.exchange(false));
+                    secondTaskFinished.set_value();
+                });
         });
-    });
 
     // Both tasks have to be enqueued
     thread1.join();
@@ -139,5 +171,3 @@ TEMPLATE_LIST_TEST_CASE("queueShouldNotExecuteTasksInParallel", "[queue]", TestQ
     firstTaskFinishedFuture.get();
     secondTaskFinishedFuture.get();
 }
-
-#endif

@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz
+/* Copyright 2022 Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -21,7 +21,6 @@
 
 namespace alpaka
 {
-    //#############################################################################
     //! The thread id map barrier block synchronization.
     template<typename TIdx>
     class BlockSyncBarrierThread : public concepts::Implements<ConceptBlockSync, BlockSyncBarrierThread<TIdx>>
@@ -30,45 +29,30 @@ namespace alpaka
         using Barrier = core::threads::BarrierThread<TIdx>;
         using BarrierWithPredicate = core::threads::BarrierThreadWithPredicate<TIdx>;
 
-        //-----------------------------------------------------------------------------
         ALPAKA_FN_HOST BlockSyncBarrierThread(TIdx const& blockThreadCount)
             : m_barrier(blockThreadCount)
             , m_barrierWithPredicate(blockThreadCount)
         {
         }
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST BlockSyncBarrierThread(BlockSyncBarrierThread const&) = delete;
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST BlockSyncBarrierThread(BlockSyncBarrierThread&&) = delete;
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST auto operator=(BlockSyncBarrierThread const&) -> BlockSyncBarrierThread& = delete;
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST auto operator=(BlockSyncBarrierThread&&) -> BlockSyncBarrierThread& = delete;
-        //-----------------------------------------------------------------------------
-        /*virtual*/ ~BlockSyncBarrierThread() = default;
 
         Barrier mutable m_barrier;
         BarrierWithPredicate mutable m_barrierWithPredicate;
     };
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         template<typename TIdx>
         struct SyncBlockThreads<BlockSyncBarrierThread<TIdx>>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_FN_HOST static auto syncBlockThreads(BlockSyncBarrierThread<TIdx> const& blockSync) -> void
             {
                 blockSync.m_barrier.wait();
             }
         };
 
-        //#############################################################################
         template<typename TOp, typename TIdx>
         struct SyncBlockThreadsPredicate<TOp, BlockSyncBarrierThread<TIdx>>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_ACC static auto syncBlockThreadsPredicate(
                 BlockSyncBarrierThread<TIdx> const& blockSync,
@@ -77,7 +61,7 @@ namespace alpaka
                 return blockSync.m_barrierWithPredicate.template wait<TOp>(predicate);
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka
 
 #endif

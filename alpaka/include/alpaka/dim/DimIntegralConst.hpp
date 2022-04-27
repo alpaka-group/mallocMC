@@ -1,4 +1,4 @@
-/* Copyright 2019 Benjamin Worpitz
+/* Copyright 2020 Benjamin Worpitz, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -15,7 +15,6 @@
 
 namespace alpaka
 {
-    //-----------------------------------------------------------------------------
     // N(th) dimension(s).
     template<std::size_t N>
     using DimInt = std::integral_constant<std::size_t, N>;

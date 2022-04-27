@@ -19,7 +19,6 @@ struct TypeList
 {
 };
 
-//-----------------------------------------------------------------------------
 TEST_CASE("apply", "[meta]")
 {
     using ApplyInput = std::tuple<int, float, long>;
@@ -28,5 +27,5 @@ TEST_CASE("apply", "[meta]")
 
     using ApplyReference = TypeList<int, float, long>;
 
-    static_assert(std::is_same<ApplyReference, ApplyResult>::value, "alpaka::meta::Apply failed!");
+    static_assert(std::is_same_v<ApplyReference, ApplyResult>, "alpaka::meta::Apply failed!");
 }

@@ -1,4 +1,4 @@
-/* Copyright 2019 Alexander Matthes, Benjamin Worpitz, Erik Zenker, Matthias Werner
+/* Copyright 2020 Alexander Matthes, Benjamin Worpitz, Erik Zenker, Matthias Werner, Bernhard Manfred Gruber
  *
  * This file exemplifies usage of alpaka.
  *
@@ -21,20 +21,17 @@
 #include <cstdint>
 #include <iostream>
 
-//-----------------------------------------------------------------------------
 template<size_t width>
-ALPAKA_FN_ACC size_t linIdxToPitchedIdx(size_t const globalIdx, size_t const pitch)
+ALPAKA_FN_ACC auto linIdxToPitchedIdx(size_t const globalIdx, size_t const pitch) -> size_t
 {
     const size_t idx_x = globalIdx % width;
     const size_t idx_y = globalIdx / width;
     return idx_x + idx_y * pitch;
 }
 
-//#############################################################################
 //! Prints all elements of the buffer.
 struct PrintBufferKernel
 {
-    //-----------------------------------------------------------------------------
     template<typename TAcc, typename TData, typename TExtent>
     ALPAKA_FN_ACC auto operator()(
         TAcc const& acc,
@@ -56,11 +53,9 @@ struct PrintBufferKernel
 };
 
 
-//#############################################################################
 //! Tests if the value of the buffer on index i is equal to i.
 struct TestBufferKernel
 {
-    //-----------------------------------------------------------------------------
     template<typename TAcc, typename TData, typename TExtent>
     ALPAKA_FN_ACC auto operator()(
         TAcc const& acc,
@@ -83,12 +78,11 @@ struct TestBufferKernel
 
         for(size_t i(linearizedGlobalThreadIdx[0]); i < extents.prod(); i += globalThreadExtent.prod())
         {
-            ALPAKA_ASSERT(data[linIdxToPitchedIdx<2>(i, pitch)] == i);
+            ALPAKA_ASSERT_OFFLOAD(data[linIdxToPitchedIdx<2>(i, pitch)] == i);
         }
     }
 };
 
-//#############################################################################
 //! Fills values of buffer with increasing elements starting from 0
 struct FillBufferKernel
 {
@@ -203,8 +197,7 @@ auto main() -> int
     // The view does not own the underlying memory. So you have to make sure that
     // the view does not outlive its underlying memory.
     std::array<Data, nElementsPerDim * nElementsPerDim * nElementsPerDim> plainBuffer;
-    using ViewHost = alpaka::ViewPlainPtr<Host, Data, Dim, Idx>;
-    ViewHost hostViewPlainPtr(plainBuffer.data(), devHost, extents);
+    auto hostViewPlainPtr = alpaka::createView(devHost, plainBuffer.data(), extents);
 
     // Allocate accelerator memory buffers
     //
@@ -257,8 +250,8 @@ auto main() -> int
     // not currently supported.
     // In this example both host buffers are copied
     // into device buffers.
-    alpaka::memcpy(devQueue, deviceBuffer1, hostViewPlainPtr, extents);
-    alpaka::memcpy(devQueue, deviceBuffer2, hostBuffer, extents);
+    alpaka::memcpy(devQueue, deviceBuffer1, hostViewPlainPtr);
+    alpaka::memcpy(devQueue, deviceBuffer2, hostBuffer);
 
     // Depending on the accelerator, the allocation function may introduce
     // padding between rows/planes of multidimensional memory allocations.

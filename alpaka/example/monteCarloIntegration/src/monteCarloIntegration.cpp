@@ -1,4 +1,4 @@
-/* Copyright 2020 Benjamin Worpitz, Sergei Bastrakov, Jakob Krude
+/* Copyright 2020 Benjamin Worpitz, Sergei Bastrakov, Jakob Krude, Bernhard Manfred Gruber
  *
  * This file exemplifies usage of alpaka.
  *
@@ -22,11 +22,9 @@
 #include <cstdlib>
 #include <iostream>
 
-//#############################################################################
 //! This functor defines the function for which the integral is to be computed.
 struct Function
 {
-    //-----------------------------------------------------------------------------
     //! \tparam TAcc The accelerator environment to be executed on.
     //! \param acc The accelerator to be executed on.
     //! \param x The argument.
@@ -37,13 +35,11 @@ struct Function
     }
 };
 
-//#############################################################################
 //! The kernel executing the parallel logic.
 //! Each Thread generates X pseudo random numbers and compares them with the given function.
 //! The local result will be added to a global result.
 struct Kernel
 {
-    //-----------------------------------------------------------------------------
     //! The kernel entry point.
     //! \tparam TAcc The accelerator environment to be executed on.
     //! \tparam TFunctor A wrapper for a function.
@@ -63,8 +59,8 @@ struct Kernel
         auto const globalThreadExtent = alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc);
 
         auto const linearizedGlobalThreadIdx = alpaka::mapIdx<1u>(globalThreadIdx, globalThreadExtent)[0];
-        // Setup generator and distribution.
-        auto generator = alpaka::rand::generator::createDefault(
+        // Setup generator engine and distribution.
+        auto engine = alpaka::rand::engine::createDefault(
             acc,
             linearizedGlobalThreadIdx,
             0); // No specific subsequence start.
@@ -75,8 +71,8 @@ struct Kernel
         for(size_t i = linearizedGlobalThreadIdx; i < numPoints; i += globalThreadExtent.prod())
         {
             // Generate a point in the 2D interval.
-            float x = dist(generator);
-            float y = dist(generator);
+            float x = dist(engine);
+            float y = dist(engine);
             // Count every time where the point is "below" the given function.
             if(y <= functor(acc, x))
             {
@@ -127,11 +123,11 @@ auto main() -> int
 
     // Initialize the global count to 0.
     ptrBufHost[0] = 0.0f;
-    alpaka::memcpy(queue, bufAcc, bufHost, extent);
+    alpaka::memcpy(queue, bufAcc, bufHost);
 
     Kernel kernel;
     alpaka::exec<Acc>(queue, workdiv, kernel, numPoints, ptrBufAcc, Function{});
-    alpaka::memcpy(queue, bufHost, bufAcc, extent);
+    alpaka::memcpy(queue, bufHost, bufAcc);
     alpaka::wait(queue);
 
     // Check the result.

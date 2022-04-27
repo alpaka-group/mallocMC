@@ -1,4 +1,4 @@
-/* Copyright 2020 Axel Huebl, Jeffrey Kelling, Benjamin Worpitz, René Widera
+/* Copyright 2022 Axel Huebl, Jeffrey Kelling, Benjamin Worpitz, René Widera, Jan Stephan, Bernhard Manfred Gruber
  *
  * This file is part of Alpaka.
  *
@@ -11,7 +11,6 @@
 
 #include <alpaka/core/Concepts.hpp>
 #include <alpaka/core/Positioning.hpp>
-#include <alpaka/core/Unused.hpp>
 #include <alpaka/idx/MapIdx.hpp>
 #include <alpaka/idx/Traits.hpp>
 #include <alpaka/vec/Vec.hpp>
@@ -21,34 +20,21 @@ namespace alpaka
 {
     namespace bt
     {
-        //#############################################################################
         //! General ND bt index provider based on a linear index.
         template<typename TDim, typename TIdx>
         class IdxBtLinear : public concepts::Implements<ConceptIdxBt, IdxBtLinear<TDim, TIdx>>
         {
         public:
-            //-----------------------------------------------------------------------------
             IdxBtLinear(TIdx blockThreadIdx) : m_blockThreadIdx(blockThreadIdx)
             {
             }
-            //-----------------------------------------------------------------------------
-            IdxBtLinear(IdxBtLinear const&) = delete;
-            //-----------------------------------------------------------------------------
-            IdxBtLinear(IdxBtLinear&&) = delete;
-            //-----------------------------------------------------------------------------
-            auto operator=(IdxBtLinear const&) -> IdxBtLinear& = delete;
-            //-----------------------------------------------------------------------------
-            auto operator=(IdxBtLinear&&) -> IdxBtLinear& = delete;
-            //-----------------------------------------------------------------------------
-            ~IdxBtLinear() = default;
 
             const TIdx m_blockThreadIdx;
         };
     } // namespace bt
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         //! The IdxBtLinear index dimension get trait specialization.
         template<typename TDim, typename TIdx>
         struct DimType<bt::IdxBtLinear<TDim, TIdx>>
@@ -56,12 +42,10 @@ namespace alpaka
             using type = TDim;
         };
 
-        //#############################################################################
         //! The IdxBtLinear block thread index get trait specialization.
         template<typename TDim, typename TIdx>
         struct GetIdx<bt::IdxBtLinear<TDim, TIdx>, origin::Block, unit::Threads>
         {
-            //-----------------------------------------------------------------------------
             //! \return The index of the current thread in the block.
             template<typename TWorkDiv>
             static auto getIdx(bt::IdxBtLinear<TDim, TIdx> const& idx, TWorkDiv const& workDiv) -> Vec<TDim, TIdx>
@@ -75,7 +59,6 @@ namespace alpaka
         template<typename TIdx>
         struct GetIdx<bt::IdxBtLinear<DimInt<1u>, TIdx>, origin::Block, unit::Threads>
         {
-            //-----------------------------------------------------------------------------
             //! \return The index of the current thread in the block.
             template<typename TWorkDiv>
             static auto getIdx(bt::IdxBtLinear<DimInt<1u>, TIdx> const& idx, TWorkDiv const&) -> Vec<DimInt<1u>, TIdx>
@@ -84,12 +67,11 @@ namespace alpaka
             }
         };
 
-        //#############################################################################
         //! The IdxBtLinear block thread index idx type trait specialization.
         template<typename TDim, typename TIdx>
         struct IdxType<bt::IdxBtLinear<TDim, TIdx>>
         {
             using type = TIdx;
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka

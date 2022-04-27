@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright 2017-2019 Benjamin Worpitz
+# Copyright 2021 Benjamin Worpitz, Bernhard Manfred Gruber
 #
 # This file is part of alpaka.
 #
@@ -32,47 +32,46 @@ fi
 
 #-------------------------------------------------------------------------------
 # Boost.
+echo $ALPAKA_CI_BOOST_BRANCH
 ALPAKA_CI_BOOST_BRANCH_MAJOR=${ALPAKA_CI_BOOST_BRANCH:6:1}
 echo ALPAKA_CI_BOOST_BRANCH_MAJOR: "${ALPAKA_CI_BOOST_BRANCH_MAJOR}"
 ALPAKA_CI_BOOST_BRANCH_MINOR=${ALPAKA_CI_BOOST_BRANCH:8:2}
 echo ALPAKA_CI_BOOST_BRANCH_MINOR: "${ALPAKA_CI_BOOST_BRANCH_MINOR}"
 
+export ALPAKA_CI_INSTALL_ATOMIC="OFF"
+# If the variable is not set, the backend will most probably be used by default so we install Boost.Atomic
+if [ "${alpaka_ACC_CPU_B_SEQ_T_SEQ_ENABLE-ON}" == "ON" ] ||
+    [ "${alpaka_ACC_CPU_B_SEQ_T_THREADS_ENABLE-ON}" == "ON" ] ||
+    [ "${alpaka_ACC_CPU_B_SEQ_T_FIBERS_ENABLE-ON}" == "ON" ] ||
+    [ "${alpaka_ACC_CPU_B_TBB_T_SEQ_ENABLE-ON}" == "ON" ] ||
+    [ "${alpaka_ACC_CPU_B_OMP2_T_SEQ_ENABLE-ON}" == "ON" ] ||
+    [ "${alpaka_ACC_CPU_B_SEQ_T_OMP2_ENABLE-ON}" == "ON" ]
+then
+  export ALPAKA_CI_INSTALL_ATOMIC="ON"
+fi
+
 #-------------------------------------------------------------------------------
 # CUDA
 export ALPAKA_CI_INSTALL_CUDA="OFF"
-if [ "${ALPAKA_ACC_GPU_CUDA_ENABLE}" == "ON" ]
+if [[ "${alpaka_ACC_GPU_CUDA_ENABLE}" == "ON" ]]
 then
     export ALPAKA_CI_INSTALL_CUDA="ON"
-fi
-if [ "${ALPAKA_ACC_GPU_HIP_ENABLE}" == "ON" ]
-then
-    if [ "${ALPAKA_HIP_PLATFORM}" == "nvcc" ]
-    then
-        export ALPAKA_CI_INSTALL_CUDA="ON"
-    fi
 fi
 
 #-------------------------------------------------------------------------------
 # HIP
 export ALPAKA_CI_INSTALL_HIP="OFF"
-if [ "${ALPAKA_ACC_GPU_HIP_ENABLE}" == "ON" ]
+if [ "${alpaka_ACC_GPU_HIP_ENABLE}" == "ON" ]
 then
     export ALPAKA_CI_INSTALL_HIP="ON"
-
-    # if platform is nvcc, CUDA part is already processed in this file.
-    if [ "${ALPAKA_HIP_PLATFORM}" == "hcc" ]
-    then
-        echo "HIP(hcc) is not supported."
-        exit 1
-    fi
 fi
 
 #-------------------------------------------------------------------------------
 # TBB
 export ALPAKA_CI_INSTALL_TBB="OFF"
-if [ ! -z "${ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE+x}" ]
+if [ ! -z "${alpaka_ACC_CPU_B_TBB_T_SEQ_ENABLE+x}" ]
 then
-    if [ "${ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE}" = "ON" ]
+    if [ "${alpaka_ACC_CPU_B_TBB_T_SEQ_ENABLE}" = "ON" ]
     then
         export ALPAKA_CI_INSTALL_TBB="ON"
     fi
@@ -82,11 +81,19 @@ else
 fi
 
 #-------------------------------------------------------------------------------
+# OPENMP
+export ALPAKA_CI_INSTALL_OMP="OFF"
+if [ "$ALPAKA_CI_OS_NAME" = "macOS"  ]
+then
+    export ALPAKA_CI_INSTALL_OMP="ON"
+fi
+
+#-------------------------------------------------------------------------------
 # Fibers
 export ALPAKA_CI_INSTALL_FIBERS="OFF"
-if [ ! -z "${ALPAKA_ACC_CPU_B_SEQ_T_FIBERS_ENABLE+x}" ]
+if [ ! -z "${alpaka_ACC_CPU_B_SEQ_T_FIBERS_ENABLE+x}" ]
 then
-    if [ "${ALPAKA_ACC_CPU_B_SEQ_T_FIBERS_ENABLE}" = "ON" ]
+    if [ "${alpaka_ACC_CPU_B_SEQ_T_FIBERS_ENABLE}" = "ON" ]
     then
         export ALPAKA_CI_INSTALL_FIBERS="ON"
     fi
@@ -99,13 +106,13 @@ fi
 # GCC-5.5 has broken avx512vlintrin.h in Release mode with NVCC 9.X
 #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=76731
 #   https://github.com/tensorflow/tensorflow/issues/10220
-if [ "${ALPAKA_CI_INSTALL_CUDA}" == "ON" ]
+if [ "${ALPAKA_CI_INSTALL_CUDA}" == "ON"  ]
 then
-    if [ "${CXX}" == "g++" ]
+    if [[ "${CXX}" == "g++"* ]]
     then
         if (( "${ALPAKA_CI_GCC_VER_MAJOR}" == 5 ))
         then
-            if [ "${ALPAKA_CUDA_COMPILER}" == "nvcc" ]
+            if [ "${CMAKE_CUDA_COMPILER}" == "nvcc" ]
             then
                 if [ "${CMAKE_BUILD_TYPE}" == "Release" ]
                 then
@@ -116,34 +123,64 @@ then
     fi
 fi
 
-#-------------------------------------------------------------------------------
-if [ "$ALPAKA_CI_OS_NAME" = "Linux" ]
+# nvcc does not recognize GCC-9 builtins from avx512fintrin.h in Release
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=76731
+#   https://github.com/tensorflow/tensorflow/issues/10220
+if [ "${ALPAKA_CI_INSTALL_CUDA}" == "ON"  ]
 then
-    if [ "${ALPAKA_CI_STDLIB}" == "libc++" ]
+    if [[ "${CXX}" == "g++"* ]]
     then
-        if [ "${CXX}" == "g++" ]
+        if (( "${ALPAKA_CI_GCC_VER_MAJOR}" == 9 ))
         then
-            echo "using libc++ with g++ not yet supported."
-            exit 1
-        fi
-    fi
-
-    if [ "${ALPAKA_CI_STDLIB}" == "libstdc++" ]
-    then
-        if [ ! -z "${ALPAKA_CXX_STANDARD+x}" ]
-        then
-            if (( "${ALPAKA_CXX_STANDARD}" >= 17 ))
+            if [ "${CMAKE_CUDA_COMPILER}" == "nvcc" ]
             then
-                if [ "${ALPAKA_CI_INSTALL_FIBERS}" == "ON" ]
+                if [ "${CMAKE_BUILD_TYPE}" == "Release" ]
                 then
-                    if (( ( ( "${ALPAKA_CI_BOOST_BRANCH_MAJOR}" == 1 ) && ( "${ALPAKA_CI_BOOST_BRANCH_MINOR}" < 67 ) ) || ( "${ALPAKA_CI_BOOST_BRANCH_MAJOR}" < 1 ) ))
-                    then
-                        # https://github.com/boostorg/coroutine2/issues/26
-                        echo "libstdc++ in c++17 mode is not compatible with boost.fibers in boost-1.66 and below."
-                        exit 1
-                    fi
+                    export CMAKE_BUILD_TYPE=Debug
                 fi
             fi
         fi
     fi
 fi
+
+if [ "$ALPAKA_CI_OS_NAME" = "Linux" ]
+then
+    if [ "${ALPAKA_CI_STDLIB}" == "libc++" ]
+    then
+        if [ ! -z "${alpaka_ACC_CPU_B_TBB_T_SEQ_ENABLE+x}" ]
+        then
+            if [ "${alpaka_ACC_CPU_B_TBB_T_SEQ_ENABLE}" = "ON" ]
+            then
+                 echo "libc++ is not compatible with TBB."
+                 exit 1
+            fi
+        fi
+    fi
+fi
+
+#-------------------------------------------------------------------------------
+if [ "$ALPAKA_CI_OS_NAME" = "Linux" ]
+then
+    if [ "${ALPAKA_CI_STDLIB}" == "libc++" ]
+    then
+        if [[ "${CXX}" == "g++"* ]]
+        then
+            echo "using libc++ with g++ not yet supported."
+            exit 1
+        fi
+    fi
+fi
+
+if [ ! -z "${ALPAKA_CI_CLANG_VER+x}" ]
+then
+    if [ "${ALPAKA_CI_CLANG_VER}" == 5 ]
+    then
+        if [ "${ALPAKA_CI_INSTALL_FIBERS}" == "ON" ]
+        then
+            # https://github.com/boostorg/fiber/issues/272
+            echo "clang-5 is not compatible with boost.fibers."
+            exit 1
+        fi
+    fi
+fi
+

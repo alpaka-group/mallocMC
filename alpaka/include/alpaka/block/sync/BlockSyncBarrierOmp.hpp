@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz
+/* Copyright 2022 Axel Huebl, Benjamin Worpitz, Jan Stephan, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -13,45 +13,24 @@
 
 #    include <alpaka/block/sync/Traits.hpp>
 #    include <alpaka/core/Common.hpp>
-#    include <alpaka/core/Unused.hpp>
 
 namespace alpaka
 {
-    //#############################################################################
     //! The OpenMP barrier block synchronization.
     class BlockSyncBarrierOmp : public concepts::Implements<ConceptBlockSync, BlockSyncBarrierOmp>
     {
     public:
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST BlockSyncBarrierOmp() : m_generation(0u)
-        {
-        }
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST BlockSyncBarrierOmp(BlockSyncBarrierOmp const&) = delete;
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST BlockSyncBarrierOmp(BlockSyncBarrierOmp&&) = delete;
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST auto operator=(BlockSyncBarrierOmp const&) -> BlockSyncBarrierOmp& = delete;
-        //-----------------------------------------------------------------------------
-        ALPAKA_FN_HOST auto operator=(BlockSyncBarrierOmp&&) -> BlockSyncBarrierOmp& = delete;
-        //-----------------------------------------------------------------------------
-        /*virtual*/ ~BlockSyncBarrierOmp() = default;
-
-        std::uint8_t mutable m_generation;
+        std::uint8_t mutable m_generation = 0u;
         int mutable m_result[2];
     };
 
-    namespace traits
+    namespace trait
     {
-        //#############################################################################
         template<>
         struct SyncBlockThreads<BlockSyncBarrierOmp>
         {
-            //-----------------------------------------------------------------------------
-            ALPAKA_FN_HOST static auto syncBlockThreads(BlockSyncBarrierOmp const& blockSync) -> void
+            ALPAKA_FN_HOST static auto syncBlockThreads(BlockSyncBarrierOmp const& /* blockSync */) -> void
             {
-                alpaka::ignore_unused(blockSync);
-
 // NOTE: This waits for all threads in all blocks.
 // If multiple blocks are executed in parallel this is not optimal.
 #    pragma omp barrier
@@ -60,10 +39,8 @@ namespace alpaka
 
         namespace detail
         {
-            //#############################################################################
             template<typename TOp>
             struct AtomicOp;
-            //#############################################################################
             template<>
             struct AtomicOp<BlockCount>
             {
@@ -73,7 +50,6 @@ namespace alpaka
                     result += static_cast<int>(value);
                 }
             };
-            //#############################################################################
             template<>
             struct AtomicOp<BlockAnd>
             {
@@ -83,7 +59,6 @@ namespace alpaka
                     result &= static_cast<int>(value);
                 }
             };
-            //#############################################################################
             template<>
             struct AtomicOp<BlockOr>
             {
@@ -95,11 +70,9 @@ namespace alpaka
             };
         } // namespace detail
 
-        //#############################################################################
         template<typename TOp>
         struct SyncBlockThreadsPredicate<TOp, BlockSyncBarrierOmp>
         {
-            //-----------------------------------------------------------------------------
             ALPAKA_NO_HOST_ACC_WARNING
             ALPAKA_FN_ACC static auto syncBlockThreadsPredicate(BlockSyncBarrierOmp const& blockSync, int predicate)
                 -> int
@@ -129,7 +102,7 @@ namespace alpaka
                 return blockSync.m_result[generationMod2];
             }
         };
-    } // namespace traits
+    } // namespace trait
 } // namespace alpaka
 
 #endif

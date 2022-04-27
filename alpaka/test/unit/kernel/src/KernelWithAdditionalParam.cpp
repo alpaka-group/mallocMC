@@ -1,4 +1,4 @@
-/* Copyright 2019 Axel Huebl, Benjamin Worpitz, René Widera
+/* Copyright 2022 Axel Huebl, Benjamin Worpitz, René Widera, Jan Stephan, Bernhard Manfred Gruber
  *
  * This file is part of alpaka.
  *
@@ -14,22 +14,17 @@
 
 #include <catch2/catch.hpp>
 
-//#############################################################################
 class KernelWithAdditionalParamByValue
 {
 public:
-    //-----------------------------------------------------------------------------
     ALPAKA_NO_HOST_ACC_WARNING
     template<typename TAcc>
-    ALPAKA_FN_ACC auto operator()(TAcc const& acc, bool* success, std::int32_t val) const -> void
+    ALPAKA_FN_ACC auto operator()(TAcc const& /* acc */, bool* success, std::int32_t val) const -> void
     {
-        alpaka::ignore_unused(acc);
-
         ALPAKA_CHECK(*success, 42 == val);
     }
 };
 
-//-----------------------------------------------------------------------------
 TEMPLATE_LIST_TEST_CASE("KernelWithAdditionalParamByValue", "[kernel]", alpaka::test::TestAccs)
 {
     using Acc = TestType;
@@ -43,59 +38,17 @@ TEMPLATE_LIST_TEST_CASE("KernelWithAdditionalParamByValue", "[kernel]", alpaka::
     REQUIRE(fixture(kernel, 42));
 }
 
-/*
-Passing a parameter by reference to non-const is not allowed.
-There is only one single copy of the parameters on the CPU accelerators.
-They are shared between all threads. Therefore they should not be mutated.
-
-//#############################################################################
-class KernelWithAdditionalParamByRef
-{
-public:
-    //-----------------------------------------------------------------------------
-    ALPAKA_NO_HOST_ACC_WARNING
-    template <typename TAcc>
-    ALPAKA_FN_ACC auto operator()(
-        TAcc const &acc,
-        bool *success,
-        std::int32_t &val) const -> void {
-        alpaka::ignore_unused(acc);
-
-        ALPAKA_CHECK(*success, 42 == val);
-    }
-};
-
-//-----------------------------------------------------------------------------
-TEMPLATE_LIST_TEST_CASE("KernelWithAdditionalParamByRef", "[kernel]", alpaka::test::TestAccs)
-{
-    using Acc = TestType;
-    using Dim = alpaka::Dim<Acc>;
-    using Idx = alpaka::Idx<Acc>;
-
-    alpaka::test::KernelExecutionFixture<Acc> fixture(
-        alpaka::Vec<Dim, Idx>::ones());
-
-    KernelWithAdditionalParamByRef kernel;
-
-    REQUIRE(fixture(kernel, 42));
-}*/
-
-//#############################################################################
 class KernelWithAdditionalParamByConstRef
 {
 public:
-    //-----------------------------------------------------------------------------
     ALPAKA_NO_HOST_ACC_WARNING
     template<typename TAcc>
-    ALPAKA_FN_ACC auto operator()(TAcc const& acc, bool* success, std::int32_t const& val) const -> void
+    ALPAKA_FN_ACC auto operator()(TAcc const& /* acc */, bool* success, std::int32_t const& val) const -> void
     {
-        alpaka::ignore_unused(acc);
-
         ALPAKA_CHECK(*success, 42 == val);
     }
 };
 
-//-----------------------------------------------------------------------------
 TEMPLATE_LIST_TEST_CASE("KernelWithAdditionalParamByConstRef", "[kernel]", alpaka::test::TestAccs)
 {
     using Acc = TestType;
