@@ -684,7 +684,8 @@ namespace mallocMC
                 {
                     const uint32 region = page / regionsize;
                     alpaka::atomicOp<alpaka::AtomicExch>(acc, (uint32*) (_regions + region), 0u);
-                    const uint32 block = region * regionsize * _accessblocks / _numpages;
+                    const uint32 pagesperblock = _numpages / _accessblocks;
+                    const uint32 block = page / pagesperblock;
                     if(warpid() + laneid() == 0)
                         alpaka::atomicOp<alpaka::AtomicMin>(acc, (uint32*) &_firstfreeblock, block);
                 }
