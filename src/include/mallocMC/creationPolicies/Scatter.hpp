@@ -286,7 +286,7 @@ namespace mallocMC
             {
                 const uint32 low_part = (spot + 1) == sizeof(uint32) * CHAR_BIT ? 0u : (bitfield >> (spot + 1));
                 const uint32 high_part = (bitfield << (spots - (spot + 1)));
-                const uint32 selection_mask = spots == sizeof(uint32) * CHAR_BIT ? ~0 : ((1 << spots) - 1);
+                const uint32 selection_mask = spots == sizeof(uint32) * CHAR_BIT ? ~0 : ((1u << spots) - 1);
                 // wrap around the bitfields from the current spot to the left
                 bitfield = (high_part | low_part) & selection_mask;
                 // compute the step from the current spot in the bitfield
@@ -325,7 +325,7 @@ namespace mallocMC
                 uint32 spot = randInit() % spots;
                 for(;;)
                 {
-                    const uint32 mask = 1 << spot;
+                    const uint32 mask = 1u << spot;
                     const uint32 old = alpaka::atomicOp<alpaka::AtomicOr>(acc, bitfield, mask);
                     if((old & mask) == 0)
                         return spot;
@@ -397,7 +397,7 @@ namespace mallocMC
                 const uint32 segments = fullsegments + (additional_chunks > 0 ? 1 : 0);
                 uint32 spot = randInit() % segments;
                 const uint32 mask = _ptes[page].bitmask;
-                if((mask & (1 << spot)) != 0)
+                if((mask & (1u << spot)) != 0)
                     spot = nextspot(mask, spot, segments);
                 const uint32 tries = segments - popc(mask);
                 uint32* onpagemasks = onPageMasksPosition(page, segments);
