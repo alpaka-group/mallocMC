@@ -612,6 +612,34 @@ namespace mallocMC
                                     (uint32*) &_ptes[page_in_region].chunksize,
                                     0u,
                                     minAllocation);
+
+                                // CAUTION: Hot fix for the following bug.
+                                // If another thread is currently cleaning this very page, there is a phase where the
+                                // chunk size is already 0 (so our atomicCas above passed) but the filling level in the
+                                // pte.count is not yet reduced, i.e., the page is still locked. In this case, we would
+                                // go into the useChunkSize!=0 branch below, fail in tryUsePage and try the next page.
+                                // We would never reset the chunk size that was already set when looking it up above.
+                                // It is actually quite hard to reset it consistently because there might be other
+                                // threads on this page already when we do so.
+                                //
+                                // So as a very hot fix, this thread waits for the page to get unlocked before
+                                // proceeding. This is not a great solution and probably not 100% safe but a proper fix
+                                // will take longer and might involve some re-design.
+                                auto beforeFilling = alpaka::atomicOp<alpaka::AtomicCas>(
+                                    acc,
+                                    (uint32*) &_ptes[page_in_region].count,
+                                    0u,
+                                    0U);
+                                while(beforeFilling >= pagesize)
+                                {
+                                    beforeFilling = alpaka::atomicOp<alpaka::AtomicCas>(
+                                        acc,
+                                        (uint32*) &_ptes[page_in_region].count,
+                                        0u,
+                                        0U);
+                                }
+
+
                                 // Check if the chunk size can be used even if the size is not an exact match.
                                 auto const isChunkSizeInRange = [&](uint32_t currentChunkSize)
                                 { return currentChunkSize >= bytes && currentChunkSize <= maxchunksize; };
