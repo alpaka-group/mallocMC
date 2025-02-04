@@ -43,12 +43,14 @@ target_include_directories(
                          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 
+option(mallocMC_BUILD_TESTING "Turn on/off building the tests" OFF)
 if(mallocMC_BUILD_TESTING)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
   enable_testing()
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test ${CMAKE_BINARY_DIR}/test)
 endif()
 
+option(mallocMC_BUILD_EXAMPLES "Turn on/off building the examples" OFF)
 if(mallocMC_BUILD_EXAMPLES)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/examples ${CMAKE_BINARY_DIR}/examples)
