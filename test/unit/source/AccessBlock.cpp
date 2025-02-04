@@ -46,10 +46,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
+#include <type_traits>
 
 template<typename T_HeapConfig, typename T_AlignmentPolicy>
 struct TestableAccessBlock
@@ -528,5 +531,123 @@ TEMPLATE_LIST_TEST_CASE("AccessBlock", "", AccessBlocks)
                 CHECK(unresettingAccessBlock.getAvailableSlots(accSerial, differentChunkSize) == slots);
             }
         }
+    }
+}
+
+TEST_CASE("AccessBlock (Regression)")
+{
+    SECTION("Mutable lambda")
+    {
+        // We had reason to believe that the read-in chunk size in `thisPageIsSuitable` might not have been propagated
+        // up to `createChunk` correctly. This would have led to the page being interpreted as having the wrong chunk
+        // size in cases with a waste factor. The following scenario excludes this:
+        //
+        // Assume that we have one page with a chunk size such that it contains exactly one bit mask full of chunks and
+        // fill this with allocations. We write ones to every bit in those allocations, so every single bit on this
+        // page is set to one (because the mask is also completely filled).
+        //
+        // Now, we deallocate the pointer to the very first chunk. This unsets exactly one bit, namely the first of the
+        // bit mask. Next, we request one allocation with a slightly smaller chunk size such that we would need one
+        // more bit from a second bit mask and fill this allocation with zeros.
+        //
+        // The CORRECT behaviour is as follows:
+        // - For the smaller allocation, the page still gets interpreted with the larger chunk size such that it
+        // correctly interprets itself to have only a single bit mask.
+        // - Looking for a free chunk, it therefore finds the first bit to be unset and (re-)allocates the first chunk
+        // for the slightly smaller chunk size.
+        // - There is no overlap of allocations and all writes are independent. We expect all allocations of the larger
+        // chunk size to contain only set bits and the allocation with the smaller chunk size to only contain unset
+        // bits.
+        // - The pointer for the smaller-size allocation points to the same location as the freed pointer.
+        //
+        // The suspected WRONG behaviour could have been as follows:
+        // - For the smaller allocation, the page gets wrongly interpreted with the SMALLER chunk size such that it
+        // wrongly assumes itself to host two bit masks.
+        // - Looking for a free chunk, the "first bit mask"" is completely set because it is actually the data region
+        // of the last chunk and we have set all bits in there. But what is considered as the "second bit mask" (but is
+        // actually the first and only one) has a free bit in the first position (which is the only allowed bit in that
+        // mask). Hence, the allocation takes place near the end of the page in the last chunk.
+        // - This allocation overlaps with a previous allocation and the original data get corrupted when we write our
+        // zeros.
+        //
+        // The wrong behaviour was not actually observed but excluded during debugging via this test.
+
+        using namespace mallocMC::CreationPolicies::FlatterScatterAlloc;
+
+        // For this to fail we would need a waste factor:
+        constexpr uint32_t wastefactor = 2U;
+
+        // Fits exactly onto one bit mask:
+        constexpr uint32_t numChunksOneMask = BitMaskSize;
+        // Needs a second bit mask:
+        constexpr uint32_t numChunksTwoMasks = BitMaskSize + 1;
+
+        // It was a bit of fiddling around to get these to do exactly what we want.
+        constexpr uint32_t chunkSizeTwoMasks = 2 * numChunksOneMask;
+        constexpr uint32_t chunkSizeOneMask = chunkSizeTwoMasks + (sizeof(BitMask) - 1);
+
+        // This data Size is suited to fit both numbers of chunks:
+        constexpr uint32_t dataSize = numChunksOneMask * chunkSizeOneMask * AlignmentPolicy::Properties::dataAlignment;
+
+        // Don't forget to add some room for the bit mask:
+        constexpr uint32_t pageSize = dataSize + sizeof(BitMask);
+
+        // And the page table, also don't forget the page table.
+        using AccessBlock
+            = TestableAccessBlock<HeapConfig<(pageSize + pageTableEntrySize), pageSize, wastefactor>, AlignmentPolicy>;
+
+        AccessBlock accessBlock{};
+
+        REQUIRE(accessBlock.getAvailableSlots(accSerial, chunkSizeOneMask) == numChunksOneMask);
+        REQUIRE(accessBlock.getAvailableSlots(accSerial, chunkSizeTwoMasks) == numChunksTwoMasks);
+
+        auto pointers = fillWith(accessBlock, chunkSizeOneMask);
+
+        // Fill all memory with ones.
+        for(void* pointer : pointers)
+        {
+            auto mem = std::span(static_cast<unsigned char*>(pointer), chunkSizeOneMask);
+            for(auto& byte : mem)
+            {
+                byte = std::numeric_limits<unsigned char>::max();
+            }
+        }
+
+        // Free up the pointer to the first chunk.
+        std::ranges::sort(pointers);
+        auto freedPointer = pointers[0];
+        accessBlock.destroy(accSerial, freedPointer);
+
+        void* pointerTwoMasks = accessBlock.create(accSerial, chunkSizeTwoMasks);
+        for(auto& c : std::span(static_cast<unsigned char*>(pointerTwoMasks), chunkSizeTwoMasks))
+        {
+            c = 0U;
+        }
+
+        // Check for corrupted memory. We might have written zeros here:
+        for(void* pointer : pointers)
+        {
+            if(pointer != freedPointer)
+            {
+                auto mem = std::span(static_cast<unsigned char*>(pointer), chunkSizeOneMask);
+                CHECK(std::all_of(
+                    mem.begin(),
+                    mem.end(),
+                    [](auto const val)
+                    { return val == std::numeric_limits<std::remove_cv_t<decltype(val)>>::max(); }));
+            }
+        }
+
+        auto mem = std::span(static_cast<unsigned char*>(pointerTwoMasks), chunkSizeTwoMasks);
+        CHECK(std::all_of(mem.begin(), mem.end(), [](auto const val) { return val == 0U; }));
+
+        // Now, we want to be really explicit:
+        CHECK(pointerTwoMasks == freedPointer);
+
+        // This is a general check but should pass even in case of failure of the previous because only the filling
+        // level is considered here:
+        CHECK(accessBlock.getAvailableSlots(accSerial, AlignmentPolicy::Properties::dataAlignment) == 0U);
+        CHECK(accessBlock.getAvailableSlots(accSerial, chunkSizeOneMask) == 0U);
+        CHECK(accessBlock.getAvailableSlots(accSerial, chunkSizeTwoMasks) == 0U);
     }
 }
