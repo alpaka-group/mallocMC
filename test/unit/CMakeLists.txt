@@ -39,7 +39,21 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
 # enable compiler warnings
 if(NOT mallocMC_TEST_INSTALLED_VERSION)
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    target_compile_options(mallocMC INTERFACE -Wall -Wpedantic -Wextra -Werror "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:default-stream-launch>")
+    target_compile_options(
+      mallocMC
+      INTERFACE
+      -Wall
+      # nvcc generate C code which uses directives GCC complains about like this:
+      #   warning: style of line directive is a GCC extension
+      # So we can't use -pedantic here.
+      $<$<NOT:$<COMPILE_LANGUAGE:CUDA>>:-Wpedantic>
+      -Wextra
+      # Somehow, with the commandline that CMake composes nvcc misinterprets the flag
+      # after -Werror as an argument to -Werror leading to errors like
+      #   nvcc fatal   : Value '-Wpedantic' is not defined for option 'Werror'
+      # So, we can't compile with -Werror for nvcc.
+      $<$<NOT:$<COMPILE_LANGUAGE:CUDA>>:-Werror>
+    )
   elseif(MSVC)
     target_compile_options(mallocMC INTERFACE /W4 /WX)
   endif()
