@@ -251,6 +251,16 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
         template<typename TAcc>
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto destroy(TAcc const& acc, void* const pointer) -> void
         {
+            // CAUTION: This memfence is of utmost importance! As we are allowing a re-use of the chunk we're about to
+            // free, we need to make sure that any memory operation from the previous thread is executed before we can
+            // safely consider it free. If this is missing, an extended (non-atomic) write operation might not yet have
+            // finished when we unset the bit. In such a case, another thread might start using the memory while we're
+            // still writing to it, thus corrupting the new thread's data. It might even lead to us overwriting the
+            // bitmask itself, if the chunk size (and thereby the extent of the bitmask) changes before we finish.
+            // (The latter scenario might be excluded by other mem_fences in the code.) If a read is pending, the old
+            // thread might read data from the new thread leading to inconsistent information in the first thread.
+            alpaka::mem_fence(acc, alpaka::memory_scope::Device{});
+
             auto const index = pageIndex(pointer);
             if(index >= static_cast<int32_t>(numPages()) || index < 0)
             {

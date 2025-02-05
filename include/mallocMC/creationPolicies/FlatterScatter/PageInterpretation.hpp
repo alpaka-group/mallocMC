@@ -166,6 +166,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                                          "to a valid chunk or it is not marked as allocated."};
             }
 #endif // NDEBUG
+
             bitField().unset(acc, chunkIndex);
         }
 
