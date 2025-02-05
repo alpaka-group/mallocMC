@@ -707,6 +707,12 @@ namespace mallocMC
                                 (uint32*) &_ptes[page].chunksize,
                                 chunksize,
                                 0u);
+
+                            // CAUTION: This printf never fires but it is of utmost importance! It's existence has a
+                            // similar effect as the mem_fence in the FlatterScatter AccessBlock at this position.
+                            // Using the result of the atomic above implies that it has actually been executed and
+                            // observed by other threads. The otherwise unconditional release of the filling-level lock
+                            // cannot be observed before resetting the chunk size only due to this `if` block.
                             if(oldChunkSize != chunksize)
                             {
                                 // The chunksize can only be changed if it was in between zero. Therefore this code

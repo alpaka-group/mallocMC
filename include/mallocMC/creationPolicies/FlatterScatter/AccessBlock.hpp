@@ -758,7 +758,23 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                     auto latestFilling = alpaka::atomicCas(acc, &pageTable.fillingLevels[pageIndex], 0U, lock);
                     if(latestFilling == 0U)
                     {
-                        auto chunkSize = atomicLoad(acc, pageTable.chunkSizes[pageIndex]);
+                        auto chunkSize = alpaka::atomicExch(acc, &pageTable.chunkSizes[pageIndex], 0U);
+
+                        // If the chunkSize is found to be 0, another thread has already cleaned-up everything and
+                        // we're done here. Otherwise, we're responsible and have to clean up.
+                        //
+                        // CAUTION: It is of utmost importance that we use the result of the atomic exchange here. This
+                        // is to ensure that it has been evaluated and observed by other threads before we continue
+                        // beyond this point (because we can only know the return value after we have evaulated it).
+                        // (Although admittedly in this version, the existence of the mem_fence further below probably
+                        // has a similar effect.)
+                        //
+                        // In a previous version, there were situations in which the change of the chunk size and the
+                        // release of the lock further below were independent of each other. In this case, their
+                        // execution could be observed in reverse order in other threads which led to the lock being
+                        // observed as released before the chunk size was actually reset. When the chunk size setting
+                        // finally arrived, it could corrupt the metadata another thread was already relying on leading
+                        // to bad memory bugs.
                         if(chunkSize != 0)
                         {
                             // At this point it's guaranteed that the fiilling level is numChunks and thereby locked.
@@ -767,19 +783,10 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                             // barrier to reset it.
                             MyPageInterpretation{pages[pageIndex], chunkSize}.cleanupUnused();
                             alpaka::mem_fence(acc, alpaka::memory_scope::Device{});
-
-                            // It is important to keep this after the clean-up line above: Otherwise another thread
-                            // with a smaller chunk size might circumvent our lock and already start allocating before
-                            // we're done cleaning up.
-                            alpaka::atomicCas(acc, &pageTable.chunkSizes[pageIndex], chunkSize, 0U);
                         }
 
-                        // TODO(lenz): Original version had a thread fence at this point in order to invalidate
-                        // potentially cached bit masks. Check if that's necessary!
-
                         // At this point, there might already be another thread (with another chunkSize) on this page
-                        // but that's fine. It won't see the full capacity but we can just subtract what we've added
-                        // before:
+                        // but that's fine. It will see the lock and retreat.
                         alpaka::atomicSub(acc, &pageTable.fillingLevels[pageIndex], lock);
                     }
                 }
