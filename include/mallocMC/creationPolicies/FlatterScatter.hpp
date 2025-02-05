@@ -86,12 +86,32 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
         MyAccessBlock* accessBlocks{};
         uint32_t volatile block = 0U;
 
+        ALPAKA_FN_INLINE ALPAKA_FN_ACC static auto init(auto const& acc, void* accessBlocksPointer, auto heapSize)
+            -> void
+        {
+            auto* accessBlocks = static_cast<MyAccessBlock*>(accessBlocksPointer);
+            for(uint32_t i = 0; i < numBlocks(heapSize); ++i)
+            {
+                accessBlocks[i].init(acc);
+            }
+        }
+
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto init() -> void
         {
             for(uint32_t i = 0; i < numBlocks(); ++i)
             {
                 accessBlocks[i].init();
             }
+        }
+
+        /**
+         * @brief Number of access blocks assuming the given heapSize.
+         *
+         * @return Number of access blocks in the heap.
+         */
+        ALPAKA_FN_INLINE ALPAKA_FN_ACC static constexpr auto numBlocks(auto heapSize) -> uint32_t
+        {
+            return heapSize / T_HeapConfig::accessblocksize;
         }
 
         /**
@@ -102,7 +122,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
          */
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto numBlocks() const -> uint32_t
         {
-            return heapSize / T_HeapConfig::accessblocksize;
+            return numBlocks(heapSize);
         }
 
         /**
@@ -307,15 +327,20 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
     {
         template<typename T_HeapConfig, typename T_HashConfig, typename T_AlignmentPolicy>
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto operator()(
-            auto const& /*unused*/,
+            auto const& acc,
             Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>* m_heap,
             void* m_heapmem,
             size_t const m_memsize) const
         {
-            m_heap->accessBlocks
-                = static_cast<Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>::MyAccessBlock*>(m_heapmem);
-            m_heap->heapSize = m_memsize;
-            m_heap->init();
+            auto const id = alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0];
+            if(id == 0)
+            {
+                m_heap->accessBlocks
+                    = static_cast<Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>::MyAccessBlock*>(m_heapmem);
+                m_heap->heapSize = m_memsize;
+            }
+            // We can't rely on thread 0 to finish the above before we start, so we use the static version:
+            Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>::init(acc, m_heapmem, m_memsize);
         }
     };
 
