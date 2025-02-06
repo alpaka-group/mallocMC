@@ -3,6 +3,7 @@ on: [push, pull_request]
 env:
   CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
   CTEST_OUTPUT_ON_FAILURE: 1
+  SKIP: no-commit-to-branch
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
