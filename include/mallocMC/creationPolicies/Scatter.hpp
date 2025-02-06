@@ -975,6 +975,18 @@ namespace mallocMC
             {
                 if(mem == 0)
                     return;
+
+                // CAUTION: This memfence is of utmost importance! As we are allowing a re-use of the chunk we're about
+                // to free, we need to make sure that any memory operation from the previous thread is executed before
+                // we can safely consider it free. If this is missing, an extended (non-atomic) write operation might
+                // not yet have finished when we unset the bit. In such a case, another thread might start using the
+                // memory while we're still writing to it, thus corrupting the new thread's data. It might even lead to
+                // us overwriting the bitmask itself, if the chunk size (and thereby the extent of the bitmask) changes
+                // before we finish. (The latter scenario might be excluded by other mem_fences in the code.) If a read
+                // is pending, the old thread might read data from the new thread leading to inconsistent information
+                // in the first thread.
+                alpaka::mem_fence(acc, alpaka::memory_scope::Device{});
+
                 // lets see on which page we are on
                 auto const page = static_cast<uint32>(((char*) mem - (char*) _page) / pagesize);
                 /* Emulate atomic read.
