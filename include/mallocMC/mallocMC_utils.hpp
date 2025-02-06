@@ -50,7 +50,7 @@
  * only is used to detect the device compile path.
  * Since we require devices with support for ballot we can high-jack __HIP_ARCH_HAS_WARP_BALLOT__.
  */
-#if(defined(__HIP_ARCH_HAS_WARP_BALLOT__) || defined(__CUDA_ARCH__) || __HIP_DEVICE_COMPILE__ == 1)
+#if (defined(__HIP_ARCH_HAS_WARP_BALLOT__) || defined(__CUDA_ARCH__) || __HIP_DEVICE_COMPILE__ == 1)
 #    define MALLOCMC_DEVICE_COMPILE 1
 #endif
 
@@ -66,7 +66,7 @@ namespace mallocMC
 #endif
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
-#    if(HIP_VERSION_MAJOR >= 4)
+#    if (HIP_VERSION_MAJOR >= 4)
     template<typename TDim, typename TIdx>
     constexpr uint32_t warpSize<alpaka::AccGpuHipRt<TDim, TIdx>> = __AMDGCN_WAVEFRONT_SIZE;
 #    else
