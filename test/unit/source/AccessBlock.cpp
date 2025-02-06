@@ -59,7 +59,8 @@ struct TestableAccessBlock
     : mallocMC::CreationPolicies::FlatterScatterAlloc::AccessBlock<T_HeapConfig, T_AlignmentPolicy>
 {
 public:
-    TestableAccessBlock() = default;
+    explicit TestableAccessBlock(auto const& acc)
+        : mallocMC::CreationPolicies::FlatterScatterAlloc::AccessBlock<T_HeapConfig, T_AlignmentPolicy>(acc) {};
     using mallocMC::CreationPolicies::FlatterScatterAlloc::AccessBlock<T_HeapConfig, T_AlignmentPolicy>::blockSize;
     using mallocMC::CreationPolicies::FlatterScatterAlloc::AccessBlock<T_HeapConfig, T_AlignmentPolicy>::pageSize;
     using mallocMC::CreationPolicies::FlatterScatterAlloc::AccessBlock<T_HeapConfig, T_AlignmentPolicy>::wasteFactor;
@@ -116,7 +117,7 @@ TEMPLATE_LIST_TEST_CASE("AccessBlock", "", AccessBlocks)
     constexpr auto const blockSize = AccessBlock::blockSize;
     constexpr auto const pageSize = AccessBlock::pageSize;
 
-    AccessBlock accessBlock{};
+    AccessBlock accessBlock{accSerial};
 
     SECTION("knows its number of pages.")
     {
@@ -312,7 +313,8 @@ TEMPLATE_LIST_TEST_CASE("AccessBlock", "", AccessBlocks)
         SECTION("with waste factor")
         {
             constexpr uint32_t const wastefactor = 3U;
-            TestableAccessBlock<HeapConfig<blockSize, pageSize, wastefactor>, AlignmentPolicy> wastedAccessBlock{};
+            TestableAccessBlock<HeapConfig<blockSize, pageSize, wastefactor>, AlignmentPolicy> wastedAccessBlock{
+                accSerial};
             auto pointers = fillWith(wastedAccessBlock, chunkSize);
 
             auto smallerChunkSize = chunkSize / (wastefactor - 1U);
@@ -374,7 +376,7 @@ TEMPLATE_LIST_TEST_CASE("AccessBlock", "", AccessBlocks)
             TestableAccessBlock<
                 SelectivelyWastedHeapConfig<blockSize, pageSize, wastefactor, selectedNumBytes>,
                 AlignmentPolicy>
-                wastedAccessBlock{};
+                wastedAccessBlock{accSerial};
             auto pointers = fillWith(wastedAccessBlock, chunkSize);
 
             auto notSelectedNumBytes = chunkSize / (wastefactor - 1U);
@@ -596,7 +598,7 @@ TEST_CASE("AccessBlock (Regression)")
         using AccessBlock
             = TestableAccessBlock<HeapConfig<(pageSize + pageTableEntrySize), pageSize, wastefactor>, AlignmentPolicy>;
 
-        AccessBlock accessBlock{};
+        AccessBlock accessBlock{accSerial};
 
         REQUIRE(accessBlock.getAvailableSlots(accSerial, chunkSizeOneMask) == numChunksOneMask);
         REQUIRE(accessBlock.getAvailableSlots(accSerial, chunkSizeTwoMasks) == numChunksTwoMasks);

@@ -30,12 +30,16 @@
 
 #include <alpaka/core/Common.hpp>
 #include <alpaka/core/Positioning.hpp>
+#include <alpaka/extent/Traits.hpp>
 #include <alpaka/idx/Accessors.hpp>
+#include <alpaka/idx/MapIdx.hpp>
 #include <alpaka/kernel/Traits.hpp>
 #include <alpaka/mem/fence/Traits.hpp>
 #include <alpaka/mem/view/Traits.hpp>
 #include <alpaka/mem/view/ViewPlainPtr.hpp>
 #include <alpaka/vec/Vec.hpp>
+#include <alpaka/workdiv/Traits.hpp>
+#include <alpaka/workdiv/WorkDivHelpers.hpp>
 #include <alpaka/workdiv/WorkDivMembers.hpp>
 
 #include <sys/types.h>
@@ -86,12 +90,36 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
         MyAccessBlock* accessBlocks{};
         uint32_t volatile block = 0U;
 
-        ALPAKA_FN_INLINE ALPAKA_FN_ACC auto init() -> void
+        ALPAKA_FN_INLINE ALPAKA_FN_ACC static auto init(auto const& acc, void* accessBlocksPointer, auto heapSize)
+            -> void
         {
-            for(uint32_t i = 0; i < numBlocks(); ++i)
+            auto threadsInGrid = alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc);
+            auto numThreads = threadsInGrid.prod();
+            auto const [idx] = alpaka::mapIdx<1U>(alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc), threadsInGrid);
+            auto* accessBlocks = static_cast<MyAccessBlock*>(accessBlocksPointer);
+
+            for(uint32_t i = idx; i < numBlocks(heapSize) * MyAccessBlock::numPages(); i += numThreads)
             {
-                accessBlocks[i].init();
+                auto blockIdx = i / MyAccessBlock::numPages();
+                auto pageIdx = i % MyAccessBlock::numPages();
+
+                accessBlocks[blockIdx].init(acc, pageIdx);
             }
+        }
+
+        ALPAKA_FN_INLINE ALPAKA_FN_ACC auto init(auto const& acc) -> void
+        {
+            init(acc, accessBlocks, heapSize);
+        }
+
+        /**
+         * @brief Number of access blocks assuming the given heapSize.
+         *
+         * @return Number of access blocks in the heap.
+         */
+        ALPAKA_FN_INLINE ALPAKA_FN_ACC static constexpr auto numBlocks(auto heapSize) -> uint32_t
+        {
+            return heapSize / T_HeapConfig::accessblocksize;
         }
 
         /**
@@ -102,7 +130,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
          */
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto numBlocks() const -> uint32_t
         {
-            return heapSize / T_HeapConfig::accessblocksize;
+            return numBlocks(heapSize);
         }
 
         /**
@@ -307,15 +335,22 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
     {
         template<typename T_HeapConfig, typename T_HashConfig, typename T_AlignmentPolicy>
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto operator()(
-            auto const& /*unused*/,
+            auto const& acc,
             Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>* m_heap,
             void* m_heapmem,
             size_t const m_memsize) const
         {
-            m_heap->accessBlocks
-                = static_cast<Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>::MyAccessBlock*>(m_heapmem);
-            m_heap->heapSize = m_memsize;
-            m_heap->init();
+            auto const idx = alpaka::mapIdx<1U>(
+                alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc),
+                alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc));
+            if(idx == 0)
+            {
+                m_heap->accessBlocks
+                    = static_cast<Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>::MyAccessBlock*>(m_heapmem);
+                m_heap->heapSize = m_memsize;
+            }
+            // We can't rely on thread 0 to finish the above before we start, so we use the static version:
+            Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>::init(acc, m_heapmem, m_memsize);
         }
     };
 
@@ -374,13 +409,15 @@ namespace mallocMC::CreationPolicies
         template<typename TAcc>
         static void initHeap([[maybe_unused]] auto& dev, auto& queue, auto* heap, void* pool, size_t memsize)
         {
-            using Dim = typename alpaka::trait::DimType<TAcc>::type;
-            using Idx = typename alpaka::trait::IdxType<TAcc>::type;
-            using VecType = alpaka::Vec<Dim, Idx>;
+            using MyHeap = FlatterScatterAlloc::Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>;
+            auto numBlocks = MyHeap::numBlocks(memsize);
+            auto numPagesPerBlock = MyHeap::MyAccessBlock::numPages();
 
-            auto workDivSingleThread
-                = alpaka::WorkDivMembers<Dim, Idx>{VecType::ones(), VecType::ones(), VecType::ones()};
-            alpaka::exec<TAcc>(queue, workDivSingleThread, FlatterScatterAlloc::InitKernel{}, heap, pool, memsize);
+            alpaka::KernelCfg<TAcc> const kernelCfg
+                = {numBlocks * numPagesPerBlock, 1U, false, alpaka::GridBlockExtentSubDivRestrictions::Unrestricted};
+            auto workDiv
+                = alpaka::getValidWorkDiv(kernelCfg, dev, FlatterScatterAlloc::InitKernel{}, heap, pool, memsize);
+            alpaka::exec<TAcc>(queue, workDiv, FlatterScatterAlloc::InitKernel{}, heap, pool, memsize);
             alpaka::wait(queue);
         }
 
