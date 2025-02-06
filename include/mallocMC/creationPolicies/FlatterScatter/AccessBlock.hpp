@@ -115,13 +115,30 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
         }
 
     public:
+        /**
+         * @brief Single-threaded initialisation loop. Used only for testing.
+         */
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto init(auto const& acc) -> void
         {
-            pageTable.cleanup();
-            constexpr uint32_t dummyChunkSize = 1U;
-            for(auto& page : pages)
+            for(uint32_t i = 0; i < numPages(); i++)
             {
-                MyPageInterpretation(page, dummyChunkSize).cleanupFull();
+                init(acc, i);
+            }
+        }
+
+        /**
+         * @brief Initialise the page given by its index. 0th also initialises the pageTable.
+         */
+        ALPAKA_FN_INLINE ALPAKA_FN_ACC auto init(auto const& /*acc*/, auto const pageIdx) -> void
+        {
+            if(pageIdx == 0U)
+            {
+                pageTable.cleanup();
+            }
+            constexpr uint32_t dummyChunkSize = 1U;
+            if(pageIdx < numPages())
+            {
+                interpret(pageIdx, dummyChunkSize).cleanupFull();
             }
         }
 
