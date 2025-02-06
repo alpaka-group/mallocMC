@@ -106,12 +106,9 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
             }
         }
 
-        ALPAKA_FN_INLINE ALPAKA_FN_ACC auto init() -> void
+        ALPAKA_FN_INLINE ALPAKA_FN_ACC auto init(auto const& acc) -> void
         {
-            for(uint32_t i = 0; i < numBlocks(); ++i)
-            {
-                accessBlocks[i].init();
-            }
+            init(acc, accessBlocks, heapSize);
         }
 
         /**
