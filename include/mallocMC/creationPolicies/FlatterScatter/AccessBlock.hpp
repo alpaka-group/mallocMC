@@ -254,7 +254,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
             auto const index = pageIndex(pointer);
             if(index >= static_cast<int32_t>(numPages()) || index < 0)
             {
-#if(!defined(NDEBUG) && !BOOST_LANG_CUDA && !BOOST_LANG_HIP)
+#if (!defined(NDEBUG) && !BOOST_LANG_CUDA && !BOOST_LANG_HIP)
                 throw std::runtime_error{
                     "Attempted to destroy an invalid pointer! Pointer does not point to any page."};
 #endif // NDEBUG
@@ -597,7 +597,8 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                 startIndex,
                 numPages(),
                 noFreePageFound(),
-                [this, numBytes, &chunkSizeCache](auto const& localAcc, auto const index) {
+                [this, numBytes, &chunkSizeCache](auto const& localAcc, auto const index)
+                {
                     return this->thisPageIsSuitable(localAcc, index, numBytes, chunkSizeCache) ? index
                                                                                                : noFreePageFound();
                 });
