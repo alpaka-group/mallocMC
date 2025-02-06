@@ -93,15 +93,16 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
         ALPAKA_FN_INLINE ALPAKA_FN_ACC static auto init(auto const& acc, void* accessBlocksPointer, auto heapSize)
             -> void
         {
-            auto const [idx] = alpaka::mapIdx<1U>(
-                alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc),
-                alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc));
-            auto blockIdx = idx / MyAccessBlock::numPages();
-            auto pageIdx = idx % MyAccessBlock::numPages();
+            auto threadsInGrid = alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc);
+            auto numThreads = threadsInGrid.prod();
+            auto const [idx] = alpaka::mapIdx<1U>(alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc), threadsInGrid);
+            auto* accessBlocks = static_cast<MyAccessBlock*>(accessBlocksPointer);
 
-            if(blockIdx < numBlocks(heapSize))
+            for(uint32_t i = idx; i < numBlocks(heapSize) * MyAccessBlock::numPages(); i += numThreads)
             {
-                auto* accessBlocks = static_cast<MyAccessBlock*>(accessBlocksPointer);
+                auto blockIdx = i / MyAccessBlock::numPages();
+                auto pageIdx = i % MyAccessBlock::numPages();
+
                 accessBlocks[blockIdx].init(acc, pageIdx);
             }
         }
