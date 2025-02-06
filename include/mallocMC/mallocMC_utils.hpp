@@ -131,7 +131,7 @@ namespace mallocMC
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
     template<typename TDim, typename TIdx>
-    ALPAKA_FN_ACC inline auto smid(alpaka::AccGpuCudaRt<TDim, TIdx> const& /*acc*/) -> uint32_t
+    inline __device__ auto smid(alpaka::AccGpuCudaRt<TDim, TIdx> const& /*acc*/) -> uint32_t
     {
         std::uint32_t mysmid = 0;
         asm("mov.u32 %0, %%smid;" : "=r"(mysmid));
@@ -154,7 +154,7 @@ namespace mallocMC
     }
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
     template<typename TDim, typename TIdx>
-    ALPAKA_FN_ACC inline auto lanemask_lt(alpaka::AccGpuCudaRt<TDim, TIdx> const& /*acc*/)
+    inline __device__ uint32_t lanemask_lt(alpaka::AccGpuCudaRt<TDim, TIdx> const& /*acc*/)
     {
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_lt;" : "=r"(lanemask));
