@@ -198,7 +198,7 @@ namespace mallocMC
         }
 
         ALPAKA_FN_HOST
-        auto getAllocatorHandle() -> AllocatorHandle
+        auto getAllocatorHandle() const -> AllocatorHandle
         {
             return AllocatorHandle{alpaka::getPtrNative(*devAllocatorBuffer)};
         }

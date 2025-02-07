@@ -68,6 +68,8 @@ target_include_directories(
   ${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
+target_link_libraries(${PROJECT_NAME} INTERFACE alpaka::alpaka)
+
 
 option(mallocMC_BUILD_TESTING "Turn on/off building the tests" OFF)
 if(mallocMC_BUILD_TESTING)
