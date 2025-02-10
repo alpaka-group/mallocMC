@@ -411,6 +411,12 @@ namespace mallocMC::CreationPolicies
         {
             using MyHeap = FlatterScatterAlloc::Heap<T_HeapConfig, T_HashConfig, T_AlignmentPolicy>;
             auto numBlocks = MyHeap::numBlocks(memsize);
+            if(numBlocks == 0U)
+            {
+                // This is not just an optimisation. The call to `getValidWorkDiv` below really dislikes the 0 extent
+                // that we'd give it, so better stop here to not run into division by zero.
+                return;
+            }
             auto numPagesPerBlock = MyHeap::MyAccessBlock::numPages();
 
             alpaka::KernelCfg<TAcc> const kernelCfg
