@@ -106,7 +106,7 @@ template<
 auto example03() -> int
 {
     using Allocator = mallocMC::Allocator<
-        Acc,
+        alpaka::AccToTag<Acc>,
         T_CreationPolicy,
         mallocMC::DistributionPolicies::Noop,
         mallocMC::OOMPolicies::ReturnNull,

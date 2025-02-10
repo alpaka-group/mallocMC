@@ -96,7 +96,7 @@ namespace mallocMC
      * @tparam T_AlignmentPolicy The desired type of a AlignmentPolicy
      */
     template<
-        typename AlpakaAcc,
+        typename T_AccTag,
         typename T_CreationPolicy,
         typename T_DistributionPolicy,
         typename T_OOMPolicy,
@@ -113,6 +113,9 @@ namespace mallocMC
         using uint32 = std::uint32_t;
 
     public:
+        using Dim = alpaka::DimInt<1>;
+        using Idx = std::uint32_t;
+        using AlpakaAcc = alpaka::TagToAcc<T_AccTag, Dim, Idx>;
         using DistributionPolicy = T_DistributionPolicy;
         using OOMPolicy = T_OOMPolicy;
         using ReservePoolPolicy = T_ReservePoolPolicy;
