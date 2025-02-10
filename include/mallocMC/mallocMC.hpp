@@ -47,6 +47,7 @@
 #include "alignmentPolicies/Noop.hpp"
 #include "alignmentPolicies/Shrink.hpp"
 #include "creationPolicies/FlatterScatter.hpp"
+#include "creationPolicies/GallatinCuda.hpp"
 #include "creationPolicies/OldMalloc.hpp"
 #include "creationPolicies/Scatter.hpp"
 #include "distributionPolicies/Noop.hpp"
@@ -55,3 +56,4 @@
 #include "oOMPolicies/ReturnNull.hpp"
 #include "reservePoolPolicies/AlpakaBuf.hpp"
 #include "reservePoolPolicies/CudaSetLimits.hpp"
+#include "reservePoolPolicies/Noop.hpp"

@@ -99,7 +99,10 @@ struct ExampleKernel
     }
 };
 
-template<typename T_CreationPolicy>
+template<
+    typename T_CreationPolicy,
+    typename T_ReservePoolPolicy,
+    typename T_AlignmentPolicy = mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>
 auto example03() -> int
 {
     using Allocator = mallocMC::Allocator<
@@ -107,8 +110,8 @@ auto example03() -> int
         T_CreationPolicy,
         mallocMC::DistributionPolicies::Noop,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
-        mallocMC::AlignmentPolicies::Shrink<AlignmentConfig>>;
+        T_ReservePoolPolicy,
+        T_AlignmentPolicy>;
 
     auto const platform = alpaka::Platform<Acc>{};
     auto const dev = alpaka::getDevByIdx(platform, 0);
@@ -130,8 +133,19 @@ auto example03() -> int
 
 auto main(int /*argc*/, char* /*argv*/[]) -> int
 {
-    example03<FlatterScatter<FlatterScatterHeapConfig>>();
-    example03<Scatter<FlatterScatterHeapConfig>>();
-    example03<OldMalloc>();
+    example03<FlatterScatter<FlatterScatterHeapConfig>, mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>>();
+    example03<Scatter<FlatterScatterHeapConfig>, mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>>();
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+    example03<
+        mallocMC::CreationPolicies::GallatinCuda<>,
+        mallocMC::ReservePoolPolicies::Noop,
+        mallocMC::AlignmentPolicies::Noop>();
+    // GallatinCuda already uses cudaSetLimits and we're not allowed to call it a second time.
+    example03<OldMalloc, mallocMC::ReservePoolPolicies::Noop>();
+    // This should normally be:
+    //    example01<OldMalloc, mallocMC::ReservePoolPolicies::CudaSetLimits>();
+#else
+    example03<OldMalloc, mallocMC::ReservePoolPolicies::Noop>();
+#endif
     return 0;
 }

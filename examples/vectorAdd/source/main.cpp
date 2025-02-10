@@ -27,9 +27,6 @@
   THE SOFTWARE.
 */
 
-#include "mallocMC/creationPolicies/FlatterScatter.hpp"
-#include "mallocMC/creationPolicies/OldMalloc.hpp"
-
 #include <alpaka/alpaka.hpp>
 #include <alpaka/example/ExampleDefaultAcc.hpp>
 
@@ -80,7 +77,10 @@ ALPAKA_STATIC_ACC_MEM_GLOBAL int** arA;
 ALPAKA_STATIC_ACC_MEM_GLOBAL int** arB;
 ALPAKA_STATIC_ACC_MEM_GLOBAL int** arC;
 
-template<typename T_CreationPolicy>
+template<
+    typename T_CreationPolicy,
+    typename T_ReservePoolPolicy,
+    typename T_AlignmentPolicy = mallocMC::AlignmentPolicies::Shrink<ShrinkConfig>>
 auto example01() -> int
 {
     using Allocator = mallocMC::Allocator<
@@ -88,8 +88,8 @@ auto example01() -> int
         T_CreationPolicy,
         mallocMC::DistributionPolicies::Noop,
         mallocMC::OOMPolicies::ReturnNull,
-        mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>,
-        mallocMC::AlignmentPolicies::Shrink<ShrinkConfig>>;
+        T_ReservePoolPolicy,
+        T_AlignmentPolicy>;
 
     constexpr auto length = 100;
 
@@ -227,8 +227,19 @@ auto example01() -> int
 
 auto main(int /*argc*/, char* /*argv*/[]) -> int
 {
-    example01<FlatterScatter<FlatterScatterHeapConfig>>();
-    example01<Scatter<FlatterScatterHeapConfig>>();
-    example01<OldMalloc>();
+    example01<FlatterScatter<FlatterScatterHeapConfig>, mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>>();
+    example01<Scatter<FlatterScatterHeapConfig>, mallocMC::ReservePoolPolicies::AlpakaBuf<Acc>>();
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+    example01<
+        mallocMC::CreationPolicies::GallatinCuda<>,
+        mallocMC::ReservePoolPolicies::Noop,
+        mallocMC::AlignmentPolicies::Noop>();
+    // GallatinCuda already uses cudaSetLimits and we're not allowed to call it a second time.
+    example01<OldMalloc, mallocMC::ReservePoolPolicies::Noop>();
+    // This should normally be:
+    //    example01<OldMalloc, mallocMC::ReservePoolPolicies::CudaSetLimits>();
+#else
+    example01<OldMalloc, mallocMC::ReservePoolPolicies::Noop>();
+#endif
     return 0;
 }
