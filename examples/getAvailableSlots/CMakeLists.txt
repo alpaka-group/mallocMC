@@ -32,3 +32,4 @@ set_target_properties(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} mallocMC::mallocMC alpaka::alpaka)
+add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})

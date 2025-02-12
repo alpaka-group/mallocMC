@@ -17,6 +17,17 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   )
 endif()
 
+# ---- Options ----
+
+option(mallocMC_BUILD_TESTING "Turn on/off building the tests" OFF)
+option(mallocMC_BUILD_EXAMPLES "Turn on/off building the examples" OFF)
+if (mallocMC_BUILD_TESTING OR mallocMC_BUILD_EXAMPLES)
+  enable_testing()
+endif()
+if (mallocMC_BUILD_TESTING)
+  set(alpaka_ACC_CPU_B_SEQ_T_SEQ_ENABLE ON CACHE BOOL "" FORCE)
+endif()
+
 # ---- Add dependencies via CPM ----
 # see https://github.com/TheLartians/CPM.cmake for more info
 
@@ -39,6 +50,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
 if(alpaka_ACC_GPU_CUDA_ENABLE)
   add_controlled("Gallatin")
 
+  if (TARGET gallatin::gallatin)
+    set(mallocMC_HAS_Gallatin_AVAILABLE YES)
+  else()
+    set(mallocMC_HAS_Gallatin_AVAILABLE NO)
+  endif()
+
   # Gallatin needs some fairly recent compute capability from CUDA.
   # CMake defaults to taking the oldest supported by the device
   # (https://cmake.org/cmake/help/latest/variable/CMAKE_CUDA_ARCHITECTURES.html)
@@ -56,9 +73,13 @@ if(alpaka_ACC_GPU_CUDA_ENABLE)
         "If the architecture set is too old, this can lead to compilation errors with Gallatin. "
         "If Gallatin is needed, please set CMAKE_CUDA_ARCHITECTURES to the correct value >= 70."
       )
+    set(mallocMC_HAS_Gallatin_AVAILABLE NO)
   endif()
 
-  target_link_libraries(${PROJECT_NAME} INTERFACE gallatin)
+  if (mallocMC_HAS_Gallatin_AVAILABLE)
+    target_link_libraries(${PROJECT_NAME} INTERFACE gallatin)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE mallocMC_HAS_Gallatin_AVAILABLE)
+  endif()
 endif()
 
 # being a cross-platform target, we enforce standards conformance on MSVC
@@ -68,15 +89,14 @@ target_include_directories(
   ${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
+target_link_libraries(${PROJECT_NAME} INTERFACE alpaka::alpaka)
 
-option(mallocMC_BUILD_TESTING "Turn on/off building the tests" OFF)
+
 if(mallocMC_BUILD_TESTING)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
-  enable_testing()
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test ${CMAKE_BINARY_DIR}/test)
 endif()
 
-option(mallocMC_BUILD_EXAMPLES "Turn on/off building the examples" OFF)
 if(mallocMC_BUILD_EXAMPLES)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/examples ${CMAKE_BINARY_DIR}/examples)

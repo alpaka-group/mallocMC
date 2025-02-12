@@ -11,10 +11,11 @@ CPMDeclarePackage(PackageProject.cmake
 # alpaka
 CPMDeclarePackage(alpaka
   NAME alpaka
-  GIT_TAG 1.2.0
+  # This is a development version slightly after 1.2.0 because we needed a patch
+  GIT_TAG 95c0bf2397255a89467bb5c151a96367ad1d1f93
   GITHUB_REPOSITORY alpaka-group/alpaka
   OPTIONS
-    "alpaka_CXX_STANDARD 20"
+    "alpaka_CXX_STANDARD 20;alpaka_INSTALL ON"
   # It is recommended to let CPM cache dependencies in order to reduce redundant downloads.
   # However, we might in the foreseeable future turn to unstable references like the `dev` branch here.
   # Setting the following option tells CPM to not use the cache.

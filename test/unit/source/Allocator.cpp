@@ -51,7 +51,7 @@ TEST_CASE("Allocator")
         auto queue = alpaka::Queue<Acc, alpaka::Blocking>{dev};
 
         mallocMC::Allocator<
-            Acc,
+            alpaka::AccToTag<Acc>,
             mallocMC::CreationPolicies::FlatterScatter<>,
             mallocMC::DistributionPolicies::Noop,
             mallocMC::OOMPolicies::ReturnNull,

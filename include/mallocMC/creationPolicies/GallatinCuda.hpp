@@ -30,7 +30,7 @@
 
 #include <alpaka/alpaka.hpp>
 
-#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+#ifdef mallocMC_HAS_Gallatin_AVAILABLE
 #    include <gallatin/allocators/gallatin.cuh>
 #else
 
@@ -44,6 +44,23 @@ namespace gallatin::allocators
         static auto generate_on_device(auto...)
         {
             return nullptr;
+        }
+
+        template<typename... T>
+        auto malloc(T... /*unused*/) -> void*
+        {
+            // This always triggers but it depends on the template parameter, so it's only instantiated if we actually
+            // use it.
+            static_assert(sizeof...(T) < 0, "Attempt to use malloc of unavailable gallatin prototype.");
+            return nullptr;
+        }
+
+        template<typename... T>
+        auto free(T... /*unused*/)
+        {
+            // This always triggers but it depends on the template parameter, so it's only instantiated if we actually
+            // use it.
+            static_assert(sizeof...(T) < 0, "Attempt to use free of unavailable gallatin prototype.");
         }
     };
 } // namespace gallatin::allocators
@@ -89,7 +106,7 @@ namespace mallocMC
             static constexpr auto providesAvailableSlots = false;
 
             template<typename AlpakaAcc>
-            ALPAKA_FN_ACC auto create(AlpakaAcc const& acc, uint32_t bytes) const -> void*
+            ALPAKA_FN_ACC auto create(AlpakaAcc const& /*acc*/, uint32_t bytes) const -> void*
             {
                 return heap->malloc(static_cast<size_t>(bytes));
             }
@@ -107,7 +124,7 @@ namespace mallocMC
 
             template<typename AlpakaAcc, typename AlpakaDevice, typename AlpakaQueue, typename T_DeviceAllocator>
             static void initHeap(
-                AlpakaDevice& dev,
+                AlpakaDevice& /*dev*/,
                 AlpakaQueue& queue,
                 T_DeviceAllocator* devAllocator,
                 void*,

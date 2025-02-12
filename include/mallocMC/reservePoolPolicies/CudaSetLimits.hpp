@@ -59,7 +59,7 @@ namespace mallocMC
         struct CudaSetLimits
         {
             template<typename AlpakaDev>
-            auto setMemPool(AlpakaDev const& dev, size_t memsize) -> void*
+            auto setMemPool(AlpakaDev const& /*dev*/, size_t memsize) -> void*
             {
                 cudaDeviceSetLimit(cudaLimitMallocHeapSize, memsize);
                 return nullptr;
