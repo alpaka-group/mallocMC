@@ -17,6 +17,17 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   )
 endif()
 
+# ---- Options ----
+
+option(mallocMC_BUILD_TESTING "Turn on/off building the tests" OFF)
+option(mallocMC_BUILD_EXAMPLES "Turn on/off building the examples" OFF)
+if (mallocMC_BUILD_TESTING OR mallocMC_BUILD_EXAMPLES)
+  enable_testing()
+endif()
+if (mallocMC_BUILD_TESTING)
+  set(alpaka_ACC_CPU_B_SEQ_T_SEQ_ENABLE ON CACHE BOOL "" FORCE)
+endif()
+
 # ---- Add dependencies via CPM ----
 # see https://github.com/TheLartians/CPM.cmake for more info
 
@@ -81,18 +92,12 @@ target_include_directories(
 target_link_libraries(${PROJECT_NAME} INTERFACE alpaka::alpaka)
 
 
-option(mallocMC_BUILD_TESTING "Turn on/off building the tests" OFF)
 if(mallocMC_BUILD_TESTING)
-  enable_testing()
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test ${CMAKE_BINARY_DIR}/test)
 endif()
 
-option(mallocMC_BUILD_EXAMPLES "Turn on/off building the examples" OFF)
 if(mallocMC_BUILD_EXAMPLES)
-  if (NOT mallocMC_BUILD_TESTING)
-    enable_testing()
-  endif()
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/examples ${CMAKE_BINARY_DIR}/examples)
 endif()
