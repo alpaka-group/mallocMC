@@ -30,4 +30,5 @@ if (CMAKE_CUDA_COMPILER)
   )
 
   target_link_libraries(${PROJECT_NAME} mallocMC::mallocMC ${CUDA_LIBRARIES})
+  add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})
 endif()

@@ -145,7 +145,7 @@ auto main(int /*argc*/, char* /*argv*/[]) -> int
     example03<OldMalloc, mallocMC::ReservePoolPolicies::Noop>();
 #    else
     // This should normally be:
-    example01<OldMalloc, mallocMC::ReservePoolPolicies::CudaSetLimits>();
+    example03<OldMalloc, mallocMC::ReservePoolPolicies::CudaSetLimits>();
 #    endif
 #else
     example03<OldMalloc, mallocMC::ReservePoolPolicies::Noop>();
