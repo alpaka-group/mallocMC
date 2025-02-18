@@ -1,6 +1,37 @@
 Change Log / Release Log for mallocMC
 ================================================================
 
+3.0.0-dev
+-----
+
+Date: not yet released
+
+This is a major release including breaking changes on the interface and
+build system level as well as many new features and bug fixes.
+
+Features
+
+- New algorithm FlatterScatter
+- New prototype GallatinCuda (CUDA-only wrapper of a recent proposal)
+- `mallocMC.cuh` header for convenient use in native CUDA applications
+- Modern CMake support and complete re-organisation of the file tree
+- Modern package management with CMake Package Manager (CPM)
+- New interface: Allocator takes a tag instead of an Acc
+- C++20 is required now.
+
+Bug fixes
+
+- Memfence before releasing a chunk in ScatterAlloc (and FlatterScatter)
+- Fix compilation error with multiple accelerators
+
+Maintenance:
+
+- Update alpaka to 1.2.0 + patches (latest develop branch)
+- Update tooling (clang-format, clang-tidy, ...)
+- Add pre-commit
+- Add rudimentary CI (additional coverage through PIConGPU)
+- Add decent test coverage for FlatterScatter and ScatterAlloc
+
 2.6.0
 -----
 
