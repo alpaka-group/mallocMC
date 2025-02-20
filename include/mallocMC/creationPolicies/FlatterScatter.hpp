@@ -117,7 +117,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
          *
          * @return Number of access blocks in the heap.
          */
-        ALPAKA_FN_INLINE ALPAKA_FN_ACC static constexpr auto numBlocks(auto heapSize) -> uint32_t
+        ALPAKA_FN_INLINE ALPAKA_FN_HOST_ACC static constexpr auto numBlocks(auto heapSize) -> uint32_t
         {
             return heapSize / T_HeapConfig::accessblocksize;
         }
