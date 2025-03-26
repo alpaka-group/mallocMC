@@ -1,0 +1,30 @@
+// This file was copied from
+// https://github.com/TheLartians/PackageProject.cmake/blob/2b8d9b49d227f714092ffe5263966274dc863380/version.h.in
+//
+// MIT License
+//
+// Copyright (c) 2020 Lars Melchior
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+
+#pragma once
+
+#define @UPPERCASE_PROJECT_NAME @_VERSION "@PROJECT_VERSION@"
+
+#define @UPPERCASE_PROJECT_NAME @_VERSION_MAJOR @PROJECT_VERSION_MAJOR @
+#define @UPPERCASE_PROJECT_NAME @_VERSION_MINOR @PROJECT_VERSION_MINOR @
+#define @UPPERCASE_PROJECT_NAME @_VERSION_PATCH @PROJECT_VERSION_PATCH @
+#define @UPPERCASE_PROJECT_NAME @_VERSION_TWEAK @PROJECT_VERSION_TWEAK @
