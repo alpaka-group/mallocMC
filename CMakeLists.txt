@@ -31,13 +31,13 @@ endif()
 # ---- Add dependencies via CPM ----
 # see https://github.com/TheLartians/CPM.cmake for more info
 
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/PackageProject.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/CPM_0.40.2.cmake)
 CPMUsePackageLock(${CMAKE_CURRENT_LIST_DIR}/cmake/package-lock.cmake)
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/add_controlled.cmake)
 
 # PackageProject.cmake will be used to make our target installable
-add_controlled("PackageProject.cmake" REQUIRED)
 add_controlled("alpaka" REQUIRED)
 
 
