@@ -1,13 +1,6 @@
 # CPM Package Lock
 # This file should be committed to version control
 
-# PackageProject.cmake
-CPMDeclarePackage(PackageProject.cmake
-  VERSION 1.8.0
-  GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-  SYSTEM YES
-  EXCLUDE_FROM_ALL YES
-)
 # alpaka
 CPMDeclarePackage(alpaka
   NAME alpaka
