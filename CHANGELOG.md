@@ -1,6 +1,74 @@
 Change Log / Release Log for mallocMC
 ================================================================
 
+3.0.0-dev
+-----
+
+Date: not yet released
+
+This is a major release including breaking changes on the interface and
+build system level as well as many new features and bug fixes.
+
+Features
+
+- New algorithm FlatterScatter
+- New prototype GallatinCuda (CUDA-only wrapper of a recent proposal)
+- `mallocMC.cuh` header for convenient use in native CUDA applications
+- Modern CMake support and complete re-organisation of the file tree
+- Modern package management with CMake Package Manager (CPM)
+- New interface: Allocator takes a tag instead of an Acc
+- C++20 is required now.
+
+Bug fixes
+
+- Memfence before releasing a chunk in ScatterAlloc (and FlatterScatter)
+- Fix compilation error with multiple accelerators
+
+Maintenance:
+
+- Update alpaka to 1.2.0 + patches (latest develop branch)
+- Update tooling (clang-format, clang-tidy, ...)
+- Add pre-commit
+- Add rudimentary CI (additional coverage through PIConGPU)
+- Add decent test coverage for FlatterScatter and ScatterAlloc
+
+2.6.0
+-----
+
+Date: 2024-08-28
+
+This is mostly a maintenance release.
+Years of production use in PIConGPU have surfaced
+a number of bugs and inconsistencies that are addressed.
+We will drop the 'crp' suffix in our version numbers
+because the original version
+(that we distinguished from via 'crp')
+is no longer maintained.
+
+Features
+
+- Compatibility with C++20
+- Use runtime selected number of access blocks
+- Full support for CPU accelerators
+- Scatter: optimize page search algorithm
+- Scatter: optimize hash and allocation size
+- Scatter: add more informations to `classname()`
+
+Bug fixes
+
+- Scatter: Various deadlocks, data races and inconsistencies
+- Compilation failure without `alpaka_ACC_GPU_CUDA_ONLY_MODE` set
+- Adjustments to the examples to compile and run cleanly again
+- Alignment violation in edge cases of small allocations fixed
+- Remove undefined behaviour in handling bit masks
+
+Maintenance
+
+- Update to alpaka 1.1.0
+- Minor adjustments in the README
+- Scatter: Internal refactorings
+- CI fixes
+
 2.5.0crp
 --------
 **Date:** 2021-02-18
