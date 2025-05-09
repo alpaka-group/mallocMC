@@ -1411,7 +1411,7 @@ namespace mallocMC
             }
         };
 
-        template<typename T, typename U = ScatterConf::DefaultScatterHashingParams>
+        template<typename T = ScatterConf::DefaultScatterConfig, typename U = ScatterConf::DefaultScatterHashingParams>
         struct Scatter
         {
             template<typename V>
