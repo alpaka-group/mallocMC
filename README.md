@@ -1,3 +1,7 @@
+<h1 align="center">
+<img src="./resources/mallocMC_logo.svg" width="300">
+</h1><br>
+
 mallocMC
 =============
 
