@@ -1293,8 +1293,7 @@ namespace mallocMC
                     auto const gid = alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc).sum();
 
                     auto const nWorker = alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc).prod();
-                    unsigned const temp
-                        = heapPtr->template getAvailaibleSlotsDeviceFunction(acc, numBytes, gid, nWorker);
+                    unsigned const temp = heapPtr->getAvailaibleSlotsDeviceFunction(acc, numBytes, gid, nWorker);
                     if(temp)
                         alpaka::atomicOp<alpaka::AtomicAdd>(acc, slots, temp);
                 };
