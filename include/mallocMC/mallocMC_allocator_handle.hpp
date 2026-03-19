@@ -39,10 +39,6 @@ namespace mallocMC
 
         DevAllocator* devAllocator;
 
-        explicit AllocatorHandleImpl(DevAllocator* p) : devAllocator(p)
-        {
-        }
-
         template<typename AlpakaAcc>
         ALPAKA_FN_ACC auto malloc(AlpakaAcc const& acc, size_t size) const -> void*
         {
