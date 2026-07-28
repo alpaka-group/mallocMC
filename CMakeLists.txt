@@ -21,7 +21,9 @@ endif()
 
 option(mallocMC_BUILD_TESTING "Turn on/off building the tests" OFF)
 option(mallocMC_BUILD_EXAMPLES "Turn on/off building the examples" OFF)
-if (mallocMC_BUILD_TESTING OR mallocMC_BUILD_EXAMPLES)
+option(mallocMC_BUILD_BENCHMARKING "Turn on/off building the benchmarking" OFF)
+
+if (mallocMC_BUILD_TESTING OR mallocMC_BUILD_EXAMPLES OR mallocMC_BUILD_BENCHMARKING)
   enable_testing()
 endif()
 if (mallocMC_BUILD_TESTING)
@@ -100,6 +102,11 @@ endif()
 if(mallocMC_BUILD_EXAMPLES)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/examples ${CMAKE_BINARY_DIR}/examples)
+endif()
+
+if(mallocMC_BUILD_BENCHMARKING)
+  include(${CMAKE_CURRENT_LIST_DIR}/cmake/tools.cmake)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/benchmarking ${CMAKE_BINARY_DIR}/benchmarking)
 endif()
 
 # ---- Create an installable target ----
