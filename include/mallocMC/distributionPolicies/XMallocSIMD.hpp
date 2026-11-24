@@ -167,7 +167,7 @@ namespace mallocMC
                         *(uint32*) myalloc = threadcount;
                 }
 
-                threadfenceBlock(acc);
+                alpaka::mem_fence(acc, alpaka::memory_scope::Block{});
 
                 void* myres = myalloc;
                 if(can_use_coalescing)
