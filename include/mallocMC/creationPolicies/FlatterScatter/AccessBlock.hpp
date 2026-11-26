@@ -431,7 +431,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                     {
                         // At this point, we have acquired all the pages we need and nobody can mess with them anymore.
                         // We still have to set the chunk size correctly.
-                        setChunkSizes(localAcc, firstIndex, numPagesNeeded, numBytes);
+                        setChunkSizes(localAcc, firstIndex, numBytes);
                         result = &pages[firstIndex];
                     }
                     else
@@ -494,31 +494,26 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
         }
 
         /**
-         * @brief Set the chunk sizes of a contiguous array of pages.
+         * @brief Set the chunk size of a contiguous array of pages.
          *
          * This function assumes that all the pages are locked by the current thread and performs a hard set operation
          * without checking the previous content.
          *
          * @param firstIndex Start index of the contiguous array of pages.
-         * @param numPagesNeeded The number of pages to set the chunk size on.
          * @param numBytes Chunk size to be set in number of bytes.
          */
         ALPAKA_FN_INLINE ALPAKA_FN_ACC auto setChunkSizes(
             auto const& acc,
             uint32_t const firstIndex,
-            uint32_t const numPagesNeeded,
             uint32_t const numBytes) -> void
         {
-            for(uint32_t numPagesAcquired = 0U; numPagesAcquired < numPagesNeeded; ++numPagesAcquired)
-            {
                 // At this point in the code, we have already locked all the pages. So, we literally don't care what
                 // other threads thought this chunk size would be because we are the only ones legitimately messing
                 // with this page. This chunk size may be non-zero because we could have taken over a page before it
                 // was properly cleaned up. That is okay for us because we're handing out uninitialised memory anyways.
                 // But it is very important to record the correct chunk size here, so the destroy method later on knows
                 // how to handle this memory.
-                alpaka::atomicExch(acc, &pageTable.chunkSizes[firstIndex + numPagesAcquired], numBytes);
-            }
+                alpaka::atomicExch(acc, &pageTable.chunkSizes[firstIndex], numBytes);
         }
 
         /**
@@ -836,6 +831,8 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
             uint32_t const pageIndex,
             uint32_t const chunkSize)
         {
+            alpaka::atomicCas(acc, &pageTable.chunkSizes[pageIndex], chunkSize, 0U);
+
             auto numPagesNeeded = ceilingDivision(chunkSize, pageSize);
             for(uint32_t i = 0; i < numPagesNeeded; ++i)
             {
@@ -848,7 +845,6 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                 {
                     MyPageInterpretation{pages[myIndex], T_AlignmentPolicy::Properties::dataAlignment}.cleanupFull();
                     alpaka::mem_fence(acc, alpaka::memory_scope::Device{});
-                    alpaka::atomicCas(acc, &pageTable.chunkSizes[myIndex], chunkSize, 0U);
                 }
                 alpaka::atomicSub(acc, &pageTable.fillingLevels[myIndex], +pageSize);
             }
