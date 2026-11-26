@@ -68,10 +68,9 @@ TEST_CASE("Allocator")
     }
 }
 
-// XMallocSIMD sizes its shared-memory arrays with the warp size. For GPU accelerators alpaka reports a warp size of
-// zero during host compilation, which makes these arrays ill-formed. CPU accelerators report one, so this test uses
-// the CPU serial accelerator even if a GPU backend is enabled. XMallocSIMD only coalesces in device code, so on the
-// host this exercises the policy's instantiation and its pass-through behaviour.
+// XMallocSIMD sizes its shared-memory arrays with the warp size and falls back to a single slot when alpaka has no
+// compile-time warp size (GPU host compilation and SYCL); CPU accelerators report one. The test still uses
+// AccCpuSerial because coalescing is device-only and this suite is CPU-only.
 using XMallocAcc = alpaka::AccCpuSerial<Dim, Idx>;
 
 // XMallocSIMD is only compatible with CreationPolicies::Scatter: Scatter treats a zero-byte request as no allocation
